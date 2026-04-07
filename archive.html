@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>過去のお知らせ | 一般社団法人 車両情報活用研究所</title>
+    <link href="output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --accent: #3b82f6;
+            --bg-light: #f8fafc;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            scroll-behavior: smooth;
+            color: #334155;
+        }
+
+        h1, h2, h3, .serif {
+            font-family: 'Noto Serif JP', serif;
+        }
+
+        .nav-active {
+            color: var(--primary);
+            font-weight: 700;
+            position: relative;
+        }
+
+        .nav-active::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-blue-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="location.href='index.html'">
+                    <img src="CIDMchara.png" alt="CIDM Logo" class="w-10 h-10 object-contain" onerror="this.src='https://placehold.jp/24/2563eb/ffffff/200x200.png?text=CIDM'">
+                    <div>
+                        <span class="block font-bold text-lg tracking-wider text-slate-800 leading-none">CIDM</span>
+                        <span class="block text-[8px] text-blue-500 font-bold tracking-tighter uppercase mt-1">Innovative Data & Mobility</span>
+                    </div>
+                </div>
+
+                <div id="main-nav-links" class="hidden lg:flex items-center space-x-8 font-bold text-[12px] tracking-wider">
+                    <a href="index.html" class="nav-item py-1 transition hover:text-blue-600">ホーム</a>
+                    <a href="index.html#research" class="nav-item py-1 transition hover:text-blue-600">研究・事業</a>
+                    <a href="archive.html" class="nav-item py-1 transition hover:text-blue-600">お知らせ一覧</a>
+                    <a href="index.html#about" class="nav-item py-1 transition hover:text-blue-600">組織概要</a>
+                    <a href="index.html#join" class="nav-item py-1 transition hover:text-blue-600">入会案内</a>
+                    <!-- 会員サイトはindex.htmlでログイン処理を行うため、index.htmlへリンク -->
+                    <a href="index.html" class="nav-item py-1 transition flex items-center text-blue-600"><i class="fa-solid fa-circle-user mr-1.5 text-sm"></i> 会員サイト</a>
+                    <a href="contact.html" class="bg-slate-900 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition shadow-lg shadow-slate-200 ml-4">お問い合わせ</a>
+                </div>
+                <button id="menu-btn" class="lg:hidden text-slate-800">
+                    <i class="fa-solid fa-bars-staggered text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow pt-32 pb-24">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-blue-600 font-bold tracking-widest text-xs uppercase mb-3 block">Archive</span>
+                <h1 class="text-3xl md:text-4xl font-bold serif text-slate-800">過去のお知らせ一覧</h1>
+                <div class="w-12 h-1 bg-blue-600 mx-auto mt-6 rounded-full"></div>
+            </div>
+
+            <div class="bg-white p-6 md:p-12 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-white">
+                <div class="divide-y divide-slate-100" id="archive-list">
+                    <p class="text-center text-slate-400 py-10">読み込み中...</p>
+                </div>
+                <!-- ページネーションコンテナ -->
+                <div id="pagination" class="flex justify-center items-center space-x-2 mt-12"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-slate-900 text-slate-400 py-16 text-center">
+        <p class="text-[10px] tracking-tighter uppercase">&copy; 2013-2026 Center for Innovative Data and Mobility.</p>
+    </footer>
+
+    <script>
+        const SUPABASE_URL = 'https://exxmuhxpbcolpkscyoha.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4eG11aHhwYmNvbHBrc2N5b2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNTQ3NzIsImV4cCI6MjA5MDkzMDc3Mn0.TYBzxHO5Qc_nKvc6E6jEuU1znQCobyDsVpCfwBPOFTc';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const ITEMS_PER_PAGE = 10; // 1ページあたりの表示件数
+
+        async function loadArchiveNews(page = 1) {
+            const archiveList = document.getElementById('archive-list');
+            if (!archiveList) return;
+            
+            archiveList.innerHTML = '<p class="text-center text-slate-400 py-10">読み込み中...</p>';
+
+            // 取得するデータの範囲を計算
+            const from = (page - 1) * ITEMS_PER_PAGE;
+            const to = from + ITEMS_PER_PAGE - 1;
+
+            // count: 'exact' で全体の件数を取得しつつ、range で10件分だけ取得する
+            const { data, error, count } = await supabaseClient
+                .from('meeting_reports')
+                .select('*', { count: 'exact' })
+                .eq('is_visible', true)
+                .order('event_date', { ascending: false })
+                .range(from, to);
+            
+            if (error) { archiveList.innerHTML = '<p class="py-10 text-center text-red-500">お知らせの取得に失敗しました。</p>'; document.getElementById('pagination').innerHTML = ''; return; }
+            if (!data || data.length === 0) { archiveList.innerHTML = '<p class="py-10 text-center text-slate-400">お知らせはありません。</p>'; document.getElementById('pagination').innerHTML = ''; return; }
+            
+            archiveList.innerHTML = data.map(item => `
+                <div class="py-8">
+                    <div class="flex flex-col md:flex-row md:items-center mb-3 gap-2 md:gap-4">
+                        <div class="flex items-center">
+                            <span class="text-sm font-bold text-slate-400 w-28">${item.event_date ? item.event_date.replace(/-/g, '.') : ''}</span>
+                            ${item.category ? `<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-full mr-4">${item.category}</span>` : ''}
+                        </div>
+                        <h3 class="text-lg text-slate-800 font-bold leading-snug">${item.title || ''}</h3>
+                    </div>
+                    <div class="md:ml-32 text-sm text-slate-600 leading-relaxed">${item.details ? item.details.replace(/\n/g, '<br>') : ''}</div>
+                </div>
+            `).join('');
+
+            renderPagination(count, page);
+        }
+
+        function renderPagination(totalCount, currentPage) {
+            const paginationContainer = document.getElementById('pagination');
+            if (!paginationContainer) return;
+
+            const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+            
+            // 1ページしかない場合や0件の場合は表示しない
+            if (totalPages <= 1) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+
+            // 「前へ」ボタン
+            html += `<button ${currentPage > 1 ? `onclick="loadArchiveNews(${currentPage - 1}); window.scrollTo(0,0);"` : 'disabled'} class="w-10 h-10 flex items-center justify-center rounded-full border ${currentPage > 1 ? 'border-slate-200 text-slate-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition' : 'border-slate-100 text-slate-300 cursor-not-allowed'}"><i class="fa-solid fa-chevron-left"></i></button>`;
+
+            // --- ページ番号ボタンの生成ロジック（ここを修正） ---
+            const delta = 2; // 現在のページの前後いくつ表示するか
+            const range = [];
+            for (let i = 1; i <= totalPages; i++) {
+                // 「最初のページ」「最後のページ」「現在のページ周辺」だけを配列に入れる
+                if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+                    range.push(i);
+                }
+            }
+
+            let last = null;
+            for (const i of range) {
+                if (last !== null) {
+                    if (i - last === 2) {
+                        // 1つ飛ばしの場合は飛ばされた番号を表示
+                        html += createPageButton(last + 1, currentPage);
+                    } else if (i - last !== 1) {
+                        // 2つ以上飛ばしている場合は「...」を表示
+                        html += `<span class="w-10 h-10 flex items-center justify-center text-slate-400">...</span>`;
+                    }
+                }
+                html += createPageButton(i, currentPage);
+                last = i;
+            }
+            // ------------------------------------------------
+
+            // 「次へ」ボタン
+            html += `<button ${currentPage < totalPages ? `onclick="loadArchiveNews(${currentPage + 1}); window.scrollTo(0,0);"` : 'disabled'} class="w-10 h-10 flex items-center justify-center rounded-full border ${currentPage < totalPages ? 'border-slate-200 text-slate-500 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition' : 'border-slate-100 text-slate-300 cursor-not-allowed'}"><i class="fa-solid fa-chevron-right"></i></button>`;
+
+            paginationContainer.innerHTML = html;
+        }
+
+        // ボタンのHTMLを生成する補助関数（共通デザイン）
+        function createPageButton(i, currentPage) {
+            if (i === currentPage) {
+                return `<button class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold shadow-md shadow-blue-200">${i}</button>`;
+            } else {
+                return `<button onclick="loadArchiveNews(${i}); window.scrollTo(0,0);" class="w-10 h-10 flex items-center justify-center rounded-full border border-slate-200 text-slate-600 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition font-medium">${i}</button>`;
+            }
+        }
+        // Function to highlight the current page in the navigation
+        function highlightCurrentNav() {
+            const currentPath = window.location.pathname;
+            const navItems = document.querySelectorAll('.nav-item');
+
+            navItems.forEach(item => {
+                item.classList.remove('nav-active'); // Remove active from all first
+
+                // Check for exact match for archive.html
+                if (currentPath.includes('archive.html') && item.getAttribute('href') === 'archive.html') {
+                    item.classList.add('nav-active');
+                }
+                // For other pages, we can't easily determine active state from archive.html
+                // If you want to highlight 'ホーム' when on index.html, you'd need more complex logic
+                // or pass state. For now, only archive.html will be highlighted on this page.
+            });
+        }
+
+        // Mobile menu toggle function
+        function toggleMobileMenu() {
+            document.getElementById('main-nav-links').classList.toggle('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadArchiveNews(1);
+            highlightCurrentNav(); // Highlight the current page in the navigation
+            document.getElementById('menu-btn')?.addEventListener('click', toggleMobileMenu);
+        });
+    </script>
+</body>
+</html>

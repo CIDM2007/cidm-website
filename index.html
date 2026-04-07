@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>一般社団法人 車両情報活用研究所 | CIDM Official</title>
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --accent: #3b82f6;
+            --bg-light: #f8fafc;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            scroll-behavior: smooth;
+            line-height: 1.8;
+            color: #334155;
+        }
+
+        h1, h2, h3, .serif {
+            font-family: 'Noto Serif JP', serif;
+        }
+
+        .page-content {
+            display: none;
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .nav-active {
+            color: var(--primary);
+            font-weight: 700;
+            position: relative;
+        }
+
+        .nav-active::after {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+        }
+    </style>
+</head>
+<body class="bg-white">
+    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-blue-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="showPage('home')">
+                    <img src="CIDMchara.png" alt="CIDM Logo" class="w-10 h-10 object-contain" onerror="this.src='https://placehold.jp/24/2563eb/ffffff/200x200.png?text=CIDM'">
+                    <div>
+                        <span class="block font-bold text-lg tracking-wider text-slate-800 leading-none">CIDM</span>
+                        <span class="block text-[8px] text-blue-500 font-bold tracking-tighter uppercase mt-1">Innovative Data & Mobility</span>
+                        <footer class="bg-slate-900 text-slate-400 py-16 text-center">
+                            <p class="text-[10px] tracking-tighter uppercase">© 2013-2026 Center for Innovative Data and Mobility.</p>
+                        </footer>
+
+                        <!-- スクリプトはbody直前で読み込むことで、関数未定義エラーを防止 -->
+                        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+                        <script>
+                        let isLoggedIn = false;
+                        const SUPABASE_URL = 'https://exxmuhxpbcolpkscyoha.supabase.co'; 
+                        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4eG11aHhwYmNvbHBrc2N5b2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNTQ3NzIsImV4cCI6MjA5MDkzMDc3Mn0.TYBzxHO5Qc_nKvc6E6jEuU1znQCobyDsVpCfwBPOFTc'; // ← anonキーのみ
+                        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+                        function showPage(pageId) {
+                            if (pageId === 'member' && !isLoggedIn) { openLogin(); return; }
+
+                            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+                            const target = document.getElementById(pageId);
+                            if (target) { 
+                                target.classList.add('active'); 
+                                window.scrollTo(0, 0); 
+                            }
+
+                            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
+                            // Correct mapping based on the order in HTML
+                            const navMap = { 'home': 0, 'research': 1, 'about': 2, 'join': 3, 'member': 4 };
+                            const navs = document.querySelectorAll('.nav-item');
+                            if (navMap[pageId] !== undefined && navs[navMap[pageId]]) {
+                                navs[navMap[pageId]].classList.add('nav-active');
+                            }
+                        }
+
+                        function checkMemberAccess() { isLoggedIn ? showPage('member') : openLogin(); }
+                        function openLogin() { document.getElementById('login-modal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
+                        function closeLogin() { document.getElementById('login-modal').classList.add('hidden'); document.body.style.overflow = ''; }
+
+                        async function handleLogin(e) {
+                            e.preventDefault();
+                            const email = document.getElementById('member-email').value;
+                            const password = document.getElementById('password').value;
+                            const btn = document.getElementById('login-btn');
+                            // 既存エラー表示をクリア
+                            let errorMsg = document.getElementById('login-error-msg');
+                            if (!errorMsg) {
+                                errorMsg = document.createElement('div');
+                                errorMsg.id = 'login-error-msg';
+                                errorMsg.style.color = 'red';
+                                errorMsg.style.fontSize = '12px';
+                                errorMsg.style.margin = '8px 0';
+                                btn.parentNode.insertBefore(errorMsg, btn);
+                            }
+                            errorMsg.textContent = '';
+
+                            // メール形式チェック
+                            if (!/^\S+@\S+\.\S+$/.test(email)) {
+                                errorMsg.textContent = '正しいメールアドレスを入力してください。';
+                                return;
+                            }
+                            if (password.length < 6) {
+                                errorMsg.textContent = 'パスワードは6文字以上で入力してください。';
+                                return;
+                            }
+
+                            btn.disabled = true;
+                            btn.innerText = '認証中...';
+
+                            try {
+                                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                                if (error) throw error;
+
+                                isLoggedIn = true;
+                                const display = document.getElementById('member-info-display');
+                                display.innerHTML = `<i class=\"fa-solid fa-user-check mr-2\"></i>${data.user.email} 様`;
+                                display.classList.remove('hidden');
+                                display.classList.add('flex');
+            
+                                closeLogin();
+                                showPage('member');
+                            } catch (err) {
+                                errorMsg.textContent = 'ログイン失敗: ' + err.message;
+                            } finally {
+                                btn.disabled = false;
+                                btn.innerText = 'ログイン';
+                            }
+                        }
+
+                        function handleLogout() { 
+                            isLoggedIn = false; 
+                            document.getElementById('member-info-display').classList.add('hidden');
+                            showPage('home'); 
+                        }
+
+                        // 入会フォームの追加バリデーション
+                        document.addEventListener('DOMContentLoaded', () => {
+                            const appForm = document.getElementById('application-form');
+                            if (appForm) {
+                                appForm.addEventListener('submit', function(e) {
+                                    // 既存エラー表示をクリア
+                                    let errorMsg = document.getElementById('app-error-msg');
+                                    if (!errorMsg) {
+                                        errorMsg = document.createElement('div');
+                                        errorMsg.id = 'app-error-msg';
+                                        errorMsg.style.color = 'red';
+                                        errorMsg.style.fontSize = '13px';
+                                        errorMsg.style.margin = '8px 0';
+                                        this.insertBefore(errorMsg, this.firstChild);
+                                    }
+                                    errorMsg.textContent = '';
+
+                                    // 必須項目チェック
+                                    const requiredFields = [
+                                        { name: 'member_type', label: '会員の種別', type: 'radio' },
+                                        { name: 'org_name', label: '社名 / 団体名' },
+                                        { name: 'zip_code', label: '郵便番号' },
+                                        { name: 'address', label: '所在地' },
+                                        { name: 'exec_title', label: '所属 / 役職' },
+                                        { name: 'exec_name', label: '責任者氏名' },
+                                        { name: 'staff_name', label: '担当者氏名' },
+                                        { name: 'staff_email', label: '担当者E-mail' }
+                                    ];
+                                    for (const field of requiredFields) {
+                                        if (field.type === 'radio') {
+                                            const checked = this.querySelector(`input[name=\"${field.name}\"]:checked`);
+                                            if (!checked) {
+                                                errorMsg.textContent = `${field.label}を選択してください。`;
+                                                e.preventDefault();
+                                                return false;
+                                            }
+                                        } else {
+                                            const input = this.querySelector(`[name=\"${field.name}\"]`);
+                                            if (!input || !input.value.trim()) {
+                                                errorMsg.textContent = `${field.label}を入力してください。`;
+                                                e.preventDefault();
+                                                return false;
+                                            }
+                                        }
+                                    }
+                                    // メール形式チェック
+                                    const emailInput = this.querySelector('[name=\"staff_email\"]');
+                                    if (emailInput && !/^\S+@\S+\.\S+$/.test(emailInput.value)) {
+                                        errorMsg.textContent = '担当者E-mailの形式が正しくありません。';
+                                        e.preventDefault();
+                                        return false;
+                                    }
+                                    // 郵便番号形式チェック
+                                    const zipInput = this.querySelector('[name=\"zip_code\"]');
+                                    if (zipInput && !/^\d{3}-\d{4}$/.test(zipInput.value)) {
+                                        errorMsg.textContent = '郵便番号は「123-4567」の形式で入力してください。';
+                                        e.preventDefault();
+                                        return false;
+                                    }
+                                    // 規約同意チェック
+                                    const agree = this.querySelector('input[type=\"checkbox\"]:not(:checked)');
+                                    if (agree) {
+                                        errorMsg.textContent = '規程および誓約事項に同意してください。';
+                                        e.preventDefault();
+                                        return false;
+                                    }
+                                });
+                            }
+                        });
+
+                        // Supabaseテーブル名は定数で管理
+                        const SUPABASE_TABLE_MEETING_REPORTS = 'meeting_reports';
+                        // News loading
+                        async function loadNews() {
+                            const { data, error } = await supabaseClient.from(SUPABASE_TABLE_MEETING_REPORTS).select('*').eq('is_visible', true).order('event_date', { ascending: false }).limit(5);
+                            const newsList = document.getElementById('news-list');
+                            if (!newsList) return;
+                            if (data && data.length > 0) {
+                                newsList.innerHTML = data.map(item => `
+                                    <div class=\"py-6 border-b border-slate-50 last:border-0\">
+                                        <div class=\"flex items-center mb-2\">\n                        <span class=\"text-sm font-bold text-slate-400 w-32\">${item.event_date ? item.event_date.replace(/-/g, '.') : ''}</span>
+                                            <span class=\"bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded mr-4\">${item.category || 'お知らせ'}</span>
+                                            <h3 class=\"text-slate-800 font-bold\">${item.title}</h3>
+                                        </div>
+                                    </div>
+                                `).join('');
+                            }
+                        }
+
+                        document.addEventListener('DOMContentLoaded', () => {
+                            let initialPage = window.location.hash ? window.location.hash.substring(1) : 'home';
+                            // memberページへ直接アクセス時はログイン状態を必ずチェック
+                            if (initialPage === 'member' && !isLoggedIn) {
+                                initialPage = 'home';
+                            }
+                            showPage(initialPage);
+                            loadNews();
+                        });
+
+                        document.getElementById('menu-btn')?.addEventListener('click', () => {
+                            const menu = document.getElementById('nav-menu');
+                            const isOpen = !menu.classList.contains('hidden');
+                            if (isOpen) {
+                                // メニューを閉じる
+                                menu.classList.add('hidden');
+                                menu.classList.remove('flex', 'flex-col', 'absolute', 'top-20', 'left-0', 'w-full', 'bg-white', 'p-6', 'shadow-xl');
+                            } else {
+                                // メニューを開く
+                                menu.classList.remove('hidden');
+                                menu.classList.add('flex', 'flex-col', 'absolute', 'top-20', 'left-0', 'w-full', 'bg-white', 'p-6', 'shadow-xl');
+                            }
+                        });
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="about" class="page-content py-24 bg-white">
+            <div class="max-w-4xl mx-auto px-6">
+                <h2 class="text-3xl font-bold serif text-slate-800 mb-12 text-center underline decoration-blue-200 underline-offset-8">組織概要</h2>
+                <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 md:p-12 space-y-12">
+                    <div class="space-y-0">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 py-6 border-b border-slate-100 items-center">
+                            <div class="text-blue-600 font-bold text-lg">名称</div>
+                            <div class="md:col-span-3 text-slate-900 font-bold text-xl">一般社団法人 車両情報活用研究所</div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 py-6 border-b border-slate-100 items-center">
+                            <div class="text-blue-600 font-bold text-lg">設立</div>
+                            <div class="md:col-span-3 text-slate-800 text-lg">2007年（平成19年）</div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 py-6 items-center">
+                            <div class="text-blue-600 font-bold text-lg">所在地</div>
+                            <div class="md:col-span-3 text-slate-800 text-lg">〒101-0021 東京都千代田区外神田6-5-4 偕楽ビル5階</div>
+                        </div>
+                    </div>
+                    <div class="pt-12 border-t-2 border-dashed border-slate-100">
+                        <h3 class="text-2xl font-bold text-slate-900 mb-10 flex items-center">
+                            <span class="w-1.5 h-8 bg-blue-600 rounded-full mr-4"></span>代表挨拶
+                        </h3>
+                        <div class="flex flex-col md:flex-row gap-10 items-center md:items-start">
+                            <div class="w-40 md:w-48 flex-shrink-0">
+                                <img src="kenjiootsuka.png" alt="理事長 大塚 健治" class="w-full h-auto rounded-2xl shadow-md border-4 border-white object-cover aspect-[3/4]">
+                            </div>
+                            <div class="flex-grow space-y-6 text-slate-700 leading-relaxed text-lg">
+                                <p>一般社団法人 車両情報活用研究所は、車検証情報をはじめとする車両情報の電子的な利活用に関する調査・研究を行い、関連する情報交流の場を作ることによって、自動車業界に対する環境面・安全面などの社会的要請に応えるとともに、より有益で効率的な車両情報の電子的利活用を行うためのビジネスモデルの創出を目指し、より安全で豊かな国民生活の実現に寄与することを目的として設立いたしました。
+　本研究会の趣旨ご理解の上、幅広い自動車関連業界の方々に、積極的にご参加頂ければ幸いです。</p>
+                                <div class="mt-10 pt-8 border-t border-slate-100 text-right">
+                                    <p class="text-slate-500 text-sm mb-1">一般社団法人 車両情報活用研究所 理事長</p>
+                                    <p class="text-2xl font-bold text-slate-900 tracking-wider mb-4">大塚 健治</p>
+                                    <div class="mt-4">
+                                        <button onclick="showPage('admin-portal')" class="text-[10px] text-slate-400 hover:text-blue-600 transition inline-flex items-center">
+                                            <i class="fa-solid fa-gear mr-1"></i> 管理者ログイン
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+<div id="join" class="page-content py-24 bg-slate-50">
+            <div class="max-w-4xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <h2 class="text-3xl font-bold serif text-slate-800 mb-4 tracking-widest underline decoration-blue-200 underline-offset-8">入会申し込み</h2>
+                    <p class="text-slate-500 mt-4">Web上で入会手続きを完結できます。印鑑は不要です。</p>
+                </div>
+
+                <form id="application-form" class="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-blue-50 space-y-10">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-4 flex items-center">
+                            <span class="w-1 h-4 bg-blue-600 rounded-full mr-2"></span>
+                            会員の種別 <span class="text-red-500 ml-1">*</span>
+                        </label>
+                        <div class="flex flex-wrap gap-6 md:gap-10 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="radio" name="member_type" value="正会員" required class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-slate-700 group-hover:text-blue-600 transition-colors">正会員</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="radio" name="member_type" value="準会員" class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-slate-700 group-hover:text-blue-600 transition-colors">準会員</span>
+                            </label>
+                            <label class="flex items-center cursor-pointer group">
+                                <input type="radio" name="member_type" value="賛助会員" class="w-4 h-4 text-blue-600 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-slate-700 group-hover:text-blue-600 transition-colors">賛助会員</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6 pt-6 border-t border-slate-100">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">社名 / 団体名 <span class="text-red-500">*</span></label>
+                            <input type="text" name="org_name" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition shadow-sm" placeholder="株式会社 〇〇">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">郵便番号 <span class="text-red-500">*</span></label>
+                            <input type="text" name="zip_code" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="123-4567">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">所在地 <span class="text-red-500">*</span></label>
+                            <input type="text" name="address" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="東京都〇〇区〇〇 1-2-3">
+                        </div>
+                    </div>
+
+                    <div class="space-y-6 pt-6 border-t border-slate-100">
+                        <h3 class="font-bold text-blue-600 flex items-center italic">
+                            <i class="fa-solid fa-user-tie mr-2"></i> 責任者情報
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">所属 / 役職 <span class="text-red-500">*</span></label>
+                                <input type="text" name="exec_title" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">氏名 <span class="text-red-500">*</span></label>
+                                <input type="text" name="exec_name" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6 pt-6 border-t border-slate-100">
+                        <h3 class="font-bold text-blue-600 flex items-center italic">
+                            <i class="fa-solid fa-envelope mr-2"></i> 担当者情報
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">氏名 <span class="text-red-500">*</span></label>
+                                <input type="text" name="staff_name" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">E-mail <span class="text-red-500">*</span></label>
+                                <input type="email" name="staff_email" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="example@cidm.jp">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200">
+                        <div class="h-32 overflow-y-scroll bg-white p-4 rounded-xl text-xs text-slate-600 border border-slate-100 mb-6 leading-relaxed shadow-inner">
+                            私は、一般社団法人 車両情報活用研究所に次の事項を遵守することを誓約します。
+                            1. 活動に関連して知得した機密情報を第三者に漏洩、または開示しない。
+                            2. 他会員の知的財産権を尊重し、本活動以外の目的に流用しない。
+                            3. 本研究所の定款、会員規程に従う。
+                        </div>
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" required class="mt-1 w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 transition cursor-pointer">
+                            <span class="ml-3 text-sm text-slate-700 font-medium group-hover:text-blue-600 transition-colors">
+                                規程および誓約事項に同意して申し込みます。
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="text-center pt-4">
+                        <button type="submit" class="bg-blue-600 text-white px-16 py-5 rounded-full font-bold hover:bg-blue-700 transition shadow-xl shadow-blue-100 w-full md:w-auto text-lg active:transform active:scale-95">
+                            入会を申し込む
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+
+
+
+
+
+
+        <div id="member" class="page-content py-24 bg-slate-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-slate-200 pb-8">
+                    <div>
+                        <h2 class="text-4xl font-bold serif text-slate-800">会員専用ポータル</h2>
+                    </div>
+                    <div class="mt-6 md:mt-0 flex items-center gap-4">
+                        <span id="member-status-badge" class="text-sm font-bold text-slate-600 bg-white px-4 py-2 rounded-full border shadow-sm">
+                            <i class="fa-solid fa-user-check mr-2 text-blue-500"></i>正会員：CIDM事務局 様
+                        </span>
+                        <button onclick="handleLogout()" class="text-sm font-bold text-red-500 hover:bg-red-50 px-5 py-2.5 rounded-full transition border border-red-100 bg-white">ログアウト</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 space-y-8">
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center"><i class="fa-solid fa-bullhorn mr-3 text-blue-600"></i>会員限定お知らせ</h3>
+                            <div class="p-4 bg-blue-50 rounded-xl border border-blue-100 flex gap-4">
+                                <span class="font-bold text-blue-600 text-sm">2026.04.01</span>
+                                <p class="text-sm text-slate-700 font-medium underline">【重要】第18期 定時総会開催のご案内</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="admin-portal" class="page-content py-24 bg-slate-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="flex justify-between items-center mb-12">
+                    <div>
+                        <h2 class="text-3xl font-bold text-slate-800 tracking-tighter">CIDM 管理者ポータル</h2>
+                        <p class="text-slate-500">会員管理・ニュース更新</p>
+                    </div>
+                    <button onclick="showPage('home')" class="bg-white text-slate-500 px-6 py-2 rounded-full border text-xs font-bold hover:bg-slate-50 transition">戻る</button>
+                </div>
+                <div class="grid md:grid-cols-2 gap-10 mb-12">
+                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center"><i class="fa-solid fa-pen-to-square mr-3 text-emerald-500"></i>NEWSトピックス入力</h3>
+                        <form id="admin-news-form" class="space-y-4">
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="date" id="news-date-input" required class="w-full border px-4 py-3 rounded-xl outline-none">
+                                <select id="news-category-input" class="w-full border px-4 py-3 rounded-xl outline-none">
+                                    <option value="お知らせ">お知らせ</option><option value="重要">重要</option>
+                                </select>
+                            </div>
+                            <input type="text" id="news-title-input" placeholder="タイトル" required class="w-full border px-4 py-3 rounded-xl outline-none">
+                            <textarea id="news-details-input" placeholder="内容" rows="4" class="w-full border px-4 py-3 rounded-xl outline-none"></textarea>
+                            <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl">NEWSを公開する</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-16 text-center">
+        <p class="text-[10px] tracking-tighter uppercase">© 2013-2026 Center for Innovative Data and Mobility.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        let isLoggedIn = false;
+        // Supabaseのキーは必ずanonキー（公開用）を使用してください。
+        // service_roleキー（管理者権限）は絶対にフロントエンドで使わないこと！
+        const SUPABASE_URL = 'https://exxmuhxpbcolpkscyoha.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4eG11aHhwYmNvbHBrc2N5b2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNTQ3NzIsImV4cCI6MjA5MDkzMDc3Mn0.TYBzxHO5Qc_nKvc6E6jEuU1znQCobyDsVpCfwBPOFTc'; // ← anonキーのみ
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        function showPage(pageId) {
+            if (pageId === 'member' && !isLoggedIn) { openLogin(); return; }
+
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            const target = document.getElementById(pageId);
+            if (target) { 
+                target.classList.add('active'); 
+                window.scrollTo(0, 0); 
+            }
+
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('nav-active'));
+            // Correct mapping based on the order in HTML
+            const navMap = { 'home': 0, 'research': 1, 'about': 2, 'join': 3, 'member': 4 };
+            const navs = document.querySelectorAll('.nav-item');
+            if (navMap[pageId] !== undefined && navs[navMap[pageId]]) {
+                navs[navMap[pageId]].classList.add('nav-active');
+            <div id="join" class="page-content py-24 bg-slate-50">
+        async function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('member-email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('login-btn');
+            // 既存エラー表示をクリア
+            let errorMsg = document.getElementById('login-error-msg');
+            if (!errorMsg) {
+                errorMsg = document.createElement('div');
+                errorMsg.id = 'login-error-msg';
+                errorMsg.style.color = 'red';
+                errorMsg.style.fontSize = '12px';
+                errorMsg.style.margin = '8px 0';
+                btn.parentNode.insertBefore(errorMsg, btn);
+            }
+            errorMsg.textContent = '';
+
+            // メール形式チェック
+            if (!/^\S+@\S+\.\S+$/.test(email)) {
+                errorMsg.textContent = '正しいメールアドレスを入力してください。';
+                return;
+            }
+            if (password.length < 6) {
+                errorMsg.textContent = 'パスワードは6文字以上で入力してください。';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = '認証中...';
+
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+
+                isLoggedIn = true;
+                const display = document.getElementById('member-info-display');
+                display.innerHTML = `<i class="fa-solid fa-user-check mr-2"></i>${data.user.email} 様`;
+                display.classList.remove('hidden');
+                display.classList.add('flex');
+                
+                closeLogin();
+                showPage('member');
+            } catch (err) {
+                errorMsg.textContent = 'ログイン失敗: ' + err.message;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'ログイン';
+            }
+        }
+
+        function handleLogout() { 
+            isLoggedIn = false; 
+            document.getElementById('member-info-display').classList.add('hidden');
+            showPage('home'); 
+        }
+
+        // Supabaseテーブル名は定数で管理
+        const SUPABASE_TABLE_MEETING_REPORTS = 'meeting_reports';
+        // News loading
+        async function loadNews() {
+            const { data, error } = await supabaseClient.from(SUPABASE_TABLE_MEETING_REPORTS).select('*').eq('is_visible', true).order('event_date', { ascending: false }).limit(5);
+            const newsList = document.getElementById('news-list');
+            if (!newsList) return;
+            if (data && data.length > 0) {
+                newsList.innerHTML = data.map(item => `
+                    <div class="py-6 border-b border-slate-50 last:border-0">
+                        <div class="flex items-center mb-2">
+                            <span class="text-sm font-bold text-slate-400 w-32">${item.event_date ? item.event_date.replace(/-/g, '.') : ''}</span>
+                            <span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded mr-4">${item.category || 'お知らせ'}</span>
+                            <h3 class="text-slate-800 font-bold">${item.title}</h3>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // 入会フォームの追加バリデーション
+        document.addEventListener('DOMContentLoaded', () => {
+            const appForm = document.getElementById('application-form');
+            if (appForm) {
+                appForm.addEventListener('submit', function(e) {
+                    // 既存エラー表示をクリア
+                    let errorMsg = document.getElementById('app-error-msg');
+                    if (!errorMsg) {
+                        errorMsg = document.createElement('div');
+                        errorMsg.id = 'app-error-msg';
+                        errorMsg.style.color = 'red';
+                        errorMsg.style.fontSize = '13px';
+                        errorMsg.style.margin = '8px 0';
+                        this.insertBefore(errorMsg, this.firstChild);
+                    }
+                    errorMsg.textContent = '';
+
+                    // 必須項目チェック
+                    const requiredFields = [
+                        { name: 'member_type', label: '会員の種別', type: 'radio' },
+                        { name: 'org_name', label: '社名 / 団体名' },
+                        { name: 'zip_code', label: '郵便番号' },
+                        { name: 'address', label: '所在地' },
+                        { name: 'exec_title', label: '所属 / 役職' },
+                        { name: 'exec_name', label: '責任者氏名' },
+                        { name: 'staff_name', label: '担当者氏名' },
+                        { name: 'staff_email', label: '担当者E-mail' }
+                    ];
+                    for (const field of requiredFields) {
+                        if (field.type === 'radio') {
+                            const checked = this.querySelector(`input[name="${field.name}"]:checked`);
+                            if (!checked) {
+                                errorMsg.textContent = `${field.label}を選択してください。`;
+                                e.preventDefault();
+                                return false;
+                            }
+                        } else {
+                            const input = this.querySelector(`[name="${field.name}"]`);
+                            if (!input || !input.value.trim()) {
+                                errorMsg.textContent = `${field.label}を入力してください。`;
+                                e.preventDefault();
+                                return false;
+                            }
+                        }
+                    }
+                    // メール形式チェック
+                    const emailInput = this.querySelector('[name="staff_email"]');
+                    if (emailInput && !/^\S+@\S+\.\S+$/.test(emailInput.value)) {
+                        errorMsg.textContent = '担当者E-mailの形式が正しくありません。';
+                        e.preventDefault();
+                        return false;
+                    }
+                    // 郵便番号形式チェック
+                    const zipInput = this.querySelector('[name="zip_code"]');
+                    if (zipInput && !/^\d{3}-\d{4}$/.test(zipInput.value)) {
+                        errorMsg.textContent = '郵便番号は「123-4567」の形式で入力してください。';
+                        e.preventDefault();
+                        return false;
+                    }
+                    // 規約同意チェック
+                    const agree = this.querySelector('input[type="checkbox"]:not(:checked)');
+                    if (agree) {
+                        errorMsg.textContent = '規程および誓約事項に同意してください。';
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+            }
+            let initialPage = window.location.hash ? window.location.hash.substring(1) : 'home';
+            // memberページへ直接アクセス時はログイン状態を必ずチェック
+            if (initialPage === 'member' && !isLoggedIn) {
+                initialPage = 'home';
+            }
+            showPage(initialPage);
+            loadNews();
+        });
+
+        document.getElementById('menu-btn')?.addEventListener('click', () => {
+            const menu = document.getElementById('nav-menu');
+            const isOpen = !menu.classList.contains('hidden');
+            if (isOpen) {
+                // メニューを閉じる
+                menu.classList.add('hidden');
+                menu.classList.remove('flex', 'flex-col', 'absolute', 'top-20', 'left-0', 'w-full', 'bg-white', 'p-6', 'shadow-xl');
+            } else {
+                // メニューを開く
+                menu.classList.remove('hidden');
+                menu.classList.add('flex', 'flex-col', 'absolute', 'top-20', 'left-0', 'w-full', 'bg-white', 'p-6', 'shadow-xl');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>お問い合わせ | 一般社団法人 車両情報活用研究所</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --accent: #3b82f6;
+            --bg-light: #f8fafc;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            scroll-behavior: smooth;
+            line-height: 1.8;
+            color: #334155;
+        }
+
+        h1, h2, h3, .serif {
+            font-family: 'Noto Serif JP', serif;
+        }
+
+        /* 入力フィールドのフォーカス時スタイル */
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-blue-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="location.href='index.html'">
+                    <div class="w-10 h-10 bg-white flex items-center justify-center rounded-lg shadow-sm border border-blue-50">
+                        <img src="CIDMchara.png" alt="CIDM Logo" class="max-w-full max-h-full object-contain" onerror="this.src='https://placehold.jp/24/2563eb/ffffff/200x200.png?text=C'">
+                    </div>
+                    <div>
+                        <span class="block font-bold text-lg tracking-wider text-slate-800 leading-none">CIDM</span>
+                        <span class="block text-[9px] text-blue-500 mt-1 font-bold uppercase tracking-tighter">Center for Innovative Data & Mobility</span>
+                    </div>
+                </div>
+                
+                <div class="hidden lg:flex items-center space-x-8 font-medium text-[14px]">
+                    <a href="index.html" class="py-1 transition duration-300 hover:text-blue-600">ホーム</a>
+                    <a href="index.html#research" class="py-1 transition duration-300 hover:text-blue-600">研究・事業内容</a>
+                    <a href="index.html#about" class="py-1 transition duration-300 hover:text-blue-600">組織概要</a>
+                    <a href="index.html#archive" class="py-1 transition duration-300 hover:text-blue-600">アーカイブ</a>
+                    <a href="contact.html" class="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition shadow-md shadow-blue-200">お問い合わせ</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-32 pb-24">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <span class="text-blue-600 font-bold tracking-widest text-xs uppercase mb-3 block">Contact</span>
+                <h2 class="text-4xl font-bold serif text-slate-800">お問い合わせ</h2>
+                <div class="w-12 h-1 bg-blue-600 mx-auto mt-6 rounded-full"></div>
+                <p class="mt-6 text-slate-500 text-sm">ご質問・ご相談は下記フォームよりお気軽にご連絡ください。</p>
+            </div>
+
+            <section class="bg-white p-8 md:p-12 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-white">
+                <form action="#" method="POST" class="space-y-8">
+                    <div class="text-[11px] text-red-500 font-bold flex items-center">
+                        <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                        ※は必須項目です。
+                    </div>
+
+                    <div class="grid md:grid-cols-4 gap-4 items-center">
+                        <label class="md:col-span-1 text-sm font-bold text-slate-700">会社名</label>
+                        <input type="text" name="company" class="md:col-span-3 w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 transition" placeholder="例：株式会社〇〇">
+                    </div>
+
+                    <div class="grid md:grid-cols-4 gap-4 items-center">
+                        <label class="md:col-span-1 text-sm font-bold text-slate-700">部署名</label>
+                        <input type="text" name="department" class="md:col-span-3 w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 transition" placeholder="例：技術開発部">
+                    </div>
+
+                    <div class="grid md:grid-cols-4 gap-4 items-center">
+                        <label class="md:col-span-1 text-sm font-bold text-slate-700">氏名 <span class="text-red-500 ml-1">※</span></label>
+                        <input type="text" name="name" required class="md:col-span-3 w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 transition" placeholder="例：山田 太郎">
+                    </div>
+
+                    <div class="grid md:grid-cols-4 gap-4 items-start">
+                        <label class="md:col-span-1 text-sm font-bold text-slate-700 mt-3">住所 <span class="text-red-500 ml-1">※</span></label>
+                        <div class="md:col-span-3 space-y-4">
+                            <div class="flex items-center gap-3">
+                                <span class="text-slate-400 text-sm font-serif">〒</span>
+                                <input type="text" name="postal" maxlength="8" required class="w-32 border border-slate-200 px-4 py-3 rounded-xl bg-slate-50/50" placeholder="000-0000">
+                                <select name="pref" required class="border border-slate-200 px-4 py-3 rounded-xl bg-white text-sm">
+                                    <option value="">都道府県を選択</option>
+                                    <optgroup label="主要都市">
+                                        <option value="東京都">東京都</option>
+                                        <option value="高知県">高知県</option>
+                                    </optgroup>
+                                    <option value="北海道">北海道</option>
+                                    </select>
+                            </div>
+                            <input type="text" name="address" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 transition" placeholder="市区町村・番地・ビル名">
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-4 gap-4 items-center">
+                        <label class="md:col-span-1 text-sm font-bold text-slate-700">電話番号 <span class="text-red-500 ml-1">※</span></label>
+                        <div class="md:col-span-3 flex items-center gap-2">
+                            <input type="text" name="tel1" required class="w-full border border-slate-200 px-4 py-3 rounded-xl bg-slate-50/50 text-center" placeholder="03">
+                            <span class="text-slate-300">-</span>
+                            <input type="text" name="tel2" required class="w-full border border-slate-200 px-4 py-3 rounded-xl bg-slate-50/50 text-center" placeholder="0000">
+                            <span class="text-slate-300">-</span>
+                            <input type="text" name="tel3" required class="w-full border border-slate-200 px-4 py-3 rounded-xl bg-slate-50/50 text-center" placeholder="0000">
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-4 gap-4 items-center">
+                        <label class="md:col-span-1 text-sm font-bold text-slate-700">FAX番号</label>
+                        <div class="md:col-span-3 flex items-center gap-2">
+                            <input type="text" name="fax1" class="w-full border border-slate-200 px-4 py-3 rounded-xl bg-slate-50/50 text-center">
+                            <span class="text-slate-300">-</span>
+                            <input type="text" name="fax2" class="w-full border border-slate-200 px-4 py-3 rounded-xl bg-slate-50/50 text-center">
+                            <span class="text-slate-300">-</span>
+                            <input type="text" name="fax3" class="w-full border border-slate-200 px-4 py-3 rounded-xl bg-slate-50/50 text-center">
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-4 gap-4 items-start">
+                        <label class="md:col-span-1 text-sm font-bold text-slate-700 mt-3">Eメール <span class="text-red-500 ml-1">※</span></label>
+                        <div class="md:col-span-3 space-y-3">
+                            <input type="email" name="email" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 transition" placeholder="example@cidm.jp">
+                            <input type="email" name="email_confirm" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 transition" placeholder="確認のため、もう一度入力してください">
+                        </div>
+                    </div>
+
+                    <div class="grid md:grid-cols-4 gap-4 items-center">
+                        <label class="md:col-span-1 text-sm font-bold text-slate-700">分類</label>
+                        <select name="category" class="md:col-span-3 w-full border border-slate-200 px-5 py-3 rounded-xl bg-white transition">
+                            <option value="">選択してください</option>
+                            <option value="ご質問">ご質問</option>
+                            <option value="ご相談">ご相談</option>
+                            <option value="資料請求">資料請求</option>
+                            <option value="その他">その他</option>
+                        </select>
+                    </div>
+
+                    <div class="grid md:grid-cols-4 gap-4 items-start">
+                        <label class="md:col-span-1 text-sm font-bold text-slate-700 mt-3">内容 <span class="text-red-500 ml-1">※</span></label>
+                        <textarea name="message" rows="6" required class="md:col-span-3 w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 transition" placeholder="お問い合わせ内容をご自由にご記入ください"></textarea>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center pt-10">
+                        <button type="submit" class="px-16 py-4 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">送信内容を確認する</button>
+                        <button type="reset" class="px-10 py-4 bg-white text-slate-400 border border-slate-100 rounded-full font-bold hover:bg-slate-50 transition">リセット</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-16">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-12 items-center">
+            <div class="flex items-center space-x-3">
+                <img src="CIDMchara.png" alt="" class="w-8 h-8 opacity-40 brightness-0 invert">
+                <div class="text-[10px] tracking-widest font-bold">CIDM OFFICIAL</div>
+            </div>
+            <div class="flex justify-center space-x-8 text-[10px] font-bold uppercase tracking-[0.2em]">
+                <a href="#" class="hover:text-white transition">Privacy Policy</a>
+                <a href="#" class="hover:text-white transition">Terms of Service</a>
+            </div>
+            <div class="text-right text-[9px] opacity-30 tracking-tight uppercase">
+                &copy; Center for Innovative Data and Mobility.
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

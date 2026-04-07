@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News & Topics 管理 - CIDM</title>
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            color: #334155;
+        }
+        .serif {
+            font-family: 'Noto Serif JP', serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+
+    <!-- 簡易ログインオーバーレイ -->
+    <div id="admin-login-overlay" class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-6">
+        <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md relative text-center">
+            <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fa-solid fa-lock text-2xl text-blue-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold serif text-slate-800 mb-2">管理者ログイン</h2>
+            <p class="text-sm text-slate-500 mb-8">関係者専用ページです。パスワードを入力してください。</p>
+            
+            <form id="admin-login-form" onsubmit="checkAdminPassword(event)">
+                <input type="password" id="admin-pwd" required class="w-full border border-slate-200 px-5 py-4 rounded-xl outline-none focus:border-blue-400 transition mb-4 text-center tracking-widest" placeholder="パスワード">
+                <p id="admin-login-error" class="text-red-500 text-sm font-bold hidden mb-4">パスワードが間違っています</p>
+                <button type="submit" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl hover:bg-blue-600 transition shadow-lg">認証する</button>
+            </form>
+            <div class="mt-6">
+                <a href="index.html" class="text-sm text-slate-400 hover:text-blue-600 transition underline">サイトトップへ戻る</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理画面コンテンツ（初期状態では非表示） -->
+    <div id="admin-content" class="hidden flex-col min-h-screen w-full">
+
+    <!-- ヘッダーナビゲーション -->
+    <nav class="bg-white/90 backdrop-blur-md border-b border-blue-100 shadow-sm w-full z-50 fixed top-0">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="location.href='index.html'">
+                <div class="w-10 h-10 bg-white flex items-center justify-center rounded-lg shadow-sm border border-blue-50">
+                    <img src="CIDMchara.png" alt="CIDM Logo" class="max-w-full max-h-full object-contain" onerror="this.src='https://placehold.jp/24/2563eb/ffffff/200x200.png?text=C'">
+                </div>
+                <div>
+                    <span class="block font-bold text-lg tracking-wider text-slate-800 leading-none">CIDM</span>
+                    <span class="block text-[9px] text-blue-500 mt-1 font-bold uppercase tracking-tighter">Admin Portal</span>
+                </div>
+            </div>
+            <a href="index.html" class="text-sm font-bold text-slate-500 hover:text-blue-600 transition">
+                <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> サイトに戻る
+            </a>
+        </div>
+    </nav>
+
+    <!-- フォームエリア -->
+    <main class="flex-grow pt-32 pb-12 px-6 flex items-center justify-center">
+        <div class="w-full max-w-2xl bg-white p-8 md:p-12 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-white">
+            <div class="text-center mb-10">
+                <span class="text-blue-600 font-bold tracking-widest text-xs uppercase mb-3 block">Management</span>
+                <h1 class="text-3xl font-bold serif text-slate-800">News & Topics 登録</h1>
+                <div class="w-12 h-1 bg-blue-600 mx-auto mt-6 rounded-full"></div>
+            </div>
+            
+            <form id="reportForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">日付 <span class="text-red-500 ml-1">*</span></label>
+                    <input type="date" id="event_date" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">カテゴリー <span class="text-red-500 ml-1">*</span></label>
+                    <input type="text" id="category" placeholder="例: お知らせ、イベント情報" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">タイトル <span class="text-red-500 ml-1">*</span></label>
+                    <input type="text" id="title" placeholder="ニュースのタイトルを入力" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">詳細 <span class="text-red-500 ml-1">*</span></label>
+                    <textarea id="details" rows="5" placeholder="ニュースの詳細内容を入力" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition"></textarea>
+                </div>
+                
+                <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" id="is_visible" checked class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
+                        <span class="ml-3 font-bold text-slate-700">サイト上に表示する (公開)</span>
+                    </label>
+                </div>
+                
+                <div class="pt-6">
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-full hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                        <i class="fa-solid fa-paper-plane mr-2"></i> 登録する
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    </div>
+
+    <script>
+        // 簡易ログイン処理
+        const ADMIN_PASSWORD = 'cidm8'; // ★ここでパスワードを設定してください
+
+        function checkAdminPassword(e) {
+            e.preventDefault();
+            const inputPwd = document.getElementById('admin-pwd').value;
+            const errorMsg = document.getElementById('admin-login-error');
+            
+            if (inputPwd === ADMIN_PASSWORD) {
+                document.getElementById('admin-login-overlay').classList.add('hidden');
+                document.getElementById('admin-content').classList.remove('hidden');
+                document.getElementById('admin-content').classList.add('flex');
+            } else {
+                errorMsg.classList.remove('hidden');
+                document.getElementById('admin-pwd').value = '';
+            }
+        }
+
+        // 1. Supabaseの接続設定（あなたの情報に書き換えてください）
+        const SUPABASE_URL = 'https://exxmuhxpbcolpkscyoha.supabase.co'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4eG11aHhwYmNvbHBrc2N5b2hhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzNTQ3NzIsImV4cCI6MjA5MDkzMDc3Mn0.TYBzxHO5Qc_nKvc6E6jEuU1znQCobyDsVpCfwBPOFTc';
+                // 変数名を「supabaseClient」にするか、右側の呼び出しをグローバルの「supabase」にする
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 2. 送信ボタンが押された時の処理
+        document.getElementById('reportForm').addEventListener('submit', async (e) => {
+            e.preventDefault(); // 画面リロードを防止
+
+            const event_date = document.getElementById('event_date').value;
+            const category = document.getElementById('category').value;
+            const title = document.getElementById('title').value;
+            const details = document.getElementById('details').value;
+            const is_visible = document.getElementById('is_visible').checked;
+
+            // 3. Supabaseの「meeting_reports」テーブルに保存
+            const { data, error } = await supabase
+                .from('meeting_reports')
+                .insert([{ 
+                    event_date: event_date,
+                    category: category,
+                    title: title, 
+                    details: details,
+                    is_visible: is_visible
+                }]);
+
+            if (error) {
+                console.error('エラー:', error);
+                alert('保存に失敗しました: ' + error.message);
+            } else {
+                alert('報告を保存しました！');
+                document.getElementById('reportForm').reset(); // 入力欄を空にする
+            }
+        });
+    </script>
+</body>
+</html>
