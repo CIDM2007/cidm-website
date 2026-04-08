@@ -6,6 +6,7 @@
     <title>お問い合わせ | 一般社団法人 車両情報活用研究所</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="./nav.js" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
         
@@ -35,31 +36,8 @@
         }
     </style>
 </head>
-<body class="bg-slate-50">
-
-    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-blue-100 shadow-sm">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center space-x-3 cursor-pointer" onclick="location.href='index.html'">
-                    <div class="w-10 h-10 bg-white flex items-center justify-center rounded-lg shadow-sm border border-blue-50">
-                        <img src="CIDMchara.png" alt="CIDM Logo" class="max-w-full max-h-full object-contain" onerror="this.src='https://placehold.jp/24/2563eb/ffffff/200x200.png?text=C'">
-                    </div>
-                    <div>
-                        <span class="block font-bold text-lg tracking-wider text-slate-800 leading-none">CIDM</span>
-                        <span class="block text-[9px] text-blue-500 mt-1 font-bold uppercase tracking-tighter">Center for Innovative Data & Mobility</span>
-                    </div>
-                </div>
-                
-                <div class="hidden lg:flex items-center space-x-8 font-medium text-[14px]">
-                    <a href="index.html" class="py-1 transition duration-300 hover:text-blue-600">ホーム</a>
-                    <a href="index.html#research" class="py-1 transition duration-300 hover:text-blue-600">研究・事業内容</a>
-                    <a href="index.html#about" class="py-1 transition duration-300 hover:text-blue-600">組織概要</a>
-                    <a href="index.html#archive" class="py-1 transition duration-300 hover:text-blue-600">アーカイブ</a>
-                    <a href="contact.html" class="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition shadow-md shadow-blue-200">お問い合わせ</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+<body class="bg-slate-50" data-nav-current="contact">
+    <div id="nav-placeholder"></div>
 
     <main class="pt-32 pb-24">
         <div class="max-w-4xl mx-auto px-6">

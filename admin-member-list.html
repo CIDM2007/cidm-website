@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会員一覧 | 管理者ポータル</title>
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f3f4f6; font-family: 'Noto Sans JP', sans-serif; }
+        .top-bar { width:100%; background:#e5e7eb; color:#374151; padding:0.8rem 0; display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; font-weight:bold; letter-spacing:0.05em; }
+        .top-bar span { margin: 0 2rem; }
+        .container { max-width: 900px; margin: 60px auto; background: #fff; border-radius: 1.5rem; box-shadow: 0 4px 24px #0001; padding: 2.5rem 2rem; }
+        h1 { font-size: 1.6rem; font-weight: bold; color: #374151; margin-bottom: 2rem; }
+        .member-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
+        .member-table th, .member-table td { border-bottom: 1px solid #e5e7eb; padding: 0.9rem 0.7rem; text-align: left; }
+        .member-table th { background: #f1f5f9; color: #374151; font-weight: bold; }
+        .member-table td { background: #fff; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <span>一般社団法人車両情報活用研究所</span>
+        <a href="admin-portal.html" style="color:inherit; text-decoration:none; cursor:pointer;">管理者ポータル</a>
+    </div>
+    <div class="container">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+            <h1 style="margin-bottom:0;"><i class="fa-solid fa-users"></i> 会員一覧</h1>
+            <a href="admin-member-new.html" class="btn btn-edit" style="background:#6b7280;color:#fff;font-weight:600;text-decoration:none;"><i class="fa-solid fa-user-plus"></i> 新規追加</a>
+        </div>
+        <table class="member-table">
+            <thead>
+                <tr>
+                    <th>会社名</th>
+                    <th>担当者名</th>
+                    <th>担当者携帯</th>
+                    <th>備考</th>
+                </tr>
+            </thead>
+            <tbody id="members-tbody">
+                <tr><td colspan="4" style="text-align:center; color:#888;">読み込み中...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+    const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    async function loadMembers() {
+        const tbody = document.getElementById('members-tbody');
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">読み込み中...</td></tr>';
+        const { data, error } = await supabaseClient.from('member').select('id, company_name, staff_name, staff_mobile, biko').order('company_name', { ascending: true });
+        if (error) {
+            tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
+            return;
+        }
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
+            return;
+        }
+        tbody.innerHTML = data.map(item => `
+            <tr style="cursor:pointer;" onclick="window.location.href='admin-members.html?id=${item.id}'">
+                <td>${item.company_name || ''}</td>
+                <td>${item.staff_name || ''}</td>
+                <td>${item.staff_mobile || ''}</td>
+                <td>${item.biko || ''}</td>
+            </tr>
+        `).join('');
+    }
+    document.addEventListener('DOMContentLoaded', loadMembers);
+    </script>
+</body>
+</html>

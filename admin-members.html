@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会員管理 | 管理者ポータル</title>
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f3f4f6; font-family: 'Noto Sans JP', sans-serif; }
+        .top-bar { width:100%; background:#e5e7eb; color:#374151; padding:0.8rem 0; display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; font-weight:bold; letter-spacing:0.05em; }
+        .top-bar span { margin: 0 2rem; }
+        .container { max-width: 900px; margin: 60px auto; background: #fff; border-radius: 1.5rem; box-shadow: 0 4px 24px #0001; padding: 2.5rem 2rem; }
+        .member-card {
+            background: linear-gradient(120deg, #f7f8fa 60%, #e5e7eb 100%);
+            border-radius: 1.2rem;
+            box-shadow: 0 2px 12px #0002;
+            margin-bottom: 2.2rem;
+            padding: 1.7rem 1.5rem 1.2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            border-left: 6px solid #6b7280;
+            transition: box-shadow 0.2s, border 0.2s;
+        }
+        .member-card:hover {
+            box-shadow: 0 6px 24px #0003;
+            border-left: 6px solid #374151;
+        }
+        .member-main-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2.5rem;
+            align-items: flex-end;
+        }
+        .member-label {
+            font-size: 0.92rem;
+            color: #6b7280;
+            font-weight: 600;
+            margin-bottom: 0.2em;
+            display: block;
+        }
+        .member-value {
+            font-size: 1.08rem;
+            color: #22223b;
+            font-weight: 500;
+            margin-bottom: 0.3em;
+        }
+        .member-sub-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2.2rem;
+            margin-left: 0.5rem;
+        }
+        .member-biko {
+            margin-left: 0.5rem;
+            color: #6b7280;
+            font-size: 0.98rem;
+            background: #f1f5f9;
+            border-radius: 0.5em;
+            padding: 0.5em 1em;
+            max-width: 600px;
+        }
+        @media (max-width: 700px) {
+            .member-main-row, .member-sub-row { flex-direction: column; gap: 0.7rem; }
+            .member-card { padding: 1.1rem 0.7rem; }
+        }
+        h1 { font-size: 1.6rem; font-weight: bold; color: #374151; margin-bottom: 2rem; }
+        .member-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
+        .member-table th, .member-table td { border-bottom: 1px solid #e5e7eb; padding: 0.9rem 0.7rem; text-align: left; }
+        .member-table th { background: #f1f5f9; color: #374151; font-weight: bold; }
+        .member-table td { background: #fff; }
+        .actions button { margin-right: 0.5rem; }
+        .btn { padding: 0.5rem 1.2rem; border-radius: 0.7rem; border: none; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .btn-edit { background: #6b7280; color: #fff; }
+        .btn-edit:hover { background: #4b5563; }
+        .btn-delete { background: #e11d48; color: #fff; }
+        .btn-delete:hover { background: #be123c; }
+        .btn-new { background: #6b7280; color: #fff; margin-bottom: 1.5rem; }
+        .btn-new:hover { background: #4b5563; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <span>一般社団法人車両情報活用研究所</span>
+        <a href="admin-portal.html" style="color:inherit; text-decoration:none; cursor:pointer;">管理者ポータル</a>
+    </div>
+    <div class="container">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+            <h1 style="margin-bottom:0;"><i class="fa-solid fa-users"></i> 会員管理</h1>
+            <a href="admin-member-list.html" class="btn btn-edit" style="background:#e5e7eb;color:#374151;font-weight:600;text-decoration:none;"><i class="fa-solid fa-list"></i> 会員一覧に戻る</a>
+        </div>
+        <div id="members-list">
+            <div style="text-align:center; color:#888;">読み込み中...</div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+    const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // URLからidパラメータを取得
+    function getIdParam() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get('id');
+    }
+
+    async function loadMember() {
+        const list = document.getElementById('members-list');
+        list.innerHTML = '<div style="text-align:center; color:#888;">読み込み中...</div>';
+        const id = getIdParam();
+        if (!id) {
+            list.innerHTML = '<div style="color:red; text-align:center;">IDが指定されていません</div>';
+            return;
+        }
+        const { data, error } = await supabaseClient.from('member').select('*').eq('id', id).single();
+        if (error || !data) {
+            list.innerHTML = `<div style="color:red; text-align:center;">データ取得エラー または データがありません</div>`;
+            return;
+        }
+        const item = data;
+        list.innerHTML = `
+            <div class="member-card">
+                <div class="member-main-row">
+                    <div><span class="member-label">会社名</span><span class="member-value">${item.company_name || ''}</span></div>
+                    <div><span class="member-label">責任者名</span><span class="member-value">${item.representative_name || ''}</span></div>
+                    <div><span class="member-label">Email</span><span class="member-value">${item.email || ''}</span></div>
+                </div>
+                <div class="member-sub-row">
+                    <div><span class="member-label">郵便番号</span><span class="member-value">${item.zip_code || ''}</span></div>
+                    <div><span class="member-label">住所</span><span class="member-value">${item.address || ''}</span></div>
+                    <div><span class="member-label">電話番号</span><span class="member-value">${item.phone_number || ''}</span></div>
+                </div>
+                <div class="member-sub-row">
+                    <div><span class="member-label">担当者</span><span class="member-value">${item.staff_name || ''}</span></div>
+                    <div><span class="member-label">担当者携帯</span><span class="member-value">${item.staff_mobile || ''}</span></div>
+                    <div><span class="member-label">担当者メルアド</span><span class="member-value">${item.staff_email || ''}</span></div>
+                </div>
+                <div class="member-biko"><span class="member-label">備考</span>${item.biko || ''}</div>
+                <div class="actions" style="display:flex; justify-content:space-between; align-items:center; margin-top:1.2rem; gap:2rem;">
+                    <button class="btn btn-delete" style="min-width:110px;" onclick="if(confirm('削除しますか?')){alert('削除しました')}"><i class="fa-solid fa-trash"></i> 削除</button>
+                    <a class="btn btn-edit" href="admin-member-edit.html?id=${item.id}" style="min-width:110px;"><i class="fa-solid fa-pen"></i> 編集</a>
+                </div>
+            </div>
+        `;
+    }
+    document.addEventListener('DOMContentLoaded', loadMember);
+    </script>
+</body>
+</html>

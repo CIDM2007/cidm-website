@@ -6,6 +6,7 @@
     <title>過去のお知らせ | 一般社団法人 車両情報活用研究所</title>
     <link href="output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="./nav.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -44,36 +45,8 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col">
-
-    <!-- ヘッダー -->
-    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-blue-50 shadow-sm">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center space-x-3 cursor-pointer" onclick="location.href='index.html'">
-                    <img src="CIDMchara.png" alt="CIDM Logo" class="w-10 h-10 object-contain" onerror="this.src='https://placehold.jp/24/2563eb/ffffff/200x200.png?text=CIDM'">
-                    <div>
-                        <span class="block font-bold text-lg tracking-wider text-slate-800 leading-none">CIDM</span>
-                        <span class="block text-[8px] text-blue-500 font-bold tracking-tighter uppercase mt-1">Innovative Data & Mobility</span>
-                    </div>
-                </div>
-
-                <div id="main-nav-links" class="hidden lg:flex items-center space-x-8 font-bold text-[12px] tracking-wider">
-                    <a href="index.html" class="nav-item py-1 transition hover:text-blue-600">ホーム</a>
-                    <a href="index.html#research" class="nav-item py-1 transition hover:text-blue-600">研究・事業</a>
-                    <a href="archive.html" class="nav-item py-1 transition hover:text-blue-600">お知らせ一覧</a>
-                    <a href="index.html#about" class="nav-item py-1 transition hover:text-blue-600">組織概要</a>
-                    <a href="index.html#join" class="nav-item py-1 transition hover:text-blue-600">入会案内</a>
-                    <!-- 会員サイトはindex.htmlでログイン処理を行うため、index.htmlへリンク -->
-                    <a href="index.html" class="nav-item py-1 transition flex items-center text-blue-600"><i class="fa-solid fa-circle-user mr-1.5 text-sm"></i> 会員サイト</a>
-                    <a href="contact.html" class="bg-slate-900 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition shadow-lg shadow-slate-200 ml-4">お問い合わせ</a>
-                </div>
-                <button id="menu-btn" class="lg:hidden text-slate-800">
-                    <i class="fa-solid fa-bars-staggered text-2xl"></i>
-                </button>
-            </div>
-        </div>
-    </nav>
+<body class="bg-slate-50 min-h-screen flex flex-col" data-nav-current="archive">
+    <div id="nav-placeholder"></div>
 
     <!-- メインコンテンツ -->
     <main class="flex-grow pt-32 pb-24">

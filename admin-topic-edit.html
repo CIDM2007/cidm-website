@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>トピック編集 | 管理者ポータル</title>
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f3f4f6; font-family: 'Noto Sans JP', sans-serif; }
+        .top-bar { width:100%; background:#e5e7eb; color:#374151; padding:0.8rem 0; display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; font-weight:bold; letter-spacing:0.05em; }
+        .top-bar span { margin: 0 2rem; }
+        .container { max-width: 600px; margin: 60px auto; background: #fff; border-radius: 1.5rem; box-shadow: 0 4px 24px #0001; padding: 2.5rem 2rem; }
+        h1 { font-size: 1.5rem; font-weight: bold; color: #374151; margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; font-weight: 500; color: #374151; margin-bottom: 0.5rem; }
+        input, textarea, select { width: 100%; padding: 0.7rem; border-radius: 0.7rem; border: 1px solid #d1d5db; background: #f9fafb; font-size: 1rem; }
+        textarea { min-height: 100px; }
+        .form-actions { text-align: right; }
+        .btn { padding: 0.6rem 1.5rem; border-radius: 0.7rem; border: none; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .btn-submit { background: #6b7280; color: #fff; }
+        .btn-submit:hover { background: #4b5563; }
+        .btn-cancel { background: #e5e7eb; color: #374151; margin-right: 1rem; }
+        .btn-cancel:hover { background: #d1d5db; }
+        .msg { margin-bottom: 1rem; color: #e11d48; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <span>一般社団法人車両情報活用研究所</span>
+        <span>管理者ポータル</span>
+    </div>
+    <div class="container">
+        <h1 id="edit-title"><i class="fa-solid fa-pen"></i> トピック編集</h1>
+        <div id="msg" class="msg" style="display:none;"></div>
+        <form id="topic-form">
+            <div class="form-group">
+                <label for="title">タイトル</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div class="form-group">
+                <label for="event_date">日付</label>
+                <input type="date" id="event_date" name="event_date" required>
+            </div>
+            <div class="form-group">
+                <label for="is_visible">公開設定</label>
+                <select id="is_visible" name="is_visible">
+                    <option value="true">公開</option>
+                    <option value="false">非公開</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="details">詳細内容</label>
+                <textarea id="details" name="details" required></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-cancel" onclick="window.history.back()">キャンセル</button>
+                <button type="submit" class="btn btn-submit">更新</button>
+            </div>
+        </form>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+    const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const form = document.getElementById('topic-form');
+    const msg = document.getElementById('msg');
+    // URLからid取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const topicId = urlParams.get('id');
+    const editTitle = document.getElementById('edit-title');
+    const submitBtn = form.querySelector('.btn-submit');
+    if (!topicId) {
+        // 新規登録モード
+        editTitle.innerHTML = '<i class="fa-solid fa-plus"></i> トピック新規登録';
+        submitBtn.textContent = '登録';
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            msg.style.display = 'none';
+            const title = form.title.value.trim();
+            const event_date = form.event_date.value;
+            const is_visible = form.is_visible.value === 'true';
+            const details = form.details.value.trim();
+            if (!title || !event_date || !details) {
+                msg.textContent = '全ての項目を入力してください。';
+                msg.style.display = 'block';
+                return;
+            }
+            const { error } = await supabaseClient.from('meeting_reports').insert([{ title, event_date, is_visible, details }]);
+            if (error) {
+                msg.textContent = '登録に失敗しました: ' + error.message;
+                msg.style.display = 'block';
+            } else {
+                msg.textContent = '登録が完了しました。';
+                msg.style.color = '#22c55e';
+                msg.style.display = 'block';
+                setTimeout(() => { window.location.href = 'admin-topics.html'; }, 1200);
+            }
+        });
+    } else {
+        // 編集モード
+        (async () => {
+            const { data, error } = await supabaseClient.from('meeting_reports').select('*').eq('id', topicId).single();
+            if (error || !data) {
+                msg.textContent = 'データ取得に失敗しました。';
+                msg.style.display = 'block';
+                form.style.display = 'none';
+                return;
+            }
+            form.title.value = data.title || '';
+            form.event_date.value = data.event_date || '';
+            form.is_visible.value = data.is_visible ? 'true' : 'false';
+            form.details.value = data.details || '';
+        })();
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            msg.style.display = 'none';
+            const title = form.title.value.trim();
+            const event_date = form.event_date.value;
+            const is_visible = form.is_visible.value === 'true';
+            const details = form.details.value.trim();
+            if (!title || !event_date || !details) {
+                msg.textContent = '全ての項目を入力してください。';
+                msg.style.display = 'block';
+                return;
+            }
+            const { error } = await supabaseClient.from('meeting_reports').update({ title, event_date, is_visible, details }).eq('id', topicId);
+            if (error) {
+                msg.textContent = '更新に失敗しました: ' + error.message;
+                msg.style.display = 'block';
+            } else {
+                msg.textContent = '更新が完了しました。';
+                msg.style.color = '#22c55e';
+                msg.style.display = 'block';
+                setTimeout(() => { window.location.href = 'admin-topics.html'; }, 1200);
+            }
+        });
+    }
+    </script>
+</body>
+</html>

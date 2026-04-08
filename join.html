@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>入会案内 | CIDM Official</title>
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="./nav.js" defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            scroll-behavior: smooth;
+            line-height: 1.8;
+            color: #334155;
+        }
+
+        h1, h2, h3, .serif {
+            font-family: 'Noto Serif JP', serif;
+        }
+    </style>
+</head>
+<body class="bg-white" data-nav-current="join">
+    <div id="nav-placeholder"></div>
+    <main class="pt-20">
+        <div class="py-24 bg-slate-50">
+            <div class="max-w-4xl mx-auto px-6">
+                <div class="text-center mb-16">
+                    <span class="text-blue-600 font-bold tracking-widest text-xs uppercase mb-3 block">JOIN</span>
+                    <h2 class="text-4xl font-bold serif text-slate-800">入会申し込み</h2>
+                    <div class="w-12 h-1 bg-blue-600 mx-auto mt-6 rounded-full"></div>
+                    <p class="mt-6 text-slate-500 text-sm">Web上で入会手続きを完結できます。印鑑は不要です。</p>
+                </div>
+                <form id="application-form" class="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-blue-50 space-y-10">
+                    <!-- 会社組織情報 -->
+                    <div class="space-y-6 pt-6 border-t border-slate-100">
+                        <h3 class="font-bold text-blue-600 flex items-center italic">
+                            <i class="fa-solid fa-building mr-2"></i> 会社組織情報
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-bold text-slate-700 mb-2">社名/団体名 <span class="text-red-500">*</span></label>
+                                <input type="text" name="company_name" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition shadow-sm" placeholder="株式会社〇〇">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">責任者名 <span class="text-red-500">*</span></label>
+                                <input type="text" name="representative_name" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">郵便番号 <span class="text-red-500">*</span></label>
+                                <input type="text" name="zip_code" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="123-4567">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-bold text-slate-700 mb-2">所在地 <span class="text-red-500">*</span></label>
+                                <input type="text" name="address" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="東京都〇〇区〇〇 1-2-3">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">電話番号 <span class="text-red-500">*</span></label>
+                                <input type="text" name="phone_number" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="03-1234-5678">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">会社URL</label>
+                                <input type="url" name="website_url" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="https://example.com">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-bold text-slate-700 mb-2">メールアドレス <span class="text-red-500">*</span></label>
+                                <input type="email" name="email" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="info@example.com">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ご担当者情報 -->
+                    <div class="space-y-6 pt-6 border-t border-slate-100">
+                        <h3 class="font-bold text-blue-600 flex items-center italic">
+                            <i class="fa-solid fa-user mr-2"></i> ご担当者情報
+                        </h3>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">担当者氏名 <span class="text-red-500">*</span></label>
+                                <input type="text" name="staff_name" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">担当者かな</label>
+                                <input type="text" name="company_name_kana" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">担当者役職</label>
+                                <input type="text" name="staff_person_title" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">担当者携帯</label>
+                                <input type="text" name="staff_mobile" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-bold text-slate-700 mb-2">担当者E-Mail <span class="text-red-500">*</span></label>
+                                <input type="email" name="staff_email" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="tanto@example.com">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 備考 -->
+                    <div class="space-y-6 pt-6 border-t border-slate-100">
+                        <h3 class="font-bold text-blue-600 flex items-center italic">
+                            <i class="fa-solid fa-pen mr-2"></i> 備考
+                        </h3>
+                        <textarea name="biko" rows="4" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="ご要望・ご質問など"></textarea>
+                    </div>
+                    <div class="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 space-y-6">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-700 mb-4">関連資料ダウンロード</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <a href="Membership Code.pdf" download class="flex items-center justify-between rounded-2xl border border-blue-100 bg-white px-5 py-4 text-slate-700 transition hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-700 shadow-sm">
+                                    <span class="flex items-center gap-3">
+                                        <i class="fa-solid fa-file-arrow-down text-blue-600"></i>
+                                        <span class="font-medium">会員規定</span>
+                                    </span>
+                                    <span class="text-xs font-bold tracking-widest text-blue-600">PDF</span>
+                                </a>
+                                <a href="Articles of Incorporation.pdf" download class="flex items-center justify-between rounded-2xl border border-blue-100 bg-white px-5 py-4 text-slate-700 transition hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-700 shadow-sm">
+                                    <span class="flex items-center gap-3">
+                                        <i class="fa-solid fa-file-arrow-down text-blue-600"></i>
+                                        <span class="font-medium">定款</span>
+                                    </span>
+                                    <span class="text-xs font-bold tracking-widest text-blue-600">PDF</span>
+                                </a>
+                                <a href="Written Oath.pdf" download class="flex items-center justify-between rounded-2xl border border-blue-100 bg-white px-5 py-4 text-slate-700 transition hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-700 shadow-sm">
+                                    <span class="flex items-center gap-3">
+                                        <i class="fa-solid fa-file-arrow-down text-blue-600"></i>
+                                        <span class="font-medium">誓約書</span>
+                                    </span>
+                                    <span class="text-xs font-bold tracking-widest text-blue-600">PDF</span>
+                                </a>
+                            </div>
+                        </div>
+                        <label class="flex items-start cursor-pointer group">
+                            <input type="checkbox" required class="mt-1 w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 transition cursor-pointer">
+                            <span class="ml-3 text-sm text-slate-700 font-medium group-hover:text-blue-600 transition-colors">
+                                規程および誓約事項に同意して申し込みます。
+                            </span>
+                        </label>
+                    </div>
+                    <div class="text-center pt-4">
+                        <button type="submit" class="bg-blue-600 text-white px-16 py-5 rounded-full font-bold hover:bg-blue-700 transition shadow-xl shadow-blue-100 w-full md:w-auto text-lg active:transform active:scale-95">
+                            入会を申し込む
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    <footer class="bg-slate-900 text-slate-400 py-16 text-center">
+        <div class="mb-4">
+            <a href="#" id="admin-login-link" style="background:#1a2233; color:#1a2233; font-size:10px; border-radius:6px; padding:4px 14px; display:inline-flex; align-items:center; gap:4px; text-decoration:none; transition:color 0.2s;">
+                <i class="fa-solid fa-gear mr-1"></i> 管理者ログイン
+            </a>
+        </div>
+        <p class="text-[10px] tracking-tighter uppercase">© 2013-2026 Center for Innovative Data and Mobility.</p>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        document.getElementById('admin-login-link')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('管理者ログインはトップページから行ってください。');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会員ポータル | CIDM Official</title>
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="./nav.js" defer></script>
+</head>
+<body class="bg-white" data-nav-current="member">
+    <div id="nav-placeholder"></div>
+    <main class="pt-20">
+        <div class="py-24 bg-blue-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="flex justify-between items-center mb-12">
+                    <h2 class="text-4xl font-bold serif text-slate-800">会員ポータル</h2>
+                    <button onclick="handleLogout()" class="text-sm font-bold text-slate-500 hover:text-red-500 flex items-center bg-white px-5 py-2.5 rounded-full shadow-sm border">ログアウト</button>
+                </div>
+                <div class="bg-white p-10 rounded-3xl shadow-md border border-blue-50">
+                    <h3 class="text-2xl font-bold text-slate-800 mb-2">Welcome, CIDM Member.</h3>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="bg-slate-900 text-slate-400 py-16 text-center">
+        <div class="mb-4">
+            <a href="#" id="admin-login-link" style="background:#1a2233; color:#1a2233; font-size:10px; border-radius:6px; padding:4px 14px; display:inline-flex; align-items:center; gap:4px; text-decoration:none; transition:color 0.2s;">
+                <i class="fa-solid fa-gear mr-1"></i> 管理者ログイン
+            </a>
+        </div>
+        <p class="text-[10px] tracking-tighter uppercase">© 2013-2026 Center for Innovative Data and Mobility.</p>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        document.getElementById('admin-login-link')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            alert('管理者ログインはトップページから行ってください。');
+        });
+        function handleLogout() {
+            alert('ログアウトしました。');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
