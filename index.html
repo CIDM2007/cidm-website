@@ -225,64 +225,6 @@
 
 
         
-        // 入会申し込み送信処理 (Supabase連携 ＋ UX演出)
-        document.getElementById('application-form')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const form = e.target;
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const originalBtnText = submitBtn.innerHTML;
-
-            // 1. ボタンを「送信中」の状態にする（二重送信防止とフィードバック）
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> 送信中...`;
-            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
-
-            try {
-                const formData = new FormData(form);
-                const data = Object.fromEntries(formData.entries());
-
-                // Supabaseへのインサート処理
-                const { error } = await supabaseClient.from('applications').insert([data]);
-
-                if (error) throw error;
-
-                // 2. 成功時の演出（フォームをフェードアウトさせて完了メッセージを表示）
-                form.style.transition = 'opacity 0.5s ease';
-                form.style.opacity = '0';
-                
-                setTimeout(() => {
-                    form.innerHTML = `
-                        <div class="py-12 text-center animate-fadeIn">
-                            <div class="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-8 shadow-sm">
-                                <i class="fa-solid fa-check text-4xl"></i>
-                            </div>
-                            <h3 class="text-2xl font-bold text-slate-800 mb-4">お申し込みありがとうございます</h3>
-                            <p class="text-slate-600 leading-relaxed mb-10">
-                                入力いただいた内容は正常に送信されました。<br>
-                                事務局にて内容を確認の上、担当者よりメールにてご連絡差し上げます。
-                            </p>
-                            <button onclick="location.reload()" class="px-8 py-3 bg-slate-100 text-slate-600 rounded-full font-bold hover:bg-slate-200 transition">
-                                トップページに戻る
-                            </button>
-                        </div>
-                    `;
-                    form.style.opacity = '1';
-                    // 画面上部へスムーズにスクロール
-                    window.scrollTo({ top: document.getElementById('join').offsetTop - 100, behavior: 'smooth' });
-                }, 500);
-
-            } catch (error) {
-                // 3. エラー時の処理
-                console.error('送信エラー:', error);
-                alert('送信エラーが発生しました。インターネット接続を確認し、再度お試しください。');
-                
-                // 失敗した場合はボタンの状態を元に戻す
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
-                submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-            }
-        });
 
 
 
