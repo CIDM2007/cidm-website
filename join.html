@@ -98,13 +98,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- 備考 -->
-                    <div class="space-y-6 pt-6 border-t border-slate-100">
-                        <h3 class="font-bold text-blue-600 flex items-center italic">
-                            <i class="fa-solid fa-pen mr-2"></i> 備考
-                        </h3>
-                        <textarea name="biko" rows="4" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="ご要望・ご質問など"></textarea>
-                    </div>
                     <div class="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 space-y-6">
                         <div>
                             <h3 class="text-sm font-bold text-slate-700 mb-4">関連資料ダウンロード</h3>
@@ -170,12 +163,6 @@
         const rawData = Object.fromEntries(formData.entries());
         const submitButton = form.querySelector('button[type="submit"]');
 
-        const notes = [
-            rawData.phone_number ? `代表電話: ${rawData.phone_number}` : '',
-            rawData.email ? `代表メール: ${rawData.email}` : '',
-            rawData.biko || ''
-        ].filter(Boolean).join('\n');
-
         const applicationData = {
             member_type: '法人会員',
             org_name: rawData.company_name,
@@ -188,33 +175,13 @@
             staff_name: rawData.staff_name,
             staff_title: rawData.staff_person_title || null,
             staff_tel: rawData.staff_mobile || rawData.phone_number,
-            staff_email: rawData.staff_email,
-            biko: notes || null
-        };
-        const fallbackApplicationData = {
-            member_type: applicationData.member_type,
-            org_name: applicationData.org_name,
-            org_name_kana: applicationData.org_name_kana,
-            zip_code: applicationData.zip_code,
-            address: applicationData.address,
-            website: applicationData.website,
-            exec_title: applicationData.exec_title,
-            exec_name: applicationData.exec_name,
-            staff_name: applicationData.staff_name,
-            staff_title: applicationData.staff_title,
-            staff_tel: applicationData.staff_tel,
             staff_email: applicationData.staff_email
         };
 
         submitButton.disabled = true;
 
         try {
-            let { error } = await supabaseClient.from('applications').insert([applicationData]);
-
-            if (error?.message?.includes("Could not find the 'biko' column")) {
-                console.warn('applications.biko is not available in schema cache yet. Retrying without biko.');
-                ({ error } = await supabaseClient.from('applications').insert([fallbackApplicationData]));
-            }
+            const { error } = await supabaseClient.from('applications').insert([applicationData]);
 
             if (error) {
                 alert('送信に失敗しました。再度お試しください。\\n' + error.message);
