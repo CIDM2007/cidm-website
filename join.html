@@ -163,8 +163,10 @@
         const formData = new FormData(form);
         const rawData = Object.fromEntries(formData.entries());
         const submitButton = form.querySelector('button[type="submit"]');
+        const applicationId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
         const applicationData = {
+            id: applicationId,
             member_type: '法人会員',
             org_name: rawData.company_name,
             org_name_kana: rawData.company_name_kana || null,
