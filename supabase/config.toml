@@ -1,0 +1,2 @@
+[functions.send-application-mail]
+verify_jwt = false

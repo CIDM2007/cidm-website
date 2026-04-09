@@ -155,6 +155,7 @@
     // ★ご自身のSupabaseプロジェクトの値に置き換えてください
     const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
+    const SEND_APPLICATION_MAIL_URL = 'https://uhhhifbotqidqeceqyis.functions.supabase.co/send-application-mail';
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     document.getElementById('application-form')?.addEventListener('submit', async function(e) {
@@ -163,10 +164,8 @@
         const formData = new FormData(form);
         const rawData = Object.fromEntries(formData.entries());
         const submitButton = form.querySelector('button[type="submit"]');
-        const applicationId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
         const applicationData = {
-            id: applicationId,
             member_type: '法人会員',
             org_name: rawData.company_name,
             org_name_kana: rawData.company_name_kana || null,
@@ -190,6 +189,22 @@
                 alert('送信に失敗しました。再度お試しください。\\n' + error.message);
                 console.error('Application insert error:', error);
                 return;
+            }
+
+            try {
+                const mailResponse = await fetch(SEND_APPLICATION_MAIL_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(applicationData)
+                });
+
+                if (!mailResponse.ok) {
+                    console.error('Application mail send error:', await mailResponse.text());
+                }
+            } catch (mailError) {
+                console.error('Application mail send exception:', mailError);
             }
 
             alert('送信が完了しました。ありがとうございました。');
