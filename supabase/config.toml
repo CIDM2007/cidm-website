@@ -1,2 +1,5 @@
 [functions.send-application-mail]
 verify_jwt = false
+
+[functions.send-contact-mail]
+verify_jwt = false

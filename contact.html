@@ -49,7 +49,7 @@
             </div>
 
             <section class="bg-white p-8 md:p-12 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-white">
-                <form action="#" method="POST" class="space-y-8">
+                <form id="contact-form" action="#" method="POST" class="space-y-8">
                     <div class="text-[11px] text-red-500 font-bold flex items-center">
                         <span class="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
                         ※は必須項目です。
@@ -136,7 +136,7 @@
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-4 justify-center pt-10">
-                        <button type="submit" class="px-16 py-4 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">送信内容を確認する</button>
+                        <button id="contact-submit-btn" type="submit" class="px-16 py-4 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">送信内容を確認する</button>
                         <button type="reset" class="px-10 py-4 bg-white text-slate-400 border border-slate-100 rounded-full font-bold hover:bg-slate-50 transition">リセット</button>
                     </div>
                 </form>
@@ -160,5 +160,82 @@
         </div>
     </footer>
 
+    <script>
+        const SEND_CONTACT_MAIL_URL = 'https://uhhhifbotqidqeceqyis.functions.supabase.co/send-contact-mail';
+
+        function normalizePhone(formData, prefix) {
+            const p1 = String(formData.get(`${prefix}1`) || '').trim();
+            const p2 = String(formData.get(`${prefix}2`) || '').trim();
+            const p3 = String(formData.get(`${prefix}3`) || '').trim();
+            if (!p1 && !p2 && !p3) return '';
+            return [p1, p2, p3].filter(Boolean).join('-');
+        }
+
+        const contactForm = document.getElementById('contact-form');
+        contactForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const form = event.currentTarget;
+            const submitButton = document.getElementById('contact-submit-btn');
+            const formData = new FormData(form);
+
+            const email = String(formData.get('email') || '').trim();
+            const emailConfirm = String(formData.get('email_confirm') || '').trim();
+            if (email !== emailConfirm) {
+                alert('Eメールと確認用Eメールが一致しません。');
+                return;
+            }
+
+            const payload = {
+                company: String(formData.get('company') || '').trim(),
+                department: String(formData.get('department') || '').trim(),
+                name: String(formData.get('name') || '').trim(),
+                postal: String(formData.get('postal') || '').trim(),
+                pref: String(formData.get('pref') || '').trim(),
+                address: String(formData.get('address') || '').trim(),
+                phone: normalizePhone(formData, 'tel'),
+                fax: normalizePhone(formData, 'fax'),
+                email,
+                category: String(formData.get('category') || '').trim(),
+                message: String(formData.get('message') || '').trim()
+            };
+
+            if (!payload.name || !payload.postal || !payload.pref || !payload.address || !payload.phone || !payload.email || !payload.message) {
+                alert('必須項目を入力してください。');
+                return;
+            }
+
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = '送信中...';
+            }
+
+            try {
+                const response = await fetch(SEND_CONTACT_MAIL_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || '送信に失敗しました。');
+                }
+
+                alert('お問い合わせを受け付けました。ありがとうございます。');
+                form.reset();
+            } catch (error) {
+                console.error('Contact submit error:', error);
+                alert('送信時にエラーが発生しました。時間をおいて再度お試しください。');
+            } finally {
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = '送信内容を確認する';
+                }
+            }
+        });
+    </script>
 </body>
 </html>

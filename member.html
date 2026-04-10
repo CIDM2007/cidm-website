@@ -155,10 +155,6 @@
             { updated_at: '2026-03-22', title: '定例会アーカイブ資料（2025年度）', file_type: 'ZIP', file_size: '18.1MB', file_url: '#' }
         ];
 
-        if (sessionStorage.getItem(MEMBER_AUTH_KEY) !== '1') {
-            window.location.href = 'index.html?memberLogin=1';
-        }
-
         const memberId = sessionStorage.getItem(MEMBER_ID_KEY) || '';
         const memberName = sessionStorage.getItem(MEMBER_NAME_KEY) || '';
         const memberCompany = sessionStorage.getItem(MEMBER_COMPANY_KEY) || '';
@@ -169,7 +165,7 @@
             } else if (memberId) {
                 greeting.textContent = `${memberId} 様、ようこそ。`;
             } else {
-                greeting.textContent = 'ログイン中の会員として表示しています。';
+                greeting.textContent = '会員向け情報を表示しています。';
             }
         }
 

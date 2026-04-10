@@ -30,7 +30,7 @@ function initializeNavigation() {
     const memberLink = document.querySelector('[data-member-link]');
     if (memberLink) {
         memberLink.addEventListener('click', () => {
-            memberLink.href = 'member.html';
+            memberLink.href = 'index.html?memberLogin=1';
         });
     }
 
