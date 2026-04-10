@@ -75,8 +75,8 @@
             </div>
             <form id="login-form" class="space-y-5">
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Member ID</label>
-                    <input type="text" id="member-id" required class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="CIDM-XXXXX">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Login ID</label>
+                    <input type="text" id="member-id" required class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="member-001">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
@@ -169,8 +169,12 @@
     <script>
         let isLoggedIn = false;
         let isAdminLoginBusy = false;
-        const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co'; 
-        const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
+        const MEMBER_AUTH_KEY = 'cidm-member-auth';
+        const MEMBER_ID_KEY = 'cidm-member-id';
+        const MEMBER_NAME_KEY = 'cidm-member-name';
+        const MEMBER_COMPANY_KEY = 'cidm-member-company';
+        const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
@@ -271,16 +275,29 @@
             e.preventDefault();
             const loginBtn = document.getElementById('member-login-btn');
             await window.cidmAdminUi.runWithButtonBusy(loginBtn, async () => {
-                const memberId = document.getElementById('member-id').value.trim();
+                const loginId = document.getElementById('member-id').value.trim();
                 const password = document.getElementById('password').value.trim();
-                if (!memberId || !password) {
-                    window.cidmAdminUi.showToast('会員IDとパスワードを入力してください。', 'error', 2400);
+                if (!loginId || !password) {
+                    window.cidmAdminUi.showToast('ログインIDとパスワードを入力してください。', 'error', 2400);
+                    return;
+                }
+
+                const { data, error } = await supabaseClient.rpc('cidm_member_login', {
+                    p_login_id: loginId,
+                    p_password: password
+                });
+
+                const member = Array.isArray(data) ? data[0] : null;
+                if (error || !member) {
+                    window.cidmAdminUi.showToast('ログインIDまたはパスワードが正しくありません。', 'error', 2800);
                     return;
                 }
 
                 isLoggedIn = true;
-                sessionStorage.setItem('cidm-member-auth', '1');
-                sessionStorage.setItem('cidm-member-id', memberId);
+                sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
+                sessionStorage.setItem(MEMBER_ID_KEY, member.login_id || loginId);
+                sessionStorage.setItem(MEMBER_NAME_KEY, member.staff_name || '');
+                sessionStorage.setItem(MEMBER_COMPANY_KEY, member.company_name || '');
                 window.location.href = 'member.html';
             }, 'ログイン中...');
         }

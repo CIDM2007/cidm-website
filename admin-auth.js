@@ -1,6 +1,6 @@
 (function () {
     const DEFAULT_SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-    const DEFAULT_SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
+    const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
 
     function getDefaultPolicy() {
         const policy = window.CIDM_ADMIN_AUTH_POLICY;

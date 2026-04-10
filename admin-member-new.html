@@ -50,6 +50,8 @@
             <div class="form-group"><label for="address">住所</label><input type="text" id="address" name="address"></div>
             <div class="form-group"><label for="phone_number">電話番号</label><input type="text" id="phone_number" name="phone_number"></div>
             <div class="form-group"><label for="email">Email</label><input type="email" id="email" name="email" required></div>
+            <div class="form-group"><label for="login_id">会員ログインID</label><input type="text" id="login_id" name="login_id" required placeholder="member-001"></div>
+            <div class="form-group"><label for="initial_password">初期パスワード</label><input type="password" id="initial_password" name="initial_password" required minlength="8" placeholder="8文字以上"></div>
             <div class="form-group"><label for="staff_name">担当者</label><input type="text" id="staff_name" name="staff_name"></div>
             <div class="form-group"><label for="staff_mobile">担当者携帯</label><input type="text" id="staff_mobile" name="staff_mobile"></div>
             <div class="form-group"><label for="staff_email">担当者メルアド</label><input type="email" id="staff_email" name="staff_email"></div>
@@ -98,18 +100,38 @@
                 staff_email: form.staff_email.value.trim(),
                 biko: form.biko.value.trim()
             };
-            if (!data.company_name || !data.representative_name || !data.email) {
+            const loginId = form.login_id.value.trim();
+            const initialPassword = form.initial_password.value.trim();
+
+            if (!data.company_name || !data.representative_name || !data.email || !loginId || !initialPassword) {
                 window.cidmAdminUi.showToast('必須項目を入力してください。', 'error', 2200);
                 return;
             }
-
-            const { error } = await supabaseClient.from('member').insert([data]);
-            if (error) {
-                window.cidmAdminUi.showToast('登録に失敗しました: ' + error.message, 'error', 3000);
-            } else {
-                window.cidmAdminUi.showToast('登録が完了しました。', 'success', 900);
-                setTimeout(() => { window.location.href = 'admin-members.html'; }, 500);
+            if (initialPassword.length < 8) {
+                window.cidmAdminUi.showToast('初期パスワードは8文字以上で入力してください。', 'error', 2600);
+                return;
             }
+
+            const { data: insertedMember, error } = await supabaseClient.from('member').insert([data]).select('id').single();
+            if (error || !insertedMember) {
+                window.cidmAdminUi.showToast('登録に失敗しました: ' + (error?.message || 'unknown error'), 'error', 3000);
+                return;
+            }
+
+            const { error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
+                p_member_id: insertedMember.id,
+                p_login_id: loginId,
+                p_password: initialPassword
+            });
+
+            if (loginError) {
+                await supabaseClient.from('member').delete().eq('id', insertedMember.id);
+                window.cidmAdminUi.showToast('ログイン情報の登録に失敗しました: ' + loginError.message, 'error', 3600);
+                return;
+            }
+
+            window.cidmAdminUi.showToast('登録が完了しました。', 'success', 900);
+            setTimeout(() => { window.location.href = 'admin-members.html'; }, 500);
         }, '登録中...');
     });
     </script>

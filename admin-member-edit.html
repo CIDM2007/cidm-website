@@ -50,6 +50,11 @@
             <div class="form-group"><label for="address">住所</label><input type="text" id="address" name="address"></div>
             <div class="form-group"><label for="phone_number">電話番号</label><input type="text" id="phone_number" name="phone_number"></div>
             <div class="form-group"><label for="email">Email</label><input type="email" id="email" name="email" required></div>
+            <div class="form-group"><label for="login_id">会員ログインID</label><input type="text" id="login_id" name="login_id" required></div>
+            <div class="form-group"><label for="member_password">パスワード再設定</label><input type="password" id="member_password" name="member_password" minlength="8" placeholder="変更する場合のみ入力"></div>
+            <div class="form-group" style="margin-top:-0.8rem; color:#6b7280; font-size:0.92rem;">
+                <span id="password-status">ログイン設定を確認中...</span>
+            </div>
             <div class="form-group"><label for="staff_name">担当者</label><input type="text" id="staff_name" name="staff_name"></div>
             <div class="form-group"><label for="staff_mobile">担当者携帯</label><input type="text" id="staff_mobile" name="staff_mobile"></div>
             <div class="form-group"><label for="staff_email">担当者メルアド</label><input type="email" id="staff_email" name="staff_email"></div>
@@ -69,6 +74,21 @@
     const form = document.getElementById('member-form');
     const cancelBtn = document.getElementById('cancel-btn');
     const submitBtn = form.querySelector('.btn-submit');
+    const passwordStatus = document.getElementById('password-status');
+
+    function renderPasswordStatus(settings) {
+        if (!passwordStatus) return;
+        if (!settings) {
+            passwordStatus.textContent = 'ログイン設定を読み込めませんでした。';
+            return;
+        }
+        const updatedAt = settings.password_updated_at
+            ? new Date(settings.password_updated_at).toLocaleString('ja-JP')
+            : '未設定';
+        passwordStatus.textContent = settings.has_password
+            ? `パスワード設定済み（最終更新: ${updatedAt}）`
+            : 'パスワード未設定です。';
+    }
 
     cancelBtn?.addEventListener('click', async () => {
         const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
@@ -106,6 +126,16 @@
             form.staff_mobile.value = data.staff_mobile || '';
             form.staff_email.value = data.staff_email || '';
             form.biko.value = data.biko || '';
+
+            const { data: loginSettings, error: loginSettingsError } = await supabaseClient.rpc('cidm_get_member_login_settings', {
+                p_member_id: memberId
+            });
+            if (!loginSettingsError && Array.isArray(loginSettings) && loginSettings[0]) {
+                form.login_id.value = loginSettings[0].login_id || '';
+                renderPasswordStatus(loginSettings[0]);
+            } else {
+                renderPasswordStatus(null);
+            }
         })();
     }
     form.addEventListener('submit', async (e) => {
@@ -127,18 +157,40 @@
                 staff_email: form.staff_email.value.trim(),
                 biko: form.biko.value.trim()
             };
-            if (!updateData.company_name || !updateData.representative_name || !updateData.email) {
+            const loginId = form.login_id.value.trim();
+            const memberPassword = form.member_password.value.trim();
+
+            if (!updateData.company_name || !updateData.representative_name || !updateData.email || !loginId) {
                 window.cidmAdminUi.showToast('必須項目を入力してください。', 'error', 2200);
+                return;
+            }
+            if (memberPassword && memberPassword.length < 8) {
+                window.cidmAdminUi.showToast('パスワードは8文字以上で入力してください。', 'error', 2600);
                 return;
             }
 
             const { error } = await supabaseClient.from('member').update(updateData).eq('id', memberId);
             if (error) {
                 window.cidmAdminUi.showToast('更新に失敗しました: ' + error.message, 'error', 3000);
-            } else {
-                window.cidmAdminUi.showToast('更新が完了しました。', 'success', 900);
-                setTimeout(() => { window.location.href = `admin-members.html?id=${memberId}`; }, 500);
+                return;
             }
+
+            const { data: updatedLoginSettings, error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
+                p_member_id: memberId,
+                p_login_id: loginId,
+                p_password: memberPassword || null
+            });
+            if (loginError) {
+                window.cidmAdminUi.showToast('基本情報は更新しましたが、ログイン情報の更新に失敗しました: ' + loginError.message, 'error', 4200);
+                return;
+            }
+
+            if (Array.isArray(updatedLoginSettings) && updatedLoginSettings[0]) {
+                renderPasswordStatus(updatedLoginSettings[0]);
+            }
+            form.member_password.value = '';
+            window.cidmAdminUi.showToast('更新が完了しました。', 'success', 900);
+            setTimeout(() => { window.location.href = `admin-members.html?id=${memberId}`; }, 500);
         }, '更新中...');
     });
     </script>

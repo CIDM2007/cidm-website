@@ -135,8 +135,10 @@
     <script>
         const MEMBER_AUTH_KEY = 'cidm-member-auth';
         const MEMBER_ID_KEY = 'cidm-member-id';
+        const MEMBER_NAME_KEY = 'cidm-member-name';
+        const MEMBER_COMPANY_KEY = 'cidm-member-company';
         const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         let allDocuments = [];
         let activeDocFilter = 'all';
@@ -158,9 +160,17 @@
         }
 
         const memberId = sessionStorage.getItem(MEMBER_ID_KEY) || '';
+        const memberName = sessionStorage.getItem(MEMBER_NAME_KEY) || '';
+        const memberCompany = sessionStorage.getItem(MEMBER_COMPANY_KEY) || '';
         const greeting = document.getElementById('member-greeting');
         if (greeting) {
-            greeting.textContent = memberId ? `${memberId} 様、ようこそ。` : 'ログイン中の会員として表示しています。';
+            if (memberName) {
+                greeting.textContent = `${memberCompany || memberId} / ${memberName} 様、ようこそ。`;
+            } else if (memberId) {
+                greeting.textContent = `${memberId} 様、ようこそ。`;
+            } else {
+                greeting.textContent = 'ログイン中の会員として表示しています。';
+            }
         }
 
         function formatDate(dateString) {
@@ -340,6 +350,8 @@
         function handleLogout() {
             sessionStorage.removeItem(MEMBER_AUTH_KEY);
             sessionStorage.removeItem(MEMBER_ID_KEY);
+            sessionStorage.removeItem(MEMBER_NAME_KEY);
+            sessionStorage.removeItem(MEMBER_COMPANY_KEY);
             alert('ログアウトしました。');
             window.location.href = 'index.html';
         }
