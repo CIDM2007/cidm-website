@@ -7,48 +7,88 @@
     <link href="./output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #f3f4f6; font-family: 'Noto Sans JP', sans-serif; }
-        .top-bar { width:100%; background:#e5e7eb; color:#374151; padding:0.8rem 0; display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; font-weight:bold; letter-spacing:0.05em; }
-        .top-bar span { margin: 0 2rem; }
-        .container { max-width: 600px; margin: 60px auto; background: #fff; border-radius: 1.5rem; box-shadow: 0 4px 24px #0001; padding: 2.5rem 2rem; }
-        .title-bar {
-            background: linear-gradient(90deg, #f7f8fa 70%, #e5e7eb 100%);
-            color: #374151;
-            border-radius: 1rem 1rem 0 0;
-            padding: 1.1rem 2rem 1.1rem 2rem;
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
-            box-shadow: 0 2px 8px #0001;
-            letter-spacing: 0.03em;
-        }
-        .form-group { margin-bottom: 1.5rem; }
-        label { display: block; font-weight: 500; color: #374151; margin-bottom: 0.5rem; }
-        input, textarea { width: 100%; padding: 0.7rem; border-radius: 0.7rem; border: 1px solid #d1d5db; background: #f9fafb; font-size: 1rem; }
-        .form-actions { text-align: right; }
-        .btn { padding: 0.6rem 1.5rem; border-radius: 0.7rem; border: none; font-weight: 500; cursor: pointer; transition: background 0.2s; }
-        .btn-submit { background: #6b7280; color: #fff; }
-        .btn-submit:hover { background: #4b5563; }
-        .btn-cancel { background: #e5e7eb; color: #374151; margin-right: 1rem; }
-        .btn-cancel:hover { background: #d1d5db; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0f172a; color: #cbd5e1; font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:64px; background:#0f172a; border-bottom:1px solid #1e293b; position:sticky; top:0; z-index:10; }
+        .brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; }
+        .brand-icon { width:36px; height:36px; background:linear-gradient(135deg,#3b82f6,#6366f1); border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1rem; }
+        .brand-text { font-size:0.78rem; font-weight:700; color:#94a3b8; letter-spacing:0.1em; text-transform:uppercase; }
+        .brand-text span { display:block; color:#f1f5f9; font-size:0.9rem; letter-spacing:0.04em; }
+        .header-back { display:inline-flex; align-items:center; gap:0.4rem; color:#64748b; text-decoration:none; font-size:0.78rem; font-weight:700; letter-spacing:0.06em; border:1px solid #334155; border-radius:9999px; padding:0.3rem 0.9rem; transition:color 0.15s, border-color 0.15s; }
+        .header-back:hover { color:#93c5fd; border-color:#3b82f6; }
+
+        .admin-body { flex:1; padding:2.5rem 1.5rem 4rem; max-width:760px; margin:0 auto; width:100%; }
+        .form-card { background:#1e293b; border:1px solid #334155; border-radius:1rem; padding:2rem 2rem 1.75rem; }
+        .form-heading { margin-bottom:1.6rem; border-bottom:1px solid #334155; padding-bottom:1.1rem; }
+        .eyebrow { font-size:0.7rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#3b82f6; margin-bottom:0.35rem; }
+        .form-heading h1 { font-size:1.55rem; font-weight:700; color:#f1f5f9; display:flex; align-items:center; gap:0.5rem; }
+
+        .form-group { margin-bottom: 1.15rem; }
+        label { display:block; font-size:0.78rem; font-weight:700; color:#94a3b8; letter-spacing:0.07em; text-transform:uppercase; margin-bottom:0.45rem; }
+        input, textarea, select { width:100%; padding:0.72rem 0.9rem; border-radius:0.6rem; border:1px solid #334155; background:#0f172a; color:#e2e8f0; font-size:0.92rem; font-family:inherit; transition:border-color 0.15s, box-shadow 0.15s; outline:none; }
+        input:focus, textarea:focus, select:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
+        textarea { min-height:84px; resize:vertical; }
+
+        .form-actions { display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.6rem; padding-top:1.2rem; border-top:1px solid #334155; }
+        .btn { padding:0.6rem 1.4rem; border-radius:0.6rem; font-size:0.84rem; font-weight:700; cursor:pointer; transition:opacity 0.15s, transform 0.12s; display:inline-flex; align-items:center; gap:0.35rem; border:none; }
+        .btn:hover { transform:translateY(-1px); }
+        .btn-submit { background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; }
+        .btn-submit:hover { opacity:0.9; }
+        .btn-cancel { background:transparent; color:#94a3b8; border:1px solid #334155; }
+        .btn-cancel:hover { background:#263347; color:#e2e8f0; border-color:#475569; }
+
+        .contact-row { border:1px solid #334155; border-radius:0.8rem; padding:0.9rem; margin-bottom:0.75rem; background:#0f172a; }
+        .contact-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.6rem; }
+        .contact-label { font-size:0.74rem; color:#3b82f6; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; }
+        .contact-actions { display:flex; gap:0.7rem; align-items:center; color:#94a3b8; font-size:0.85rem; }
+        .contact-del-btn { border:1px solid #7f1d1d; background:transparent; color:#fca5a5; border-radius:0.5rem; padding:0.2rem 0.55rem; cursor:pointer; font-weight:700; }
+        .contact-del-btn:hover { background:#7f1d1d; color:#fff; }
+        .contact-add-btn { width:100%; border:1px dashed #334155; background:transparent; color:#3b82f6; border-radius:0.7rem; padding:0.55rem; cursor:pointer; font-weight:700; }
+        .contact-add-btn:hover { background:#1e3a52; border-color:#3b82f6; }
+
+        .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#334155; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #1e293b; }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <span>一般社団法人車両情報活用研究所</span>
-        <a href="admin-portal.html" style="color:inherit; text-decoration:none; cursor:pointer;">管理者ポータル</a>
-    </div>
-    <div class="container">
-        <div class="title-bar"><i class="fa-solid fa-user-pen"></i> 会員編集</div>
+    <header class="admin-header">
+        <a href="admin-portal.html" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="brand-text">CIDM <span>管理者ポータル</span></div>
+        </a>
+        <a href="admin-members.html?id=" class="header-back" id="back-to-member"><i class="fa-solid fa-chevron-left"></i> 会員詳細へ戻る</a>
+    </header>
+
+    <div class="admin-body">
+        <div class="form-card">
+            <div class="form-heading">
+                <p class="eyebrow">Member Management</p>
+                <h1><i class="fa-solid fa-user-pen"></i> 会員編集</h1>
+            </div>
         <form id="member-form">
+            <div class="form-group"><label for="division_flag">区分</label>
+                <select id="division_flag" name="division_flag">
+                    <option value="会員">会員</option>
+                    <option value="関係者">関係者</option>
+                </select>
+            </div>
+            <div class="form-group"><label for="member_type">会員種別</label>
+                <select id="member_type" name="member_type">
+                    <option value="">-- 未設定 --</option>
+                    <option value="役員">役員</option>
+                    <option value="正会員">正会員</option>
+                    <option value="準会員">準会員</option>
+                    <option value="賛助">賛助</option>
+                </select>
+            </div>
+            <div class="form-group"><label for="cidm_role">CIDM役職</label><input type="text" id="cidm_role" name="cidm_role"></div>
             <div class="form-group"><label for="company_name">会社名</label><input type="text" id="company_name" name="company_name" required></div>
             <div class="form-group"><label for="representative_name">責任者名</label><input type="text" id="representative_name" name="representative_name" required></div>
             <div class="form-group"><label for="zip_code">郵便番号</label><input type="text" id="zip_code" name="zip_code"></div>
             <div class="form-group"><label for="address">住所</label><input type="text" id="address" name="address"></div>
             <div class="form-group"><label for="phone_number">電話番号</label><input type="text" id="phone_number" name="phone_number"></div>
+            <div class="form-group"><label for="fax_number">FAX番号</label><input type="text" id="fax_number" name="fax_number"></div>
             <div class="form-group"><label for="email">Email</label><input type="email" id="email" name="email" required></div>
             <div class="form-group"><label for="login_id">会員ログインID</label><input type="text" id="login_id" name="login_id" required></div>
             <div class="form-group">
@@ -61,15 +101,18 @@
             <div class="form-group" style="margin-top:-0.8rem; color:#6b7280; font-size:0.92rem;">
                 <span id="password-status">ログイン設定を確認中...</span>
             </div>
-            <div class="form-group"><label for="staff_name">担当者</label><input type="text" id="staff_name" name="staff_name"></div>
-            <div class="form-group"><label for="staff_mobile">担当者携帯</label><input type="text" id="staff_mobile" name="staff_mobile"></div>
-            <div class="form-group"><label for="staff_email">担当者メルアド</label><input type="email" id="staff_email" name="staff_email"></div>
+            <div class="form-group">
+                <label>担当者情報（複数）</label>
+                <div id="contacts-list"></div>
+                <button type="button" id="add-contact-btn" class="contact-add-btn">+ 担当者を追加</button>
+            </div>
             <div class="form-group"><label for="biko">備考</label><textarea id="biko" name="biko"></textarea></div>
             <div class="form-actions">
                 <button type="button" id="cancel-btn" class="btn btn-cancel">キャンセル</button>
                 <button type="submit" class="btn btn-submit">更新</button>
             </div>
         </form>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./admin-auth.js"></script>
@@ -83,6 +126,19 @@
     const passwordStatus = document.getElementById('password-status');
     const memberPasswordInput = document.getElementById('member_password');
     const memberPasswordToggle = document.getElementById('member-password-toggle');
+    const contactsList = document.getElementById('contacts-list');
+    const addContactBtn = document.getElementById('add-contact-btn');
+    const backToMemberLink = document.getElementById('back-to-member');
+
+    // URLからid取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const memberId = urlParams.get('id');
+    if (memberId && backToMemberLink) {
+        backToMemberLink.href = `admin-members.html?id=${memberId}`;
+    }
+    let originalLoginId = '';
+    let loginRpcAvailable = true;
+    let contactIndex = 0;
 
     memberPasswordToggle?.addEventListener('click', () => {
         const isPassword = memberPasswordInput?.type === 'password';
@@ -105,6 +161,45 @@
             : 'パスワード未設定です。';
     }
 
+    function isRlsPolicyError(error) {
+        const msg = String(error?.message || '');
+        return msg.includes('row-level security policy') || msg.includes('permission denied');
+    }
+
+    function addContactRow(contact = null) {
+        const idx = contactIndex++;
+        const row = document.createElement('div');
+        row.className = 'contact-row';
+        row.dataset.idx = idx;
+        const num = contactsList.children.length + 1;
+        row.innerHTML = `
+            <div class="contact-head">
+                <span class="contact-label">担当者 ${num}</span>
+                <div class="contact-actions">
+                    <label><input type="radio" name="primary_contact" value="${idx}" ${contact?.is_primary ? 'checked' : ''}> 主担当</label>
+                    <button type="button" class="contact-del-btn">削除</button>
+                </div>
+            </div>
+            <div class="form-group"><label>担当者名</label><input type="text" name="contact_name[]" value="${contact?.name || ''}"></div>
+            <div class="form-group"><label>担当者携帯</label><input type="text" name="contact_phone[]" value="${contact?.phone || ''}"></div>
+            <div class="form-group"><label>担当者メール</label><input type="email" name="contact_email[]" value="${contact?.email || ''}"></div>
+        `;
+        row.querySelector('.contact-del-btn').addEventListener('click', () => {
+            if (contactsList.children.length <= 1) return;
+            const wasPrimary = row.querySelector('input[type=radio]').checked;
+            row.remove();
+            [...contactsList.children].forEach((r, i) => {
+                r.querySelector('.contact-label').textContent = `担当者 ${i + 1}`;
+            });
+            if (wasPrimary && contactsList.children.length > 0) {
+                contactsList.children[0].querySelector('input[type=radio]').checked = true;
+            }
+        });
+        contactsList.appendChild(row);
+    }
+
+    addContactBtn?.addEventListener('click', () => addContactRow({ is_primary: false }));
+
     cancelBtn?.addEventListener('click', async () => {
         const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
         if (!accepted) return;
@@ -113,69 +208,122 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+        if (!memberId) {
+            window.cidmAdminUi.showToast('IDが指定されていません。', 'error', 3000);
+            form.style.display = 'none';
+            return;
+        }
+
+        const { data, error } = await supabaseClient.from('member').select('*').eq('id', memberId).single();
+        if (error || !data) {
+            window.cidmAdminUi.showToast('データ取得に失敗しました。', 'error', 3000);
+            form.style.display = 'none';
+            return;
+        }
+
+        form.member_type.value = data.member_type || '';
+        form.division_flag.value = data.division_flag || '会員';
+        form.cidm_role.value = data.cidm_role || '';
+        form.company_name.value = data.company_name || '';
+        form.representative_name.value = data.representative_name || '';
+        form.zip_code.value = data.zip_code || '';
+        form.address.value = data.address || '';
+        form.phone_number.value = data.phone_number || '';
+        form.fax_number.value = data.fax_number || '';
+        form.email.value = data.email || '';
+        form.biko.value = data.biko || '';
+        form.login_id.value = data.login_id || '';
+        originalLoginId = data.login_id || '';
+
+        const { data: contactData } = await supabaseClient
+            .from('member_contacts')
+            .select('id, name, phone, email, is_primary, sort_order')
+            .eq('member_id', memberId)
+            .order('sort_order', { ascending: true });
+
+        contactsList.innerHTML = '';
+        if (Array.isArray(contactData) && contactData.length > 0) {
+            contactData.forEach(c => addContactRow(c));
+        } else {
+            addContactRow({
+                name: data.staff_name || '',
+                phone: data.staff_mobile || '',
+                email: data.staff_email || '',
+                is_primary: true
+            });
+        }
+
+        if (!form.querySelector('input[name=primary_contact]:checked') && contactsList.children.length > 0) {
+            contactsList.children[0].querySelector('input[name=primary_contact]').checked = true;
+        }
+
+        const { data: loginSettings, error: loginSettingsError } = await supabaseClient.rpc('cidm_get_member_login_settings', {
+            p_member_id: memberId
+        });
+        if (!loginSettingsError && Array.isArray(loginSettings) && loginSettings[0]) {
+            form.login_id.value = loginSettings[0].login_id || '';
+            originalLoginId = loginSettings[0].login_id || '';
+            renderPasswordStatus(loginSettings[0]);
+        } else {
+            if (loginSettingsError && String(loginSettingsError.message || '').includes('admin access required')) {
+                loginRpcAvailable = false;
+                passwordStatus.textContent = '認証バイパス中のためログイン情報は更新できません。';
+                form.login_id.required = false;
+                form.login_id.readOnly = true;
+                form.login_id.title = '認証バイパス中のため編集できません';
+                memberPasswordInput.disabled = true;
+                memberPasswordToggle.disabled = true;
+                memberPasswordToggle.style.opacity = '0.55';
+                memberPasswordToggle.style.cursor = 'default';
+            }
+            renderPasswordStatus(null);
+        }
     });
 
-    // URLからid取得
-    const urlParams = new URLSearchParams(window.location.search);
-    const memberId = urlParams.get('id');
-    if (!memberId) {
-        window.cidmAdminUi.showToast('IDが指定されていません。', 'error', 3000);
-        form.style.display = 'none';
-    } else {
-        (async () => {
-            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
-            if (!ok) return;
-            const { data, error } = await supabaseClient.from('member').select('*').eq('id', memberId).single();
-            if (error || !data) {
-                window.cidmAdminUi.showToast('データ取得に失敗しました。', 'error', 3000);
-                form.style.display = 'none';
-                return;
-            }
-            form.company_name.value = data.company_name || '';
-            form.representative_name.value = data.representative_name || '';
-            form.zip_code.value = data.zip_code || '';
-            form.address.value = data.address || '';
-            form.phone_number.value = data.phone_number || '';
-            form.email.value = data.email || '';
-            form.staff_name.value = data.staff_name || '';
-            form.staff_mobile.value = data.staff_mobile || '';
-            form.staff_email.value = data.staff_email || '';
-            form.biko.value = data.biko || '';
-
-            const { data: loginSettings, error: loginSettingsError } = await supabaseClient.rpc('cidm_get_member_login_settings', {
-                p_member_id: memberId
-            });
-            if (!loginSettingsError && Array.isArray(loginSettings) && loginSettings[0]) {
-                form.login_id.value = loginSettings[0].login_id || '';
-                renderPasswordStatus(loginSettings[0]);
-            } else {
-                renderPasswordStatus(null);
-            }
-        })();
-    }
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
             const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
-            if (!ok) return;
-            if (!memberId) return;
+            if (!ok || !memberId) return;
+
+            const contactRows = [...contactsList.querySelectorAll('.contact-row')];
+            const primaryIdxVal = parseInt(form.querySelector('input[name=primary_contact]:checked')?.value ?? '-1', 10);
+            const contacts = contactRows.map((row, i) => ({
+                name: row.querySelector('input[name="contact_name[]"]').value.trim() || null,
+                phone: row.querySelector('input[name="contact_phone[]"]').value.trim() || null,
+                email: row.querySelector('input[name="contact_email[]"]').value.trim() || null,
+                is_primary: parseInt(row.dataset.idx, 10) === primaryIdxVal,
+                sort_order: i
+            })).filter(c => c.name || c.phone || c.email);
+
+            if (contacts.length === 0) {
+                window.cidmAdminUi.showToast('担当者を1名以上入力してください。', 'error', 2600);
+                return;
+            }
+
+            const primaryContact = contacts.find(c => c.is_primary) || contacts[0];
 
             const updateData = {
+                division_flag: form.division_flag.value || '会員',
+                member_type: form.member_type.value || null,
+                cidm_role: form.cidm_role.value.trim() || null,
                 company_name: form.company_name.value.trim(),
                 representative_name: form.representative_name.value.trim(),
                 zip_code: form.zip_code.value.trim(),
                 address: form.address.value.trim(),
                 phone_number: form.phone_number.value.trim(),
+                fax_number: form.fax_number.value.trim() || null,
                 email: form.email.value.trim(),
-                staff_name: form.staff_name.value.trim(),
-                staff_mobile: form.staff_mobile.value.trim(),
-                staff_email: form.staff_email.value.trim(),
+                staff_name: primaryContact.name,
+                staff_mobile: primaryContact.phone,
+                staff_email: primaryContact.email,
                 biko: form.biko.value.trim()
             };
+
             const loginId = form.login_id.value.trim();
             const memberPassword = form.member_password.value.trim();
 
-            if (!updateData.company_name || !updateData.representative_name || !updateData.email || !loginId) {
+            if (!updateData.company_name || !updateData.representative_name || !updateData.email || (loginRpcAvailable && !loginId)) {
                 window.cidmAdminUi.showToast('必須項目を入力してください。', 'error', 2200);
                 return;
             }
@@ -190,14 +338,48 @@
                 return;
             }
 
-            const { data: updatedLoginSettings, error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
-                p_member_id: memberId,
-                p_login_id: loginId,
-                p_password: memberPassword || null
-            });
-            if (loginError) {
-                window.cidmAdminUi.showToast('基本情報は更新しましたが、ログイン情報の更新に失敗しました: ' + loginError.message, 'error', 4200);
-                return;
+            let updatedLoginSettings = null;
+            const shouldUpdateLogin = loginRpcAvailable && (loginId !== originalLoginId || !!memberPassword);
+            if (!loginRpcAvailable && (loginId !== originalLoginId || !!memberPassword)) {
+                window.cidmAdminUi.showToast('認証バイパス中のためログイン情報の更新はスキップしました。', 'info', 2800);
+            }
+            if (shouldUpdateLogin) {
+                const { data: loginData, error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
+                    p_member_id: memberId,
+                    p_login_id: loginId,
+                    p_password: memberPassword || null
+                });
+                if (loginError) {
+                    window.cidmAdminUi.showToast('基本情報は更新しましたが、ログイン情報の更新に失敗しました: ' + loginError.message, 'error', 4200);
+                    return;
+                }
+                updatedLoginSettings = loginData;
+                originalLoginId = loginId;
+            }
+
+            let canSyncContacts = true;
+            const { error: delError } = await supabaseClient.from('member_contacts').delete().eq('member_id', memberId);
+            if (delError) {
+                if (isRlsPolicyError(delError)) {
+                    canSyncContacts = false;
+                    window.cidmAdminUi.showToast('認証バイパス中のため担当者テーブル同期はスキップしました。', 'info', 2800);
+                } else {
+                    window.cidmAdminUi.showToast('担当者情報の更新準備に失敗しました: ' + delError.message, 'error', 3600);
+                    return;
+                }
+            }
+
+            if (canSyncContacts) {
+                const payload = contacts.map(c => ({ ...c, member_id: memberId }));
+                const { error: insError } = await supabaseClient.from('member_contacts').insert(payload);
+                if (insError) {
+                    if (isRlsPolicyError(insError)) {
+                        window.cidmAdminUi.showToast('認証バイパス中のため担当者テーブル同期はスキップしました。', 'info', 2800);
+                    } else {
+                        window.cidmAdminUi.showToast('担当者情報の更新に失敗しました: ' + insError.message, 'error', 3600);
+                        return;
+                    }
+                }
             }
 
             if (Array.isArray(updatedLoginSettings) && updatedLoginSettings[0]) {
@@ -209,5 +391,7 @@
         }, '更新中...');
     });
     </script>
+
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
 </body>
 </html>

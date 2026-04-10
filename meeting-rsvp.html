@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会議出欠回答 | CIDM</title>
+    <link href="./output.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { min-height:100vh; font-family:'Noto Sans JP',sans-serif; color:#0f172a; background: radial-gradient(circle at 20% 10%, #dbeafe, #f8fafc 45%, #e2e8f0 100%); }
+        .wrap { max-width:780px; margin:0 auto; padding:2rem 1rem 3rem; }
+        .card { background:#fff; border:1px solid #e2e8f0; border-radius:1rem; box-shadow:0 12px 30px rgba(15,23,42,0.08); overflow:hidden; }
+        .head { padding:1.2rem 1.2rem 1rem; background:#0f172a; color:#f8fafc; }
+        .head p { font-size:.72rem; letter-spacing:.15em; color:#93c5fd; text-transform:uppercase; font-weight:700; margin-bottom:.3rem; }
+        .head h1 { font-size:1.3rem; }
+        .body { padding:1.2rem; }
+        .event { border:1px solid #e2e8f0; background:#f8fafc; border-radius:.8rem; padding:.9rem; margin-bottom:1rem; }
+        .label { font-size:.72rem; color:#64748b; text-transform:uppercase; letter-spacing:.08em; font-weight:700; margin-bottom:.15rem; }
+        .value { margin-bottom:.7rem; font-size:.94rem; color:#0f172a; }
+        .group { margin-bottom:.9rem; }
+        .radio-row { display:flex; gap:.9rem; flex-wrap:wrap; }
+        .radio-chip { border:1px solid #cbd5e1; background:#fff; border-radius:9999px; padding:.45rem .8rem; display:inline-flex; align-items:center; gap:.35rem; }
+        textarea { width:100%; min-height:92px; border:1px solid #cbd5e1; border-radius:.6rem; padding:.65rem .75rem; }
+        .actions { margin-top:1rem; display:flex; justify-content:flex-end; }
+        .btn { border:none; border-radius:.6rem; padding:.6rem 1rem; font-weight:700; cursor:pointer; background:linear-gradient(135deg,#2563eb,#4f46e5); color:#fff; }
+        .msg { margin:.8rem 0; padding:.65rem .8rem; border-radius:.6rem; font-size:.86rem; }
+        .msg.error { background:#fee2e2; color:#b91c1c; border:1px solid #fecaca; }
+        .msg.success { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="card">
+            <div class="head">
+                <p>RSVP</p>
+                <h1>会議出欠フォーム</h1>
+            </div>
+            <div class="body">
+                <div id="status-area"></div>
+                <div class="event" id="event-info">読み込み中...</div>
+                <form id="rsvp-form" style="display:none;">
+                    <div class="group">
+                        <div class="label">出欠</div>
+                        <div class="radio-row">
+                            <label class="radio-chip"><input type="radio" name="response_status" value="出席"> 出席</label>
+                            <label class="radio-chip"><input type="radio" name="response_status" value="欠席"> 欠席</label>
+                            <label class="radio-chip"><input type="radio" name="response_status" value="検討中"> 検討中</label>
+                        </div>
+                    </div>
+                    <div class="group">
+                        <div class="label">メモ（任意）</div>
+                        <textarea id="memo" name="memo" placeholder="補足があればご記入ください"></textarea>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" class="btn" id="submit-btn">回答を送信</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+    const supabaseClient = window.supabase.createClient(
+        'https://uhhhifbotqidqeceqyis.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q'
+    );
+
+    const form = document.getElementById('rsvp-form');
+    const eventInfo = document.getElementById('event-info');
+    const statusArea = document.getElementById('status-area');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function getToken() {
+        const p = new URLSearchParams(window.location.search);
+        return p.get('token') || '';
+    }
+
+    function setMessage(text, type) {
+        statusArea.innerHTML = `<div class="msg ${type}">${text}</div>`;
+    }
+
+    function renderEvent(inv) {
+        eventInfo.innerHTML = `
+            <div class="label">対象者</div>
+            <div class="value">${inv.company_name || ''} ${inv.staff_name ? '(' + inv.staff_name + ')' : ''}</div>
+            <div class="label">イベント名</div>
+            <div class="value">${inv.event_name || ''}</div>
+            <div class="label">開催日時</div>
+            <div class="value">${inv.starts_at ? new Date(inv.starts_at).toLocaleString('ja-JP') : ''}</div>
+            <div class="label">場所/接続情報</div>
+            <div class="value">${inv.location_info || ''}</div>
+            <div class="label">イベント内容</div>
+            <div class="value">${inv.event_description || ''}</div>
+        `;
+
+        const status = inv.response_status || '未回答';
+        const radio = form.querySelector(`input[name="response_status"][value="${status}"]`);
+        if (radio) radio.checked = true;
+        document.getElementById('memo').value = inv.memo || '';
+    }
+
+    async function loadInvite() {
+        const token = getToken();
+        if (!token) {
+            setMessage('URLが不正です（token がありません）。', 'error');
+            eventInfo.textContent = 'URLを確認してください。';
+            return;
+        }
+
+        const { data, error } = await supabaseClient.rpc('cidm_get_meeting_invite_by_token', { p_token: token });
+        if (error || !Array.isArray(data) || !data[0]) {
+            setMessage('招待情報を取得できませんでした。URLが無効の可能性があります。', 'error');
+            eventInfo.textContent = 'URLを確認してください。';
+            return;
+        }
+
+        renderEvent(data[0]);
+        form.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const token = getToken();
+        const selected = form.querySelector('input[name="response_status"]:checked')?.value;
+        const memo = document.getElementById('memo').value.trim();
+
+        if (!selected) {
+            setMessage('出欠を選択してください。', 'error');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '送信中...';
+
+        const { data, error } = await supabaseClient.rpc('cidm_submit_meeting_response', {
+            p_token: token,
+            p_response_status: selected,
+            p_memo: memo || null
+        });
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = '回答を送信';
+
+        if (error || !Array.isArray(data) || !data[0]?.success) {
+            const msg = error?.message || data?.[0]?.message || '送信失敗';
+            setMessage('回答の送信に失敗しました: ' + msg, 'error');
+            return;
+        }
+
+        setMessage('回答を受け付けました。ありがとうございます。', 'success');
+    });
+
+    loadInvite();
+    </script>
+</body>
+</html>

@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.send-contact-mail]
 verify_jwt = false
+
+[functions.send-meeting-invite-mail]
+verify_jwt = false

@@ -31,6 +31,9 @@
         /* New button */
         .btn-new { display:inline-flex; align-items:center; gap:0.5rem; background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; border:none; padding:0.65rem 1.4rem; border-radius:9999px; font-size:0.84rem; font-weight:700; cursor:pointer; text-decoration:none; transition:opacity 0.15s, transform 0.12s; }
         .btn-new:hover { opacity:0.88; transform:translateY(-1px); }
+        .filter-bar { margin-top:0.4rem; display:flex; gap:1rem; align-items:center; color:#94a3b8; font-size:0.84rem; }
+        .filter-chip { display:inline-flex; align-items:center; gap:0.45rem; border:1px solid #334155; border-radius:9999px; padding:0.35rem 0.75rem; background:#1e293b; }
+        .filter-chip input[type=checkbox] { accent-color:#3b82f6; }
 
         /* Table card */
         .table-card { background:#1e293b; border:1px solid #334155; border-radius:1rem; overflow:hidden; }
@@ -61,6 +64,11 @@
             <div class="left">
                 <p class="eyebrow">Member Management</p>
                 <h1>会員一覧</h1>
+                <div class="filter-bar">
+                    <span>区分:</span>
+                    <label class="filter-chip"><input type="checkbox" id="division-member" checked> 会員</label>
+                    <label class="filter-chip"><input type="checkbox" id="division-related" checked> 関係者</label>
+                </div>
             </div>
             <a href="admin-member-new.html" class="btn-new"><i class="fa-solid fa-user-plus"></i> 新規追加</a>
         </div>
@@ -69,14 +77,18 @@
             <table class="member-table">
                 <thead>
                     <tr>
+                        <th>区分</th>
+                        <th>会員種別</th>
                         <th>会社名</th>
-                        <th>担当者名</th>
-                        <th>担当者携帯</th>
+                        <th>CIDM役職</th>
+                        <th>主担当者名</th>
+                        <th>主担当携帯</th>
+                        <th>主担当メール</th>
                         <th>備考</th>
                     </tr>
                 </thead>
                 <tbody id="members-tbody">
-                    <tr><td colspan="4" style="text-align:center; color:#475569; padding:2rem;">読み込み中...</td></tr>
+                    <tr><td colspan="8" style="text-align:center; color:#475569; padding:2rem;">読み込み中...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -88,6 +100,7 @@
     <script src="./admin-ui.js"></script>
     <script>
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+    let allMembers = [];
 
     function renderLoadingRows() {
         const cell = window.cidmAdminUi.getSkeletonLine('100%', '0.9rem');
@@ -97,30 +110,93 @@
                 <td>${cell}</td>
                 <td>${cell}</td>
                 <td>${cell}</td>
+                <td>${cell}</td>
+                <td>${cell}</td>
+                <td>${cell}</td>
+                <td>${cell}</td>
             </tr>
         `).join('');
+    }
+
+    function renderMembers(data) {
+        const tbody = document.getElementById('members-tbody');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888;">該当する会員データはありません</td></tr>`;
+            return;
+        }
+
+        const roleRank = {
+            '理事長': 1,
+            '理事長代理': 2,
+            '副理事長': 3,
+            '常務': 4,
+            '理事': 5,
+            '監事': 6,
+            '顧問': 7,
+            '事務局長': 8,
+            'アドバイザリーボード': 9
+        };
+        const memberTypeRank = {
+            '正会員': 1,
+            '準会員': 2,
+            '賛助会員': 3,
+            '賛助': 3
+        };
+
+        const sorted = [...data].sort((a, b) => {
+            const aRole = roleRank[a.cidm_role || ''] ?? 99;
+            const bRole = roleRank[b.cidm_role || ''] ?? 99;
+            if (aRole !== bRole) return aRole - bRole;
+
+            const aType = memberTypeRank[a.member_type || ''] ?? 99;
+            const bType = memberTypeRank[b.member_type || ''] ?? 99;
+            if (aType !== bType) return aType - bType;
+
+            return String(a.company_name || '').localeCompare(String(b.company_name || ''), 'ja');
+        });
+
+        tbody.innerHTML = sorted.map(item => `
+            <tr style="cursor:pointer;" data-member-id="${item.id}">
+                <td>${item.division_flag || '会員'}</td>
+                <td>${item.member_type || ''}</td>
+                <td><span class="company-name">${item.company_name || ''}</span></td>
+                <td>${item.cidm_role || ''}</td>
+                <td>${item.staff_name || ''}</td>
+                <td><span class="sub-text">${item.staff_mobile || ''}</span></td>
+                <td><span class="sub-text">${item.staff_email || ''}</span></td>
+                <td><span class="sub-text">${item.biko || ''}</span></td>
+            </tr>
+        `).join('');
+    }
+
+    function applyDivisionFilterAndRender() {
+        const includeMember = document.getElementById('division-member')?.checked;
+        const includeRelated = document.getElementById('division-related')?.checked;
+        const filtered = allMembers.filter((item) => {
+            const division = item.division_flag || '会員';
+            if (division === '会員') return includeMember;
+            if (division === '関係者') return includeRelated;
+            return includeMember;
+        });
+        renderMembers(filtered);
     }
 
     async function loadMembers() {
         const tbody = document.getElementById('members-tbody');
         tbody.innerHTML = renderLoadingRows();
-        const { data, error } = await supabaseClient.from('member').select('id, company_name, staff_name, staff_mobile, biko').order('company_name', { ascending: true });
+        const { data, error } = await supabaseClient
+            .from('member')
+            .select('id, division_flag, member_type, company_name, cidm_role, staff_name, staff_mobile, staff_email, biko');
         if (error) {
-            tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
             return;
         }
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
             return;
         }
-        tbody.innerHTML = data.map(item => `
-            <tr style="cursor:pointer;" data-member-id="${item.id}">
-                <td><span class="company-name">${item.company_name || ''}</span></td>
-                <td>${item.staff_name || ''}</td>
-                <td><span class="sub-text">${item.staff_mobile || ''}</span></td>
-                <td><span class="sub-text">${item.biko || ''}</span></td>
-            </tr>
-        `).join('');
+        allMembers = data;
+        applyDivisionFilterAndRender();
     }
 
     document.getElementById('members-tbody')?.addEventListener('click', (event) => {
@@ -134,6 +210,8 @@
     document.addEventListener('DOMContentLoaded', async () => {
         const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
         if (!ok) return;
+        document.getElementById('division-member')?.addEventListener('change', applyDivisionFilterAndRender);
+        document.getElementById('division-related')?.addEventListener('change', applyDivisionFilterAndRender);
         loadMembers();
     });
     </script>

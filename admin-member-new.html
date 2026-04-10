@@ -74,15 +74,24 @@
                     <p class="section-label"><i class="fa-solid fa-building"></i> 会社情報</p>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1rem;">
                         <div class="form-group">
+                            <label for="division_flag">区分</label>
+                            <select id="division_flag" name="division_flag">
+                                <option value="会員" selected>会員</option>
+                                <option value="関係者">関係者</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label for="member_type">会員種別</label>
                             <select id="member_type" name="member_type">
                                 <option value="">-- 未設定 --</option>
                                 <option value="役員">役員</option>
                                 <option value="正会員">正会員</option>
+                                <option value="準会員">準会員</option>
+                                <option value="賛助">賛助会員</option>
                             </select>
                         </div>
-                        <div class="form-group"><label for="cidm_role">CIDM役職</label><input type="text" id="cidm_role" name="cidm_role" placeholder="副理事長, 理事, 監事 等"></div>
                     </div>
+                    <div class="form-group"><label for="cidm_role">CIDM役職</label><input type="text" id="cidm_role" name="cidm_role" placeholder="副理事長, 理事, 監事 等"></div>
                     <div class="form-group"><label for="company_name">会社名 <span style="color:#f87171">*</span></label><input type="text" id="company_name" name="company_name" required></div>
                     <div class="form-group"><label for="representative_name">責任者名 <span style="color:#f87171">*</span></label><input type="text" id="representative_name" name="representative_name" required></div>
                     <div class="form-group"><label for="zip_code">郵便番号</label><input type="text" id="zip_code" name="zip_code" placeholder="000-0000"></div>
@@ -105,7 +114,6 @@
                     </div>
                 </div>
                 <div class="form-section">
-                    <p class="section-label"><i class="fa-solid fa-user"></i> 担当者情報</p>
                     <p class="section-label"><i class="fa-solid fa-users"></i> 担当者情報</p>
                     <div id="contacts-list"></div>
                     <button type="button" id="add-contact-btn" class="contact-add-btn"><i class="fa-solid fa-plus"></i> 担当者を追加</button>
@@ -211,6 +219,7 @@
             const primaryContact = contacts.find(c => c.is_primary) || contacts[0] || {};
 
             const data = {
+                division_flag:       form.division_flag.value || '会員',
                 member_type:         form.member_type.value || null,
                 cidm_role:           form.cidm_role.value.trim() || null,
                 company_name:        form.company_name.value.trim(),
@@ -250,9 +259,14 @@
                 p_password: initialPassword
             });
             if (loginError) {
-                await supabaseClient.from('member').delete().eq('id', insertedMember.id);
-                window.cidmAdminUi.showToast('ログイン情報の登録に失敗しました: ' + loginError.message, 'error', 3600);
-                return;
+                const loginMessage = String(loginError.message || '');
+                if (loginMessage.includes('admin access required')) {
+                    window.cidmAdminUi.showToast('認証バイパス中のためログイン情報の登録はスキップしました。', 'info', 2800);
+                } else {
+                    await supabaseClient.from('member').delete().eq('id', insertedMember.id);
+                    window.cidmAdminUi.showToast('ログイン情報の登録に失敗しました: ' + loginError.message, 'error', 3600);
+                    return;
+                }
             }
 
             // 担当者登録
@@ -266,7 +280,7 @@
             }
 
             window.cidmAdminUi.showToast('登録が完了しました。', 'success', 900);
-            setTimeout(() => { window.location.href = 'admin-members.html'; }, 500);
+            setTimeout(() => { window.location.href = 'admin-member-list.html'; }, 500);
         }, '登録中...');
     });
     </script>

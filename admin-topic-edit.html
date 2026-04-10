@@ -35,6 +35,14 @@
         .btn-submit:hover { opacity:0.88; }
         .btn-cancel { background:transparent; color:#64748b; border:1px solid #334155; }
         .btn-cancel:hover { background:#263347; color:#cbd5e1; border-color:#475569; }
+        .file-picker { display:flex; align-items:center; gap:0.7rem; flex-wrap:wrap; }
+        .file-help { font-size:0.74rem; color:#64748b; margin-top:0.4rem; }
+        .attach-list { margin-top:0.65rem; display:flex; flex-direction:column; gap:0.45rem; }
+        .attach-item { display:flex; align-items:center; justify-content:space-between; gap:0.6rem; border:1px solid #334155; background:#0f172a; border-radius:0.55rem; padding:0.45rem 0.6rem; }
+        .attach-item a { color:#93c5fd; text-decoration:none; font-size:0.82rem; overflow-wrap:anywhere; }
+        .attach-item a:hover { text-decoration:underline; }
+        .attach-remove { border:1px solid #7f1d1d; background:#2d1b1b; color:#fecaca; border-radius:0.45rem; padding:0.25rem 0.5rem; font-size:0.72rem; font-weight:700; cursor:pointer; }
+        .attach-remove:hover { background:#7f1d1d; color:#fff; }
         .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#334155; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #1e293b; }
     </style>
 </head>
@@ -70,8 +78,21 @@
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="details">詳細内容</label>
+                    <label for="details">概要</label>
                     <textarea id="details" name="details" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="detail_text">詳細</label>
+                    <textarea id="detail_text" name="detail_text"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="attachments">添付ファイル（PDF・画像・動画）</label>
+                    <div class="file-picker">
+                        <input type="file" id="attachments" name="attachments" multiple accept=".pdf,image/*,video/*">
+                    </div>
+                    <div class="file-help">添付可能: PDF / 画像 / 動画。50MBを超える場合はアップロードに失敗することがあります。</div>
+                    <div id="existing-attachments" class="attach-list"></div>
+                    <div id="new-attachments" class="attach-list"></div>
                 </div>
                 <div class="form-actions">
                     <button type="button" id="cancel-btn" class="btn btn-cancel">キャンセル</button>
@@ -89,6 +110,85 @@
     const form = document.getElementById('topic-form');
     const cancelBtn = document.getElementById('cancel-btn');
     const submitBtn = form.querySelector('.btn-submit');
+    const attachmentInput = document.getElementById('attachments');
+    const existingAttachmentsEl = document.getElementById('existing-attachments');
+    const newAttachmentsEl = document.getElementById('new-attachments');
+    const ALLOWED_MIME_PREFIX = ['image/', 'video/'];
+    const ALLOWED_MIME_EXACT = ['application/pdf'];
+    const ALLOWED_EXT = ['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.mp4', '.mov', '.avi', '.wmv', '.mkv'];
+    const STORAGE_BUCKET = 'meeting-report-assets';
+
+    let existingAttachmentUrls = [];
+    let selectedFiles = [];
+
+    function escapeHtml(v) {
+        return String(v || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function getFileNameFromUrl(url) {
+        try {
+            const path = new URL(url).pathname;
+            return decodeURIComponent(path.split('/').pop() || url);
+        } catch {
+            return url;
+        }
+    }
+
+    function isAllowedFile(file) {
+        const type = String(file.type || '').toLowerCase();
+        if (ALLOWED_MIME_EXACT.includes(type)) return true;
+        if (ALLOWED_MIME_PREFIX.some((p) => type.startsWith(p))) return true;
+        const lowerName = String(file.name || '').toLowerCase();
+        return ALLOWED_EXT.some((ext) => lowerName.endsWith(ext));
+    }
+
+    function renderExistingAttachments() {
+        if (!existingAttachmentsEl) return;
+        if (!existingAttachmentUrls.length) {
+            existingAttachmentsEl.innerHTML = '';
+            return;
+        }
+        existingAttachmentsEl.innerHTML = existingAttachmentUrls.map((url, idx) => `
+            <div class="attach-item">
+                <a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(getFileNameFromUrl(url))}</a>
+                <button type="button" class="attach-remove" data-remove-existing="${idx}">削除</button>
+            </div>
+        `).join('');
+    }
+
+    function renderNewAttachments() {
+        if (!newAttachmentsEl) return;
+        if (!selectedFiles.length) {
+            newAttachmentsEl.innerHTML = '';
+            return;
+        }
+        newAttachmentsEl.innerHTML = selectedFiles.map((file, idx) => `
+            <div class="attach-item">
+                <span style="font-size:0.82rem; color:#cbd5e1;">${escapeHtml(file.name)}</span>
+                <button type="button" class="attach-remove" data-remove-new="${idx}">削除</button>
+            </div>
+        `).join('');
+    }
+
+    async function uploadSelectedFiles() {
+        const uploadedUrls = [];
+        for (const file of selectedFiles) {
+            const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+            const path = `topics/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+            const { error } = await supabaseClient.storage.from(STORAGE_BUCKET).upload(path, file, { upsert: false });
+            if (error) {
+                throw new Error(`添付ファイルのアップロードに失敗しました: ${error.message}`);
+            }
+            const { data } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+            uploadedUrls.push(data.publicUrl);
+        }
+        return uploadedUrls;
+    }
 
     cancelBtn?.addEventListener('click', async () => {
         const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
@@ -98,6 +198,41 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+    });
+
+    attachmentInput?.addEventListener('change', (event) => {
+        const files = Array.from(event.target.files || []);
+        if (!files.length) {
+            selectedFiles = [];
+            renderNewAttachments();
+            return;
+        }
+        const invalid = files.find((file) => !isAllowedFile(file));
+        if (invalid) {
+            window.cidmAdminUi.showToast(`対応していないファイル形式です: ${invalid.name}`, 'error', 2600);
+            attachmentInput.value = '';
+            return;
+        }
+        selectedFiles = files;
+        renderNewAttachments();
+    });
+
+    existingAttachmentsEl?.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-remove-existing]');
+        if (!btn) return;
+        const idx = Number(btn.getAttribute('data-remove-existing'));
+        if (!Number.isInteger(idx)) return;
+        existingAttachmentUrls.splice(idx, 1);
+        renderExistingAttachments();
+    });
+
+    newAttachmentsEl?.addEventListener('click', (event) => {
+        const btn = event.target.closest('button[data-remove-new]');
+        if (!btn) return;
+        const idx = Number(btn.getAttribute('data-remove-new'));
+        if (!Number.isInteger(idx)) return;
+        selectedFiles.splice(idx, 1);
+        renderNewAttachments();
     });
 
     // URLからid取得
@@ -118,12 +253,16 @@
                 const event_date = form.event_date.value;
                 const is_visible = form.is_visible.value === 'true';
                 const details = form.details.value.trim();
+                const detail_text = form.detail_text.value.trim() || null;
                 if (!title || !event_date || !details) {
                     window.cidmAdminUi.showToast('全ての項目を入力してください。', 'error', 2200);
                     return;
                 }
 
-                const { error } = await supabaseClient.from('meeting_reports').insert([{ title, event_date, is_visible, details }]);
+                const uploadedUrls = await uploadSelectedFiles();
+                const attachment_urls = [...existingAttachmentUrls, ...uploadedUrls];
+
+                const { error } = await supabaseClient.from('meeting_reports').insert([{ title, event_date, is_visible, details, detail_text, attachment_urls }]);
                 if (error) {
                     window.cidmAdminUi.showToast('登録に失敗しました: ' + error.message, 'error', 3000);
                 } else {
@@ -147,6 +286,9 @@
             form.event_date.value = data.event_date || '';
             form.is_visible.value = data.is_visible ? 'true' : 'false';
             form.details.value = data.details || '';
+            form.detail_text.value = data.detail_text || '';
+            existingAttachmentUrls = Array.isArray(data.attachment_urls) ? data.attachment_urls : [];
+            renderExistingAttachments();
         })();
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -158,12 +300,16 @@
                 const event_date = form.event_date.value;
                 const is_visible = form.is_visible.value === 'true';
                 const details = form.details.value.trim();
+                const detail_text = form.detail_text.value.trim() || null;
                 if (!title || !event_date || !details) {
                     window.cidmAdminUi.showToast('全ての項目を入力してください。', 'error', 2200);
                     return;
                 }
 
-                const { error } = await supabaseClient.from('meeting_reports').update({ title, event_date, is_visible, details }).eq('id', topicId);
+                const uploadedUrls = await uploadSelectedFiles();
+                const attachment_urls = [...existingAttachmentUrls, ...uploadedUrls];
+
+                const { error } = await supabaseClient.from('meeting_reports').update({ title, event_date, is_visible, details, detail_text, attachment_urls }).eq('id', topicId);
                 if (error) {
                     window.cidmAdminUi.showToast('更新に失敗しました: ' + error.message, 'error', 3000);
                 } else {

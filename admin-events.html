@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会議イベント管理 | 管理者ポータル</title>
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background:#0f172a; color:#cbd5e1; font-family:'Noto Sans JP',sans-serif; min-height:100vh; display:flex; flex-direction:column; }
+        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:64px; border-bottom:1px solid #1e293b; }
+        .brand { display:flex; align-items:center; gap:.75rem; text-decoration:none; }
+        .brand-icon { width:36px; height:36px; border-radius:9px; background:linear-gradient(135deg,#3b82f6,#6366f1); display:flex; align-items:center; justify-content:center; color:#fff; }
+        .brand-text { font-size:.78rem; color:#94a3b8; letter-spacing:.1em; text-transform:uppercase; font-weight:700; }
+        .brand-text span { display:block; color:#f1f5f9; font-size:.9rem; letter-spacing:.04em; }
+        .header-back { display:inline-flex; align-items:center; gap:.4rem; color:#64748b; text-decoration:none; font-size:.78rem; font-weight:700; border:1px solid #334155; border-radius:9999px; padding:.3rem .9rem; }
+        .header-back:hover { color:#93c5fd; border-color:#3b82f6; }
+        .admin-body { flex:1; max-width:1120px; width:100%; margin:0 auto; padding:2rem 1.25rem 3rem; }
+        .page-head { margin-bottom:1.2rem; }
+        .eyebrow { font-size:.7rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#3b82f6; margin-bottom:.3rem; }
+        h1 { font-size:1.6rem; color:#f1f5f9; }
+        .grid { display:grid; grid-template-columns: 360px 1fr; gap:1rem; align-items:start; }
+        .card { background:#1e293b; border:1px solid #334155; border-radius:1rem; }
+        .card h2 { font-size:1rem; color:#e2e8f0; margin-bottom:.8rem; }
+        .form-card { padding:1.1rem; }
+        .form-group { margin-bottom:.9rem; }
+        label { display:block; margin-bottom:.3rem; font-size:.75rem; color:#94a3b8; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }
+        input, textarea, select { width:100%; border:1px solid #334155; background:#0f172a; color:#e2e8f0; border-radius:.6rem; padding:.62rem .76rem; font-size:.88rem; }
+        textarea { min-height:80px; resize:vertical; }
+        .target-mode { display:grid; grid-template-columns:1fr; gap:.55rem; margin-bottom:.7rem; }
+        .target-mode label { width:100%; display:flex; align-items:center; justify-content:flex-start; gap:1em; border:1px solid #334155; border-radius:9999px; padding:.5rem .85rem; background:#0f172a; font-size:.82rem; color:#cbd5e1; text-transform:none; letter-spacing:0; font-weight:500; margin:0; text-align:left; }
+        .target-mode label input[type="radio"] { width:auto; flex:0 0 auto; margin:0; }
+        .target-box { border:1px solid #334155; border-radius:.7rem; background:#0f172a; padding:.65rem; margin-bottom:.8rem; }
+        .target-box h3 { font-size:.78rem; color:#93c5fd; margin-bottom:.45rem; font-weight:700; letter-spacing:.06em; }
+        .check-wrap { display:flex; flex-wrap:wrap; gap:.45rem .6rem; max-height:170px; overflow:auto; }
+        .check-wrap label { display:inline-flex; align-items:center; gap:.35rem; font-size:.78rem; color:#cbd5e1; text-transform:none; letter-spacing:0; font-weight:500; margin:0; }
+        .check-wrap label input[type="checkbox"] { width:auto; flex:0 0 auto; margin:0; }
+        #manual-member-list { display:flex; flex-direction:column; flex-wrap:nowrap; gap:.42rem; }
+        #manual-member-list label { width:100%; display:flex; align-items:flex-start; justify-content:flex-start; gap:1em; font-size:.82rem; }
+        #manual-member-list label input[type="checkbox"] { margin-top:.18rem; }
+        #manual-member-list .member-text { min-width:0; line-height:1.35; white-space:normal; overflow-wrap:anywhere; }
+        .member-search { margin-bottom:.5rem; }
+        .member-search input { font-size:.82rem; }
+        .muted-note { color:#64748b; font-size:.76rem; margin-top:.3rem; }
+        .btn { border:none; border-radius:.6rem; padding:.58rem 1rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:.35rem; }
+        .btn-primary { background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; }
+        .btn-secondary { background:transparent; color:#94a3b8; border:1px solid #334155; }
+        .btn-danger { background:transparent; color:#fca5a5; border:1px solid #7f1d1d; }
+        .btn-danger:hover { background:#7f1d1d; color:#fff; }
+        .list-card { overflow:hidden; }
+        .list-head { padding:1rem 1rem .8rem; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; }
+        .events-table { width:100%; border-collapse:collapse; }
+        .events-table th { text-align:left; font-size:.72rem; color:#64748b; letter-spacing:.1em; text-transform:uppercase; background:#0f172a; padding:.75rem .8rem; border-bottom:1px solid #334155; }
+        .events-table td { padding:.72rem .8rem; border-bottom:1px solid #263347; font-size:.85rem; color:#cbd5e1; }
+        .events-table tr:hover td { background:#263347; }
+        .status-badge { font-size:.7rem; padding:.22rem .52rem; border-radius:9999px; border:1px solid #334155; color:#93c5fd; }
+        .empty { text-align:center; color:#64748b; padding:1rem; }
+        .admin-footer { text-align:center; padding:1rem; color:#334155; font-size:.68rem; border-top:1px solid #1e293b; }
+        @media (max-width: 980px) { .grid { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <a href="admin-portal.html" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="brand-text">CIDM <span>管理者ポータル</span></div>
+        </a>
+        <a href="admin-portal.html" class="header-back"><i class="fa-solid fa-chevron-left"></i> ポータルへ戻る</a>
+    </header>
+
+    <div class="admin-body">
+        <div class="page-head">
+            <p class="eyebrow">Meeting Events</p>
+            <h1><i class="fa-solid fa-calendar-days"></i> 会議イベント管理</h1>
+        </div>
+
+        <div class="grid">
+            <div class="card form-card">
+                <h2>イベント作成</h2>
+                <form id="event-form">
+                    <div class="form-group">
+                        <label for="event_name">イベント名 *</label>
+                        <input id="event_name" name="event_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="starts_at">開催日時 *</label>
+                        <input id="starts_at" name="starts_at" type="datetime-local" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="location_info">場所/オンライン接続情報 *</label>
+                        <textarea id="location_info" name="location_info" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="event_description">イベント内容</label>
+                        <textarea id="event_description" name="event_description"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>配信種別 *</label>
+                        <div class="target-mode">
+                            <label><input type="radio" name="delivery_mode" value="rsvp" checked> 出欠確認あり</label>
+                            <label><input type="radio" name="delivery_mode" value="notice"> 案内のみ（出欠回答なし）</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>対象者 *</label>
+                        <div class="target-mode">
+                            <label><input type="radio" name="target_mode" value="manual" checked> 会員一覧から個別選択</label>
+                            <label><input type="radio" name="target_mode" value="filter"> 条件指定（種別/区分/CIDM役職）</label>
+                        </div>
+
+                        <div id="target-manual" class="target-box">
+                            <h3>会員一覧から選択</h3>
+                            <div class="member-search"><input id="member-search" placeholder="会社名/担当者名で絞り込み"></div>
+                            <div class="check-wrap" id="manual-member-list"></div>
+                            <div class="muted-note">複数選択可。0件だと作成できません。</div>
+                        </div>
+
+                        <div id="target-filter" class="target-box" style="display:none;">
+                            <h3>条件指定</h3>
+                            <div class="form-group" style="margin-bottom:.6rem;">
+                                <label style="margin-bottom:.25rem;">区分</label>
+                                <div class="check-wrap" id="filter-division"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:.6rem;">
+                                <label style="margin-bottom:.25rem;">会員種別</label>
+                                <div class="check-wrap" id="filter-member-type"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <label style="margin-bottom:.25rem;">CIDM役職</label>
+                                <div class="check-wrap" id="filter-cidm-role"></div>
+                            </div>
+                            <div class="muted-note">いずれか1項目以上を選択してください（AND条件）。</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="target_note">対象者メモ（任意）</label>
+                        <input id="target_note" name="target_note" placeholder="例: 本部担当者のみ">
+                    </div>
+                    <div class="form-group">
+                        <label for="invite_mail_body">招待メール本文（編集可）</label>
+                        <textarea id="invite_mail_body" name="invite_mail_body"></textarea>
+                        <div class="muted-note">宛名、イベント情報、回答URLは自動追記されます。ここは前文として利用されます。</div>
+                    </div>
+                    <button class="btn btn-primary" type="submit" id="event-submit"><i class="fa-solid fa-plus"></i> 作成する</button>
+                </form>
+            </div>
+
+            <div class="card list-card">
+                <div class="list-head">
+                    <h2>イベント一覧</h2>
+                    <button class="btn btn-secondary" id="reload-events"><i class="fa-solid fa-rotate"></i> 再読込</button>
+                </div>
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>イベント名</th>
+                            <th>開催日時</th>
+                            <th>対象</th>
+                            <th>回答状況</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="events-tbody">
+                        <tr><td colspan="5" class="empty">読み込み中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./admin-auth.js"></script>
+    <script src="./admin-ui.js"></script>
+    <script>
+    const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+    const form = document.getElementById('event-form');
+    const submitBtn = document.getElementById('event-submit');
+    let memberMaster = [];
+    const DEFAULT_INVITE_MAIL_BODY = [
+        'いつも、一般社団法人車両情報活用研究所へのご理解とご協力を賜り心からお礼申し上げます。',
+        'さて下記のイベントについてご案内申し上げますので、出欠を下のURLからご回答くださいますようにお願いいたします。',
+        '大変お忙しい中かとは存じますが、何卒ご出席を賜りますよう、宜しくお願い致します。'
+    ].join('\n');
+
+    function escapeHtml(v) {
+        return String(v || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function uniqueNonEmpty(values) {
+        return [...new Set(values.map((v) => String(v || '').trim()).filter(Boolean))];
+    }
+
+    function renderFilterCheckboxes(containerId, name, values) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        if (!values || values.length === 0) {
+            el.innerHTML = '<span style="color:#64748b;font-size:.78rem;">選択肢なし</span>';
+            return;
+        }
+        el.innerHTML = values.map((v) => `<label><input type="checkbox" name="${name}" value="${escapeHtml(v)}"> ${escapeHtml(v)}</label>`).join('');
+    }
+
+    function renderManualMembers(items) {
+        const wrap = document.getElementById('manual-member-list');
+        if (!wrap) return;
+        if (!items || items.length === 0) {
+            wrap.innerHTML = '<span style="color:#64748b;font-size:.78rem;">対象データなし</span>';
+            return;
+        }
+        wrap.innerHTML = items.map((m) => {
+            const label = `${m.company_name || ''}${m.staff_name ? ' / ' + m.staff_name : ''}`;
+            return `<label><input type="checkbox" name="manual_member_id" value="${m.id}"><span class="member-text">${escapeHtml(label)}</span></label>`;
+        }).join('');
+    }
+
+    function getCheckedValues(name) {
+        return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map((el) => el.value);
+    }
+
+    function updateTargetModeUI() {
+        const mode = form.querySelector('input[name="target_mode"]:checked')?.value || 'manual';
+        document.getElementById('target-manual').style.display = mode === 'manual' ? 'block' : 'none';
+        document.getElementById('target-filter').style.display = mode === 'filter' ? 'block' : 'none';
+    }
+
+    function formatDate(v) {
+        if (!v) return '';
+        return new Date(v).toLocaleString('ja-JP');
+    }
+
+    async function loadMemberMaster() {
+        const { data, error } = await supabaseClient
+            .from('member')
+            .select('id, company_name, staff_name, division_flag, member_type, cidm_role')
+            .order('company_name', { ascending: true });
+
+        if (error) {
+            window.cidmAdminUi.showToast('会員マスタ取得に失敗しました: ' + error.message, 'error', 2800);
+            memberMaster = [];
+            renderManualMembers([]);
+            renderFilterCheckboxes('filter-division', 'filter_division', []);
+            renderFilterCheckboxes('filter-member-type', 'filter_member_type', []);
+            renderFilterCheckboxes('filter-cidm-role', 'filter_cidm_role', []);
+            return;
+        }
+
+        memberMaster = data || [];
+        renderManualMembers(memberMaster);
+        renderFilterCheckboxes('filter-division', 'filter_division', uniqueNonEmpty(memberMaster.map((m) => m.division_flag || '会員')));
+        renderFilterCheckboxes('filter-member-type', 'filter_member_type', uniqueNonEmpty(memberMaster.map((m) => m.member_type)));
+        renderFilterCheckboxes('filter-cidm-role', 'filter_cidm_role', uniqueNonEmpty(memberMaster.map((m) => m.cidm_role)));
+    }
+
+    function renderEvents(events) {
+        const tbody = document.getElementById('events-tbody');
+        if (!events || events.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty">イベントはまだありません</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = events.map((e) => {
+            const status = `出席 ${e.attended_count} / 欠席 ${e.absent_count} / 検討中 ${e.considering_count} / 未回答 ${e.pending_count}`;
+            return `
+                <tr>
+                    <td>${e.event_name || ''}</td>
+                    <td>${formatDate(e.starts_at)}</td>
+                    <td><span class="status-badge">${e.target_scope || ''}</span></td>
+                    <td>${status}</td>
+                    <td>
+                        <a class="btn btn-secondary" href="admin-event-responses.html?eventId=${e.event_id}"><i class="fa-solid fa-list-check"></i> 回答一覧</a>
+                        <button type="button" class="btn btn-danger" data-event-delete="${e.event_id}"><i class="fa-solid fa-trash"></i> 削除</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function deleteEvent(eventId, triggerButton) {
+        await window.cidmAdminUi.runWithButtonBusy(triggerButton, async () => {
+            const accepted = await window.cidmAdminUi.showConfirm('このイベントを削除しますか？関連する出欠回答も削除されます。', { confirmText: '削除する' });
+            if (!accepted) return;
+
+            const { error } = await supabaseClient.from('meeting_events').delete().eq('id', eventId);
+            if (error) {
+                window.cidmAdminUi.showToast('イベント削除に失敗しました: ' + error.message, 'error', 3000);
+                return;
+            }
+
+            window.cidmAdminUi.showToast('イベントを削除しました。', 'success', 1200);
+            await loadEvents();
+        }, '削除中...');
+    }
+
+    async function loadEvents() {
+        const tbody = document.getElementById('events-tbody');
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">読み込み中...</td></tr>';
+        const { data, error } = await supabaseClient.rpc('cidm_admin_list_meeting_events');
+        if (error) {
+            tbody.innerHTML = `<tr><td colspan="5" class="empty" style="color:#fca5a5;">取得エラー: ${error.message}</td></tr>`;
+            return;
+        }
+        renderEvents(data || []);
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
+            const targetMode = form.querySelector('input[name="target_mode"]:checked')?.value || 'manual';
+            const selectedMemberIds = getCheckedValues('manual_member_id');
+            const selectedDivisions = getCheckedValues('filter_division');
+            const selectedMemberTypes = getCheckedValues('filter_member_type');
+            const selectedRoles = getCheckedValues('filter_cidm_role');
+
+            if (targetMode === 'manual' && selectedMemberIds.length === 0) {
+                window.cidmAdminUi.showToast('対象者を1件以上選択してください。', 'error', 2200);
+                return;
+            }
+            if (targetMode === 'filter' && selectedDivisions.length === 0 && selectedMemberTypes.length === 0 && selectedRoles.length === 0) {
+                window.cidmAdminUi.showToast('条件指定モードでは1項目以上選択してください。', 'error', 2400);
+                return;
+            }
+
+            const targetScope = targetMode === 'manual' ? '個別選択' : '条件指定';
+            const targetNoteParts = [];
+            if (targetMode === 'manual') {
+                targetNoteParts.push(`個別選択 ${selectedMemberIds.length}件`);
+            } else {
+                if (selectedDivisions.length) targetNoteParts.push(`区分:${selectedDivisions.join(' / ')}`);
+                if (selectedMemberTypes.length) targetNoteParts.push(`種別:${selectedMemberTypes.join(' / ')}`);
+                if (selectedRoles.length) targetNoteParts.push(`役職:${selectedRoles.join(' / ')}`);
+            }
+
+            const payload = {
+                p_event_name: form.event_name.value.trim(),
+                p_event_description: form.event_description.value.trim() || null,
+                p_starts_at: new Date(form.starts_at.value).toISOString(),
+                p_location_info: form.location_info.value.trim(),
+                p_delivery_mode: form.querySelector('input[name="delivery_mode"]:checked')?.value || 'rsvp',
+                p_target_scope: targetScope,
+                p_target_note: [form.target_note.value.trim(), ...targetNoteParts].filter(Boolean).join(' | ') || null,
+                p_invite_mail_body: (form.invite_mail_body.value || '').trim() || null,
+                p_target_mode: targetMode,
+                p_member_ids: targetMode === 'manual' ? selectedMemberIds : null,
+                p_division_flags: targetMode === 'filter' ? selectedDivisions : null,
+                p_member_types: targetMode === 'filter' ? selectedMemberTypes : null,
+                p_cidm_roles: targetMode === 'filter' ? selectedRoles : null
+            };
+
+            if (!payload.p_event_name || !payload.p_starts_at || !payload.p_location_info) {
+                window.cidmAdminUi.showToast('必須項目を入力してください。', 'error', 2200);
+                return;
+            }
+
+            const { data, error } = await supabaseClient.rpc('cidm_create_meeting_event', payload);
+            if (error) {
+                window.cidmAdminUi.showToast('作成に失敗しました: ' + error.message, 'error', 3200);
+                return;
+            }
+
+            window.cidmAdminUi.showToast('イベントを作成しました。', 'success', 1200);
+            form.reset();
+            if (form.querySelector('input[name="target_mode"][value="manual"]')) {
+                form.querySelector('input[name="target_mode"][value="manual"]').checked = true;
+            }
+            if (form.querySelector('input[name="delivery_mode"][value="rsvp"]')) {
+                form.querySelector('input[name="delivery_mode"][value="rsvp"]').checked = true;
+            }
+            updateTargetModeUI();
+            renderManualMembers(memberMaster);
+            renderFilterCheckboxes('filter-division', 'filter_division', uniqueNonEmpty(memberMaster.map((m) => m.division_flag || '会員')));
+            renderFilterCheckboxes('filter-member-type', 'filter_member_type', uniqueNonEmpty(memberMaster.map((m) => m.member_type)));
+            renderFilterCheckboxes('filter-cidm-role', 'filter_cidm_role', uniqueNonEmpty(memberMaster.map((m) => m.cidm_role)));
+            form.invite_mail_body.value = DEFAULT_INVITE_MAIL_BODY;
+            await loadEvents();
+            if (data) {
+                window.location.href = `admin-event-responses.html?eventId=${data}`;
+            }
+        }, '作成中...');
+    });
+
+    document.getElementById('member-search')?.addEventListener('input', (e) => {
+        const q = String(e.target.value || '').trim().toLowerCase();
+        if (!q) {
+            renderManualMembers(memberMaster);
+            return;
+        }
+        const filtered = memberMaster.filter((m) => {
+            const label = `${m.company_name || ''} ${m.staff_name || ''}`.toLowerCase();
+            return label.includes(q);
+        });
+        renderManualMembers(filtered);
+    });
+
+    form.querySelectorAll('input[name="target_mode"]').forEach((el) => {
+        el.addEventListener('change', updateTargetModeUI);
+    });
+
+    document.getElementById('reload-events')?.addEventListener('click', loadEvents);
+
+    document.getElementById('events-tbody')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-event-delete]');
+        if (!btn) return;
+        const eventId = btn.getAttribute('data-event-delete');
+        if (!eventId) return;
+        deleteEvent(eventId, btn);
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+        if (!ok) return;
+        form.invite_mail_body.value = DEFAULT_INVITE_MAIL_BODY;
+        await loadMemberMaster();
+        updateTargetModeUI();
+        loadEvents();
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会議回答一覧 | 管理者ポータル</title>
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background:#0f172a; color:#cbd5e1; font-family:'Noto Sans JP',sans-serif; min-height:100vh; display:flex; flex-direction:column; }
+        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:64px; border-bottom:1px solid #1e293b; }
+        .brand { display:flex; align-items:center; gap:.75rem; text-decoration:none; }
+        .brand-icon { width:36px; height:36px; border-radius:9px; background:linear-gradient(135deg,#3b82f6,#6366f1); display:flex; align-items:center; justify-content:center; color:#fff; }
+        .brand-text { font-size:.78rem; color:#94a3b8; letter-spacing:.1em; text-transform:uppercase; font-weight:700; }
+        .brand-text span { display:block; color:#f1f5f9; font-size:.9rem; letter-spacing:.04em; }
+        .header-back { display:inline-flex; align-items:center; gap:.4rem; color:#64748b; text-decoration:none; font-size:.78rem; font-weight:700; border:1px solid #334155; border-radius:9999px; padding:.3rem .9rem; }
+        .header-back:hover { color:#93c5fd; border-color:#3b82f6; }
+        .admin-body { flex:1; max-width:1180px; width:100%; margin:0 auto; padding:2rem 1.25rem 3rem; }
+        .title { font-size:1.5rem; color:#f1f5f9; margin-bottom:.7rem; }
+        .meta { color:#94a3b8; font-size:.85rem; margin-bottom:1rem; }
+        .actions { display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem; }
+        .btn { border:none; border-radius:.55rem; padding:.5rem .9rem; font-size:.8rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; }
+        .btn-primary { background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; }
+        .btn-secondary { background:transparent; color:#93c5fd; border:1px solid #334155; }
+        .btn:disabled { opacity:.6; cursor:not-allowed; }
+        .card { background:#1e293b; border:1px solid #334155; border-radius:1rem; overflow:hidden; }
+        .table { width:100%; border-collapse:collapse; }
+        .table th { text-align:left; font-size:.72rem; color:#64748b; letter-spacing:.1em; text-transform:uppercase; background:#0f172a; padding:.72rem .7rem; border-bottom:1px solid #334155; }
+        .table td { padding:.72rem .7rem; border-bottom:1px solid #263347; font-size:.85rem; vertical-align:top; }
+        .table tr:hover td { background:#263347; }
+        .badge { padding:.2rem .48rem; border-radius:9999px; font-size:.72rem; border:1px solid #334155; }
+        .badge-yes { color:#86efac; border-color:#14532d; background:#052e16; }
+        .badge-no { color:#fca5a5; border-color:#7f1d1d; background:#450a0a; }
+        .badge-pending { color:#93c5fd; border-color:#1d4ed8; background:#172554; }
+        .badge-hold { color:#fcd34d; border-color:#92400e; background:#451a03; }
+        .memo { color:#94a3b8; max-width:280px; white-space:pre-wrap; }
+        .url-btn { border:1px solid #334155; background:transparent; color:#93c5fd; border-radius:.45rem; padding:.25rem .55rem; cursor:pointer; font-size:.75rem; }
+        .url-btn:hover { background:#1e3a52; }
+        .empty { text-align:center; color:#64748b; padding:1rem; }
+        .sub-title { font-size:1rem; color:#e2e8f0; margin:1.2rem 0 .6rem; }
+        .hint { color:#64748b; font-size:.78rem; margin-bottom:.6rem; }
+        .admin-footer { text-align:center; padding:1rem; color:#334155; font-size:.68rem; border-top:1px solid #1e293b; }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <a href="admin-portal.html" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="brand-text">CIDM <span>管理者ポータル</span></div>
+        </a>
+        <a href="admin-events.html" class="header-back"><i class="fa-solid fa-chevron-left"></i> イベント一覧へ戻る</a>
+    </header>
+
+    <div class="admin-body">
+        <h1 class="title" id="event-title">会議回答一覧</h1>
+        <div class="meta" id="event-meta">読み込み中...</div>
+        <div class="actions">
+            <button type="button" class="btn btn-primary" id="send-all-mails"><i class="fa-solid fa-paper-plane"></i> 全員へ一括送信</button>
+            <button type="button" class="btn btn-secondary" id="send-pending-mails"><i class="fa-solid fa-hourglass-half"></i> 未回答者のみ送信</button>
+        </div>
+
+        <div class="card">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>区分</th>
+                        <th>会員種別</th>
+                        <th>会社名</th>
+                        <th>主担当者</th>
+                        <th>回答</th>
+                        <th>メモ</th>
+                        <th>回答日時</th>
+                        <th>URL</th>
+                    </tr>
+                </thead>
+                <tbody id="invite-tbody">
+                    <tr><td colspan="8" class="empty">読み込み中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="sub-title">送信履歴</h2>
+        <div class="hint">最新50件を表示します。</div>
+        <div class="card">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>送信日時</th>
+                        <th>送信モード</th>
+                        <th>会社名</th>
+                        <th>担当者</th>
+                        <th>メール</th>
+                        <th>結果</th>
+                        <th>エラー</th>
+                    </tr>
+                </thead>
+                <tbody id="mail-log-tbody">
+                    <tr><td colspan="7" class="empty">読み込み中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./admin-auth.js"></script>
+    <script src="./admin-ui.js"></script>
+    <script>
+    const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+    let currentInvites = [];
+    let currentEvent = null;
+
+    function getEventId() {
+        const p = new URLSearchParams(window.location.search);
+        return p.get('eventId');
+    }
+
+    function buildRsvpUrl(token) {
+        const url = new URL(window.location.href);
+        url.pathname = url.pathname.replace('admin-event-responses.html', 'meeting-rsvp.html');
+        url.search = '?token=' + encodeURIComponent(token);
+        return url.toString();
+    }
+
+    function responseBadge(status) {
+        if (status === '出席') return '<span class="badge badge-yes">出席</span>';
+        if (status === '欠席') return '<span class="badge badge-no">欠席</span>';
+        if (status === '検討中') return '<span class="badge badge-hold">検討中</span>';
+        return '<span class="badge badge-pending">未回答</span>';
+    }
+
+    function setBulkSendButtonsDisabled(disabled) {
+        const allBtn = document.getElementById('send-all-mails');
+        const pendingBtn = document.getElementById('send-pending-mails');
+        if (allBtn) allBtn.disabled = disabled;
+        if (pendingBtn) pendingBtn.disabled = disabled;
+    }
+
+    function parseFailureMessage(raw) {
+        if (!raw) return '';
+        try {
+            const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            return parsed?.message || String(raw);
+        } catch {
+            return String(raw);
+        }
+    }
+
+    function modeLabel(mode) {
+        return mode === 'pending' ? '未回答者のみ' : '全員';
+    }
+
+    function statusBadge(status) {
+        if (status === 'success') return '<span class="badge badge-yes">成功</span>';
+        if (status === 'failed') return '<span class="badge badge-no">失敗</span>';
+        return '<span class="badge badge-pending">不明</span>';
+    }
+
+    async function loadMailLogs(eventId) {
+        const tbody = document.getElementById('mail-log-tbody');
+        if (!eventId) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty">eventId が指定されていません</td></tr>';
+            return;
+        }
+
+        const { data, error } = await supabaseClient
+            .from('meeting_invite_mail_logs')
+            .select('sent_at,send_mode,company_name,recipient_name,recipient_email,send_status,error_message')
+            .eq('event_id', eventId)
+            .order('sent_at', { ascending: false })
+            .limit(50);
+
+        if (error) {
+            if (String(error.message || '').toLowerCase().includes('meeting_invite_mail_logs')) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty">送信履歴テーブル未作成です。migration適用後に表示されます。</td></tr>';
+                return;
+            }
+            tbody.innerHTML = `<tr><td colspan="7" class="empty" style="color:#fca5a5;">履歴取得失敗: ${error.message}</td></tr>`;
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty">履歴はまだありません</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.map((r) => `
+            <tr>
+                <td>${r.sent_at ? new Date(r.sent_at).toLocaleString('ja-JP') : ''}</td>
+                <td>${modeLabel(r.send_mode)}</td>
+                <td>${r.company_name || ''}</td>
+                <td>${r.recipient_name || ''}</td>
+                <td>${r.recipient_email || ''}</td>
+                <td>${statusBadge(r.send_status)}</td>
+                <td><div class="memo">${r.error_message || ''}</div></td>
+            </tr>
+        `).join('');
+    }
+
+    async function saveMailLogs(eventId, sendMode, invokeData, recipients) {
+        if (!eventId || !Array.isArray(recipients) || recipients.length === 0) return;
+
+        const results = Array.isArray(invokeData?.results) ? invokeData.results : [];
+        const resultMap = new Map(results.map((r) => [String(r.email || '').toLowerCase(), r]));
+
+        const rows = recipients.map((r) => {
+            const key = String(r.email || '').toLowerCase();
+            const rs = resultMap.get(key);
+            const sendStatus = rs?.success === false ? 'failed' : 'success';
+            return {
+                event_id: eventId,
+                recipient_email: r.email,
+                recipient_name: r.staff_name || null,
+                company_name: r.company_name || null,
+                send_mode: sendMode,
+                send_status: sendStatus,
+                error_message: rs?.success === false ? parseFailureMessage(rs.message) : null,
+                sent_at: new Date().toISOString()
+            };
+        });
+
+        const { error } = await supabaseClient.from('meeting_invite_mail_logs').insert(rows);
+        if (error) {
+            console.warn('failed to save mail logs:', error);
+            return;
+        }
+
+        await loadMailLogs(eventId);
+    }
+
+    async function loadEventAndInvites() {
+        const eventId = getEventId();
+        const tbody = document.getElementById('invite-tbody');
+        if (!eventId) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty">eventId が指定されていません</td></tr>';
+            return;
+        }
+
+        const { data: events, error: eventErr } = await supabaseClient.rpc('cidm_admin_list_meeting_events');
+        if (eventErr) {
+            tbody.innerHTML = `<tr><td colspan="8" class="empty" style="color:#fca5a5;">イベント取得失敗: ${eventErr.message}</td></tr>`;
+            return;
+        }
+
+        const current = (events || []).find((e) => e.event_id === eventId);
+        currentEvent = current || null;
+        if (current) {
+            document.getElementById('event-title').textContent = current.event_name + ' - 回答一覧';
+            document.getElementById('event-meta').textContent =
+                `開催日時: ${new Date(current.starts_at).toLocaleString('ja-JP')} / 対象: ${current.target_scope} / 種別: ${current.delivery_mode === 'notice' ? '案内のみ' : '出欠確認あり'} / 招待: ${current.total_invites}件`;
+        }
+
+        const pendingBtn = document.getElementById('send-pending-mails');
+        if (pendingBtn) {
+            pendingBtn.style.display = current && current.delivery_mode === 'notice' ? 'none' : 'inline-flex';
+        }
+
+        const { data, error } = await supabaseClient.rpc('cidm_admin_list_meeting_invites', { p_event_id: eventId });
+        if (error) {
+            tbody.innerHTML = `<tr><td colspan="8" class="empty" style="color:#fca5a5;">回答取得失敗: ${error.message}</td></tr>`;
+            currentInvites = [];
+            setBulkSendButtonsDisabled(true);
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="empty">対象データがありません</td></tr>';
+            currentInvites = [];
+            setBulkSendButtonsDisabled(true);
+            await loadMailLogs(eventId);
+            return;
+        }
+
+        currentInvites = data;
+        setBulkSendButtonsDisabled(false);
+        await loadMailLogs(eventId);
+
+        tbody.innerHTML = data.map((r) => `
+            <tr>
+                <td>${r.division_flag || '会員'}</td>
+                <td>${r.member_type || ''}</td>
+                <td>${r.company_name || ''}</td>
+                <td>${r.staff_name || ''}</td>
+                <td>${responseBadge(r.response_status)}</td>
+                <td><div class="memo">${r.memo || ''}</div></td>
+                <td>${r.responded_at ? new Date(r.responded_at).toLocaleString('ja-JP') : ''}</td>
+                <td>${currentEvent && currentEvent.delivery_mode === 'notice' ? '<span class="memo">案内のみ</span>' : `<button class="url-btn" data-token="${r.access_token}"><i class="fa-solid fa-link"></i> URLコピー</button>`}</td>
+            </tr>
+        `).join('');
+    }
+
+    async function sendBulkInviteMails(onlyPending) {
+        const eventId = getEventId();
+        if (!currentEvent || !Array.isArray(currentInvites) || currentInvites.length === 0) {
+            window.cidmAdminUi.showToast('送信対象データがありません。', 'error', 1800);
+            return;
+        }
+
+        const recipients = currentInvites
+            .filter((r) => (onlyPending ? r.response_status === '未回答' : true))
+            .filter((r) => !!r.staff_email)
+            .map((r) => ({
+                email: r.staff_email,
+                staff_name: r.staff_name || '',
+                company_name: r.company_name || '',
+                url: buildRsvpUrl(r.access_token)
+            }));
+
+        if (recipients.length === 0) {
+            window.cidmAdminUi.showToast('送信対象のメールアドレスがありません。', 'error', 1800);
+            return;
+        }
+
+        const confirmed = await window.cidmAdminUi.showConfirm(`合計 ${recipients.length} 件へ招待メールを送信します。よろしいですか？`, { confirmText: '送信する' });
+        if (!confirmed) return;
+
+        setBulkSendButtonsDisabled(true);
+        try {
+            const { data, error } = await supabaseClient.functions.invoke('send-meeting-invite-mail', {
+                body: {
+                    event_name: currentEvent.event_name,
+                    event_description: currentEvent.event_description,
+                    starts_at: currentEvent.starts_at,
+                    location_info: currentEvent.location_info,
+                    invite_mail_body: currentEvent.invite_mail_body || null,
+                    delivery_mode: currentEvent.delivery_mode || 'rsvp',
+                    recipients
+                }
+            });
+
+            if (error) {
+                window.cidmAdminUi.showToast('メール送信に失敗しました: ' + error.message, 'error', 3500);
+                return;
+            }
+
+            await saveMailLogs(eventId, onlyPending ? 'pending' : 'all', data, recipients);
+
+            const successCount = Number(data?.successCount || 0);
+            const failedCount = Number(data?.failedCount || 0);
+            if (failedCount > 0) {
+                const firstFailure = data?.failures?.[0];
+                const detail = firstFailure ? parseFailureMessage(firstFailure.message) : '';
+                const message = detail
+                    ? `送信完了: 成功 ${successCount} 件 / 失敗 ${failedCount} 件（${detail}）`
+                    : `送信完了: 成功 ${successCount} 件 / 失敗 ${failedCount} 件`;
+                window.cidmAdminUi.showToast(message, 'error', 5200);
+            } else {
+                window.cidmAdminUi.showToast(`招待メールを ${successCount} 件送信しました。`, 'success', 2200);
+            }
+        } catch (e) {
+            window.cidmAdminUi.showToast('メール送信に失敗しました: ' + (e?.message || e), 'error', 3500);
+        } finally {
+            setBulkSendButtonsDisabled(false);
+        }
+    }
+
+    document.getElementById('invite-tbody')?.addEventListener('click', async (e) => {
+        const btn = e.target.closest('button[data-token]');
+        if (!btn) return;
+        const token = btn.getAttribute('data-token');
+        if (!token) return;
+        const url = buildRsvpUrl(token);
+        try {
+            await navigator.clipboard.writeText(url);
+            window.cidmAdminUi.showToast('回答URLをコピーしました。', 'success', 1200);
+        } catch {
+            window.cidmAdminUi.showToast('コピーに失敗しました。', 'error', 1800);
+        }
+    });
+
+    document.getElementById('send-all-mails')?.addEventListener('click', () => {
+        sendBulkInviteMails(false);
+    });
+
+    document.getElementById('send-pending-mails')?.addEventListener('click', () => {
+        sendBulkInviteMails(true);
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+        if (!ok) return;
+        loadEventAndInvites();
+    });
+    </script>
+</body>
+</html>
