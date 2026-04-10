@@ -75,8 +75,8 @@
             </div>
             <form id="login-form" class="space-y-5">
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Login ID</label>
-                    <input type="text" id="member-id" required class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="member-001">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Login ID / Email</label>
+                    <input type="text" id="member-id" required class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="member-001 または メールアドレス">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
@@ -284,7 +284,7 @@
                 const loginId = document.getElementById('member-id').value.trim();
                 const password = document.getElementById('password').value.trim();
                 if (!loginId || !password) {
-                    window.cidmAdminUi.showToast('ログインIDとパスワードを入力してください。', 'error', 2400);
+                    window.cidmAdminUi.showToast('ログインID/メールアドレスとパスワードを入力してください。', 'error', 2600);
                     return;
                 }
 
@@ -305,7 +305,7 @@
                 }
 
                 if (!member) {
-                    window.cidmAdminUi.showToast('ログインIDまたはパスワードが正しくありません。', 'error', 2800);
+                    window.cidmAdminUi.showToast('ログインID・メールアドレスまたはパスワードが正しくありません。', 'error', 3000);
                     return;
                 }
 

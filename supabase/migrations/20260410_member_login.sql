@@ -34,7 +34,11 @@ begin
         m.company_name,
         m.staff_name
     from public.member as m
-    where lower(m.login_id) = lower(btrim(p_login_id))
+    where (
+            lower(m.login_id) = lower(btrim(p_login_id))
+            or lower(m.email) = lower(btrim(p_login_id))
+                        or lower(m.staff_email) = lower(btrim(p_login_id))
+        )
       and m.password_hash is not null
       and extensions.crypt(p_password, m.password_hash) = m.password_hash
     limit 1;
