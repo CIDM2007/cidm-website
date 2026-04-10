@@ -76,6 +76,7 @@
                             <div class="flex items-center gap-3">
                                 <span class="text-slate-400 text-sm font-serif">〒</span>
                                 <input type="text" name="postal" maxlength="8" required class="w-32 border border-slate-200 px-4 py-3 rounded-xl bg-slate-50/50" placeholder="000-0000">
+                                <button type="button" id="postal-lookup-btn" class="px-4 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200 transition">住所自動入力</button>
                                 <select name="pref" required class="border border-slate-200 px-4 py-3 rounded-xl bg-white text-sm">
                                     <option value="">都道府県を選択</option>
                                     <optgroup label="主要都市">
@@ -162,6 +163,7 @@
 
     <script>
         const SEND_CONTACT_MAIL_URL = 'https://uhhhifbotqidqeceqyis.functions.supabase.co/send-contact-mail';
+        const ZIP_LOOKUP_URL = 'https://zipcloud.ibsnet.co.jp/api/search?zipcode=';
 
         function normalizePhone(formData, prefix) {
             const p1 = String(formData.get(`${prefix}1`) || '').trim();
@@ -171,7 +173,76 @@
             return [p1, p2, p3].filter(Boolean).join('-');
         }
 
+        function normalizePostal(postal) {
+            return String(postal || '').replace(/[^0-9]/g, '');
+        }
+
+        async function lookupAddressByPostal(form) {
+            const postalRaw = String(form.postal.value || '').trim();
+            const postal = normalizePostal(postalRaw);
+            if (postal.length !== 7) {
+                alert('郵便番号は7桁で入力してください。');
+                return;
+            }
+
+            const button = document.getElementById('postal-lookup-btn');
+            if (button) {
+                button.disabled = true;
+                button.textContent = '検索中...';
+            }
+
+            try {
+                const response = await fetch(ZIP_LOOKUP_URL + encodeURIComponent(postal));
+                if (!response.ok) {
+                    throw new Error('郵便番号検索に失敗しました。');
+                }
+
+                const data = await response.json();
+                const result = Array.isArray(data.results) ? data.results[0] : null;
+                if (!result) {
+                    alert('該当する住所が見つかりませんでした。郵便番号をご確認ください。');
+                    return;
+                }
+
+                const pref = String(result.address1 || '').trim();
+                const city = String(result.address2 || '').trim();
+                const town = String(result.address3 || '').trim();
+
+                form.pref.value = pref;
+
+                const currentAddress = String(form.address.value || '').trim();
+                const autoAddress = `${city}${town}`;
+                if (!currentAddress || currentAddress === autoAddress) {
+                    form.address.value = autoAddress;
+                } else if (!currentAddress.startsWith(autoAddress)) {
+                    form.address.value = `${autoAddress}${currentAddress}`;
+                }
+            } catch (error) {
+                console.error('Postal lookup error:', error);
+                alert('住所の自動入力に失敗しました。時間をおいて再度お試しください。');
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = '住所自動入力';
+                }
+            }
+        }
+
         const contactForm = document.getElementById('contact-form');
+        const postalLookupBtn = document.getElementById('postal-lookup-btn');
+
+        postalLookupBtn?.addEventListener('click', () => {
+            if (!contactForm) return;
+            lookupAddressByPostal(contactForm);
+        });
+
+        contactForm?.postal?.addEventListener('blur', () => {
+            const postal = normalizePostal(contactForm.postal.value);
+            if (postal.length === 7) {
+                lookupAddressByPostal(contactForm);
+            }
+        });
+
         contactForm?.addEventListener('submit', async (event) => {
             event.preventDefault();
 
@@ -224,7 +295,7 @@
                     throw new Error(errorText || '送信に失敗しました。');
                 }
 
-                alert('お問い合わせを受け付けました。ありがとうございます。');
+                alert('お問い合わせを受け付けました。\n対応いたしますので、しばらくお待ちください。\nありがとうございます。');
                 form.reset();
             } catch (error) {
                 console.error('Contact submit error:', error);
