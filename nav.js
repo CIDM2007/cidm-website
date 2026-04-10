@@ -29,22 +29,51 @@ function initializeNavigation() {
 
     const memberLink = document.querySelector('[data-member-link]');
     if (memberLink) {
-        memberLink.addEventListener('click', (event) => {
-            if (document.body.dataset.navCurrent === 'home' && typeof window.openLogin === 'function') {
-                event.preventDefault();
-                window.openLogin();
-                return;
-            }
-
-            memberLink.href = 'index.html?memberLogin=1';
+        memberLink.addEventListener('click', () => {
+            memberLink.href = 'member.html';
         });
     }
 
     const menuButton = document.getElementById('menu-btn');
     const mainNavLinks = document.getElementById('main-nav-links');
     if (menuButton && mainNavLinks) {
+        const isDesktop = () => window.matchMedia('(min-width: 1024px)').matches;
+
+        const closeMobileMenu = () => {
+            mainNavLinks.classList.remove('is-open');
+            menuButton.setAttribute('aria-expanded', 'false');
+        };
+
+        const syncMenuState = () => {
+            if (isDesktop()) {
+                mainNavLinks.classList.remove('is-open');
+                menuButton.setAttribute('aria-expanded', 'false');
+            } else {
+                closeMobileMenu();
+            }
+        };
+
         menuButton.addEventListener('click', () => {
-            mainNavLinks.classList.toggle('hidden');
+            if (isDesktop()) {
+                return;
+            }
+
+            const opened = mainNavLinks.classList.toggle('is-open');
+            menuButton.setAttribute('aria-expanded', opened ? 'true' : 'false');
         });
+
+        mainNavLinks.querySelectorAll('a').forEach((link) => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth < 1024) {
+                    closeMobileMenu();
+                }
+            });
+        });
+
+        window.addEventListener('resize', () => {
+            syncMenuState();
+        });
+
+        syncMenuState();
     }
 }

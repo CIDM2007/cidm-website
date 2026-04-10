@@ -43,13 +43,26 @@
         </table>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./admin-auth.js"></script>
+    <script src="./admin-ui.js"></script>
     <script>
-    const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+
+    function renderLoadingRows() {
+        const cell = window.cidmAdminUi.getSkeletonLine('100%', '0.9rem');
+        return Array.from({ length: 6 }).map(() => `
+            <tr>
+                <td>${cell}</td>
+                <td>${cell}</td>
+                <td>${cell}</td>
+                <td>${cell}</td>
+            </tr>
+        `).join('');
+    }
+
     async function loadMembers() {
         const tbody = document.getElementById('members-tbody');
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#888;">読み込み中...</td></tr>';
+        tbody.innerHTML = renderLoadingRows();
         const { data, error } = await supabaseClient.from('member').select('id, company_name, staff_name, staff_mobile, biko').order('company_name', { ascending: true });
         if (error) {
             tbody.innerHTML = `<tr><td colspan="4" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
@@ -60,7 +73,7 @@
             return;
         }
         tbody.innerHTML = data.map(item => `
-            <tr style="cursor:pointer;" onclick="window.location.href='admin-members.html?id=${item.id}'">
+            <tr style="cursor:pointer;" data-member-id="${item.id}">
                 <td>${item.company_name || ''}</td>
                 <td>${item.staff_name || ''}</td>
                 <td>${item.staff_mobile || ''}</td>
@@ -68,7 +81,20 @@
             </tr>
         `).join('');
     }
-    document.addEventListener('DOMContentLoaded', loadMembers);
+
+    document.getElementById('members-tbody')?.addEventListener('click', (event) => {
+        const row = event.target.closest('tr[data-member-id]');
+        if (!row) return;
+        const id = row.getAttribute('data-member-id');
+        if (!id) return;
+        window.location.href = 'admin-members.html?id=' + id;
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+        if (!ok) return;
+        loadMembers();
+    });
     </script>
 </body>
 </html>

@@ -62,9 +62,9 @@
 <body class="bg-white" data-nav-current="home">
     <div id="nav-placeholder"></div>
 
-    <div id="login-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+    <div id="login-modal" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative border border-blue-50">
-            <button onclick="closeLogin()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+            <button id="login-close-btn" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
             <div class="text-center mb-8">
@@ -73,7 +73,7 @@
                 </div>
                 <h3 class="text-2xl font-bold serif text-slate-800">会員ログイン</h3>
             </div>
-            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-5">
+            <form id="login-form" class="space-y-5">
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Member ID</label>
                     <input type="text" id="member-id" required class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="CIDM-XXXXX">
@@ -82,7 +82,7 @@
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
                     <input type="password" id="password" required class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="••••••••">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">ログイン</button>
+                <button id="member-login-btn" type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">ログイン</button>
             </form>
         </div>
     </div>
@@ -91,7 +91,7 @@
     <div id="home" class="page-content active">
             <header class="relative h-[80vh] flex items-center overflow-hidden bg-white">
                 <div class="absolute inset-0 z-0">
-                    <img src="heroimg.png" alt="ヒーロー画像" class="w-full h-full object-cover opacity-90" onerror="this.src='https://images.unsplash.com/photo-1558444458-5f75bc9b6a58?auto=format&fit=crop&q=80&w=2000'">
+                    <img id="hero-image" src="heroimg.png" data-fallback-src="https://images.unsplash.com/photo-1558444458-5f75bc9b6a58?auto=format&fit=crop&q=80&w=2000" alt="ヒーロー画像" class="w-full h-full object-cover opacity-90">
                     <div class="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent"></div>
                 </div>
                 <div class="relative z-10 px-8 lg:px-24 max-w-4xl">
@@ -99,15 +99,15 @@
                         車両情報が拓く、<br><span class="text-blue-600">次世代社会</span>の指針。
                     </h1>
                     <div class="flex flex-wrap gap-4">
-                        <button onclick="location.href='research.html'" class="px-8 py-4 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">活動を見る</button>
-                        <button onclick="location.href='about.html'" class="px-8 py-4 bg-white text-blue-600 border border-blue-100 rounded-full font-bold hover:bg-blue-50 transition shadow-sm">研究所について</button>
+                        <button id="hero-research-btn" class="px-8 py-4 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">活動を見る</button>
+                        <button id="hero-about-btn" class="px-8 py-4 bg-white text-blue-600 border border-blue-100 rounded-full font-bold hover:bg-blue-50 transition shadow-sm">研究所について</button>
                     </div>
                 </div>
             </header>
 
             <section class="py-20 bg-slate-50 border-b border-slate-100">
                 <div class="max-w-4xl mx-auto px-6">
-                    <h2 class="text-3xl font-bold serif text-slate-800 mb-8 text-center">車両情報活用研究所とは</h2>
+                    <h2 class="text-3xl font-bold serif text-slate-800 mb-8 text-center">一般社団法人車両情報活用研究所とは</h2>
                     <p class="text-slate-600 leading-relaxed text-lg text-justify md:text-center">
                         自動車の登録や所有者に関わる車検証情報をはじめ、電子化が進む車両のOBD情報や、リコールに関わる情報など点在する幅広い車両情報に関わる調査や研究を行い、環境や安全、ユーザーの利便性向上といった観点でそれらの情報の利活用することによる新しいビジネスモデルの創出を目指し設立された社団法人です。
                     </p>
@@ -153,57 +153,92 @@
     </footer>
 
     <!-- 管理者ログインモーダル（Supabase Auth用） -->
-    <div id="admin-login-modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:#0008;">
-      <div style="background:#fff; max-width:350px; margin:10vh auto; padding:2rem; border-radius:1rem; box-shadow:0 4px 24px #0003;">
+    <div id="admin-login-modal" role="dialog" aria-modal="true" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:#0008;">
+            <div id="admin-login-dialog" style="background:#fff; max-width:350px; margin:10vh auto; padding:2rem; border-radius:1rem; box-shadow:0 4px 24px #0003;">
         <h2 style="font-size:1.2rem; margin-bottom:1rem;">管理者ログイン</h2>
         <input id="admin-email" type="email" placeholder="メールアドレス" style="width:100%;margin-bottom:1rem;padding:0.5rem;">
         <input id="admin-password" type="password" placeholder="パスワード" style="width:100%;margin-bottom:1rem;padding:0.5rem;">
         <button id="admin-login-btn" style="width:100%;background:#2563eb;color:#fff;padding:0.7rem;border:none;border-radius:0.5rem;">ログイン</button>
-        <div id="admin-login-error" style="color:#e11d48; margin-top:0.7rem; display:none;"></div>
-        <button onclick="document.getElementById('admin-login-modal').style.display='none'" style="margin-top:1rem; background:#eee; border:none; border-radius:0.5rem; width:100%;">閉じる</button>
+                <button id="admin-modal-close-btn" style="margin-top:1rem; background:#eee; border:none; border-radius:0.5rem; width:100%;">閉じる</button>
       </div>
     </div>
 
     <script src="./nav.js" defer></script>
+        <script src="./admin-ui.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         let isLoggedIn = false;
+        let isAdminLoginBusy = false;
         const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co'; 
         const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 
 
+        function openAdminLoginModal() {
+            const modal = document.getElementById('admin-login-modal');
+            if (!modal) return;
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            const emailInput = document.getElementById('admin-email');
+            emailInput?.focus();
+        }
+
+        function closeAdminLoginModal(force = false) {
+            if (isAdminLoginBusy && !force) return;
+            const modal = document.getElementById('admin-login-modal');
+            if (!modal) return;
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+            const emailInput = document.getElementById('admin-email');
+            const passwordInput = document.getElementById('admin-password');
+            if (emailInput) emailInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+        }
+
         // 管理者ログインリンククリックでモーダル表示
         document.getElementById('admin-login-link')?.addEventListener('click', function(e) {
             e.preventDefault();
-            document.getElementById('admin-login-modal').style.display = 'block';
+            openAdminLoginModal();
+        });
+
+        document.getElementById('admin-modal-close-btn')?.addEventListener('click', () => {
+            closeAdminLoginModal();
+        });
+
+        document.getElementById('admin-login-modal')?.addEventListener('click', (event) => {
+            if (event.target.id === 'admin-login-modal') {
+                closeAdminLoginModal();
+            }
         });
 
         // 管理者ログインボタン処理（Supabase Auth）
         document.getElementById('admin-login-btn')?.addEventListener('click', async function() {
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
-            const errorDiv = document.getElementById('admin-login-error');
-            errorDiv.style.display = 'none';
-            if (!email || !password) {
-                errorDiv.textContent = 'メールアドレスとパスワードを入力してください';
-                errorDiv.style.display = 'block';
-                return;
-            }
-            try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                if (error) {
-                    errorDiv.textContent = 'ログイン失敗: ' + error.message;
-                    errorDiv.style.display = 'block';
-                } else {
-                    // ログイン成功時
-                    window.location.href = 'admin-portal.html';
+            const loginButton = document.getElementById('admin-login-btn');
+
+            await window.cidmAdminUi.runWithButtonBusy(loginButton, async () => {
+                isAdminLoginBusy = true;
+                if (!email || !password) {
+                    window.cidmAdminUi.showToast('メールアドレスとパスワードを入力してください', 'error', 2600);
+                    isAdminLoginBusy = false;
+                    return;
                 }
-            } catch (e) {
-                errorDiv.textContent = '通信エラーが発生しました';
-                errorDiv.style.display = 'block';
-            }
+                try {
+                    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                    if (error) {
+                        window.cidmAdminUi.showToast('ログイン失敗: ' + error.message, 'error', 3200);
+                        isAdminLoginBusy = false;
+                    } else {
+                        // ログイン成功時
+                        window.location.href = 'admin-portal.html';
+                    }
+                } catch (e) {
+                    window.cidmAdminUi.showToast('通信エラーが発生しました', 'error', 2800);
+                    isAdminLoginBusy = false;
+                }
+            }, 'ログイン中...');
         });
 
         function showPage(pageId) {
@@ -218,9 +253,37 @@
         }
 
         function checkMemberAccess() { isLoggedIn ? showPage('member') : openLogin(); }
-        function openLogin() { document.getElementById('login-modal').classList.remove('hidden'); document.body.style.overflow = 'hidden'; }
-        function closeLogin() { document.getElementById('login-modal').classList.add('hidden'); document.body.style.overflow = ''; }
-        function handleLogin(e) { e.preventDefault(); isLoggedIn = true; closeLogin(); showPage('member'); }
+        function openLogin() {
+            document.getElementById('login-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            const memberIdInput = document.getElementById('member-id');
+            memberIdInput?.focus();
+        }
+        function closeLogin() {
+            document.getElementById('login-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+            const memberIdInput = document.getElementById('member-id');
+            const passwordInput = document.getElementById('password');
+            if (memberIdInput) memberIdInput.value = '';
+            if (passwordInput) passwordInput.value = '';
+        }
+        async function handleLogin(e) {
+            e.preventDefault();
+            const loginBtn = document.getElementById('member-login-btn');
+            await window.cidmAdminUi.runWithButtonBusy(loginBtn, async () => {
+                const memberId = document.getElementById('member-id').value.trim();
+                const password = document.getElementById('password').value.trim();
+                if (!memberId || !password) {
+                    window.cidmAdminUi.showToast('会員IDとパスワードを入力してください。', 'error', 2400);
+                    return;
+                }
+
+                isLoggedIn = true;
+                sessionStorage.setItem('cidm-member-auth', '1');
+                sessionStorage.setItem('cidm-member-id', memberId);
+                window.location.href = 'member.html';
+            }, 'ログイン中...');
+        }
         function handleLogout() { isLoggedIn = false; showPage('home'); }
 
 
@@ -259,6 +322,63 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('login-close-btn')?.addEventListener('click', closeLogin);
+            document.getElementById('login-form')?.addEventListener('submit', handleLogin);
+            document.getElementById('login-modal')?.addEventListener('click', (event) => {
+                if (event.target.id === 'login-modal') {
+                    closeLogin();
+                }
+            });
+            document.getElementById('hero-research-btn')?.addEventListener('click', () => {
+                window.location.href = 'research.html';
+            });
+            document.getElementById('hero-about-btn')?.addEventListener('click', () => {
+                window.location.href = 'about.html';
+            });
+            document.getElementById('hero-image')?.addEventListener('error', (event) => {
+                const img = event.currentTarget;
+                const fallbackSrc = img.getAttribute('data-fallback-src');
+                if (!fallbackSrc || img.src.includes(fallbackSrc)) return;
+                img.src = fallbackSrc;
+            });
+
+            const memberIdInput = document.getElementById('member-id');
+            const memberPasswordInput = document.getElementById('password');
+            memberIdInput?.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                memberPasswordInput?.focus();
+            });
+
+            const adminEmailInput = document.getElementById('admin-email');
+            const adminPasswordInput = document.getElementById('admin-password');
+            const adminLoginBtn = document.getElementById('admin-login-btn');
+            adminEmailInput?.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                adminPasswordInput?.focus();
+            });
+            adminPasswordInput?.addEventListener('keydown', (event) => {
+                if (event.key !== 'Enter') return;
+                event.preventDefault();
+                adminLoginBtn?.click();
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key !== 'Escape') return;
+
+                const memberModal = document.getElementById('login-modal');
+                if (memberModal && !memberModal.classList.contains('hidden')) {
+                    closeLogin();
+                    return;
+                }
+
+                const adminModal = document.getElementById('admin-login-modal');
+                if (adminModal && adminModal.style.display === 'block') {
+                    closeAdminLoginModal();
+                }
+            });
+
             const initialPage = window.location.hash ? window.location.hash.substring(1) : 'home';
             showPage(initialPage);
             loadNews();

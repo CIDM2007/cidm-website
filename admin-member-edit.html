@@ -34,7 +34,6 @@
         .btn-submit:hover { background: #4b5563; }
         .btn-cancel { background: #e5e7eb; color: #374151; margin-right: 1rem; }
         .btn-cancel:hover { background: #d1d5db; }
-        .msg { margin-bottom: 1rem; color: #e11d48; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -44,7 +43,6 @@
     </div>
     <div class="container">
         <div class="title-bar"><i class="fa-solid fa-user-pen"></i> 会員編集</div>
-        <div id="msg" class="msg" style="display:none;"></div>
         <form id="member-form">
             <div class="form-group"><label for="company_name">会社名</label><input type="text" id="company_name" name="company_name" required></div>
             <div class="form-group"><label for="representative_name">責任者名</label><input type="text" id="representative_name" name="representative_name" required></div>
@@ -57,31 +55,44 @@
             <div class="form-group"><label for="staff_email">担当者メルアド</label><input type="email" id="staff_email" name="staff_email"></div>
             <div class="form-group"><label for="biko">備考</label><textarea id="biko" name="biko"></textarea></div>
             <div class="form-actions">
-                <button type="button" class="btn btn-cancel" onclick="window.history.back()">キャンセル</button>
+                <button type="button" id="cancel-btn" class="btn btn-cancel">キャンセル</button>
                 <button type="submit" class="btn btn-submit">更新</button>
             </div>
         </form>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./admin-auth.js"></script>
+    <script src="./admin-ui.js"></script>
     <script>
-    const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+
     const form = document.getElementById('member-form');
-    const msg = document.getElementById('msg');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const submitBtn = form.querySelector('.btn-submit');
+
+    cancelBtn?.addEventListener('click', async () => {
+        const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
+        if (!accepted) return;
+        window.history.back();
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+    });
+
     // URLからid取得
     const urlParams = new URLSearchParams(window.location.search);
     const memberId = urlParams.get('id');
     if (!memberId) {
-        msg.textContent = 'IDが指定されていません。';
-        msg.style.display = 'block';
+        window.cidmAdminUi.showToast('IDが指定されていません。', 'error', 3000);
         form.style.display = 'none';
     } else {
         (async () => {
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+            if (!ok) return;
             const { data, error } = await supabaseClient.from('member').select('*').eq('id', memberId).single();
             if (error || !data) {
-                msg.textContent = 'データ取得に失敗しました。';
-                msg.style.display = 'block';
+                window.cidmAdminUi.showToast('データ取得に失敗しました。', 'error', 3000);
                 form.style.display = 'none';
                 return;
             }
@@ -99,35 +110,36 @@
     }
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        msg.style.display = 'none';
-        if (!memberId) return;
-        const updateData = {
-            company_name: form.company_name.value.trim(),
-            representative_name: form.representative_name.value.trim(),
-            zip_code: form.zip_code.value.trim(),
-            address: form.address.value.trim(),
-            phone_number: form.phone_number.value.trim(),
-            email: form.email.value.trim(),
-            staff_name: form.staff_name.value.trim(),
-            staff_mobile: form.staff_mobile.value.trim(),
-            staff_email: form.staff_email.value.trim(),
-            biko: form.biko.value.trim()
-        };
-        if (!updateData.company_name || !updateData.representative_name || !updateData.email) {
-            msg.textContent = '必須項目を入力してください。';
-            msg.style.display = 'block';
-            return;
-        }
-        const { error } = await supabaseClient.from('member').update(updateData).eq('id', memberId);
-        if (error) {
-            msg.textContent = '更新に失敗しました: ' + error.message;
-            msg.style.display = 'block';
-        } else {
-            msg.textContent = '更新が完了しました。';
-            msg.style.color = '#22c55e';
-            msg.style.display = 'block';
-            setTimeout(() => { window.location.href = `admin-members.html?id=${memberId}`; }, 1200);
-        }
+        await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+            if (!ok) return;
+            if (!memberId) return;
+
+            const updateData = {
+                company_name: form.company_name.value.trim(),
+                representative_name: form.representative_name.value.trim(),
+                zip_code: form.zip_code.value.trim(),
+                address: form.address.value.trim(),
+                phone_number: form.phone_number.value.trim(),
+                email: form.email.value.trim(),
+                staff_name: form.staff_name.value.trim(),
+                staff_mobile: form.staff_mobile.value.trim(),
+                staff_email: form.staff_email.value.trim(),
+                biko: form.biko.value.trim()
+            };
+            if (!updateData.company_name || !updateData.representative_name || !updateData.email) {
+                window.cidmAdminUi.showToast('必須項目を入力してください。', 'error', 2200);
+                return;
+            }
+
+            const { error } = await supabaseClient.from('member').update(updateData).eq('id', memberId);
+            if (error) {
+                window.cidmAdminUi.showToast('更新に失敗しました: ' + error.message, 'error', 3000);
+            } else {
+                window.cidmAdminUi.showToast('更新が完了しました。', 'success', 900);
+                setTimeout(() => { window.location.href = `admin-members.html?id=${memberId}`; }, 500);
+            }
+        }, '更新中...');
     });
     </script>
 </body>

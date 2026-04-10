@@ -40,6 +40,18 @@
         color: inherit;
     }
 
+    .cidm-brand {
+        line-height: 1.1;
+    }
+
+    .cidm-brand-ja {
+        font-size: 10px;
+        color: #64748b;
+        font-weight: 500;
+        margin-top: 3px;
+        line-height: 1.2;
+    }
+
     .nav-active {
         color: #2563eb;
         font-weight: 700;
@@ -56,29 +68,99 @@
         bottom: -4px;
         left: 0;
     }
+
+    .cidm-nav-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        left: 0;
+        right: 0;
+        z-index: 40;
+        flex-direction: column;
+        gap: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 1rem;
+        background: #ffffff;
+        padding: 1rem;
+        box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
+    }
+
+    .cidm-nav-menu.is-open {
+        display: flex;
+    }
+
+    .cidm-nav-menu .cidm-nav-link {
+        padding: 0.5rem 0;
+    }
+
+    .cidm-nav-menu .cidm-contact-link {
+        display: block;
+        text-align: center;
+        margin-top: 0.25rem;
+    }
+
+    .cidm-menu-btn {
+        color: #1e293b;
+        display: inline-flex;
+    }
+
+    @media (min-width: 1024px) {
+        .cidm-nav-menu {
+            display: flex;
+            position: static;
+            top: auto;
+            left: auto;
+            right: auto;
+            z-index: auto;
+            flex-direction: row;
+            gap: 2rem;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            padding: 0;
+            box-shadow: none;
+            align-items: center;
+        }
+
+        .cidm-nav-menu .cidm-nav-link {
+            padding: 0.25rem 0;
+        }
+
+        .cidm-nav-menu .cidm-contact-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 0;
+            margin-left: 1rem;
+        }
+
+        .cidm-menu-btn {
+            display: none;
+        }
+    }
 </style>
 <nav class="cidm-nav fixed w-full z-50 bg-white/90 backdrop-blur-md border-b border-blue-50 shadow-sm">
     <div class="max-w-7xl mx-auto px-6">
-        <div class="flex justify-between h-20 items-center">
+        <div class="relative flex justify-between h-20 items-center">
             <div class="flex items-center space-x-3 cursor-pointer" onclick="location.href='index.html'">
                 <img src="CIDMchara.png" alt="CIDM Logo" class="w-10 h-10 object-contain" onerror="this.src='https://placehold.jp/24/2563eb/ffffff/200x200.png?text=CIDM'">
-                <div>
+                <div class="cidm-brand">
                     <span class="block font-bold text-lg tracking-wider text-slate-800 leading-none">CIDM</span>
-                    <span class="block text-[8px] text-blue-500 font-bold tracking-tighter uppercase mt-1">Innovative Data & Mobility</span>
+                    <span class="block cidm-brand-ja">一般社団法人車両情報活用研究所</span>
                 </div>
             </div>
 
-            <div id="main-nav-links" class="cidm-nav-links hidden lg:flex items-center space-x-8 text-[12px] tracking-wider">
-                <a href="index.html" data-nav-key="home" class="cidm-nav-link nav-item py-1 transition hover:text-blue-600">ホーム</a>
-                <a href="research.html" data-nav-key="research" class="cidm-nav-link nav-item py-1 transition hover:text-blue-600">研究・事業</a>
-                <a href="archive.html" data-nav-key="archive" class="cidm-nav-link nav-item py-1 transition hover:text-blue-600">お知らせ一覧</a>
-                <a href="about.html" data-nav-key="about" class="cidm-nav-link nav-item py-1 transition hover:text-blue-600">組織概要</a>
-                <a href="join.html" data-nav-key="join" class="cidm-nav-link nav-item py-1 transition hover:text-blue-600">入会案内</a>
-                <a href="index.html?memberLogin=1" data-nav-key="member" data-member-link="true" class="cidm-nav-link cidm-member-link nav-item py-1 transition flex items-center hover:text-blue-600"><i class="fa-solid fa-circle-user mr-1.5 text-sm"></i> 会員サイト</a>
-                <a href="contact.html" class="cidm-contact-link bg-slate-900 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition shadow-lg shadow-slate-200 ml-4">お問い合わせ</a>
+            <div id="main-nav-links" class="cidm-nav-links cidm-nav-menu text-[12px] tracking-wider">
+                <a href="index.html" data-nav-key="home" class="cidm-nav-link nav-item transition hover:text-blue-600">ホーム</a>
+                <a href="research.html" data-nav-key="research" class="cidm-nav-link nav-item transition hover:text-blue-600">研究・事業</a>
+                <a href="archive.html" data-nav-key="archive" class="cidm-nav-link nav-item transition hover:text-blue-600">お知らせ一覧</a>
+                <a href="about.html" data-nav-key="about" class="cidm-nav-link nav-item transition hover:text-blue-600">組織概要</a>
+                <a href="join.html" data-nav-key="join" class="cidm-nav-link nav-item transition hover:text-blue-600">入会案内</a>
+                <a href="member.html" data-nav-key="member" data-member-link="true" class="cidm-nav-link cidm-member-link nav-item transition flex items-center hover:text-blue-600"><i class="fa-solid fa-circle-user mr-1.5 text-sm"></i> 会員サイト</a>
+                <a href="contact.html" class="cidm-contact-link bg-slate-900 text-white px-6 py-3 rounded-full hover:bg-blue-600 transition shadow-lg shadow-slate-200">お問い合わせ</a>
             </div>
 
-            <button id="menu-btn" class="lg:hidden text-slate-800" type="button" aria-label="メニューを開く">
+            <button id="menu-btn" class="cidm-menu-btn" type="button" aria-label="メニューを開く" aria-expanded="false" aria-controls="main-nav-links">
                 <i class="fa-solid fa-bars-staggered text-2xl"></i>
             </button>
         </div>

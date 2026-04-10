@@ -20,7 +20,7 @@
         .logout-btn button:hover { background: #4b5563; }
     </style>
 </head>
-<body data-nav-current="home">
+<body>
     <div id="nav-placeholder"></div>
     <div class="top-bar" style="width:100%;background:#e5e7eb;color:#374151;padding:0.8rem 0;display:flex;justify-content:space-between;align-items:center;font-size:1.1rem;font-weight:bold;letter-spacing:0.05em; margin-top:80px;">
         <span style="margin-left:2rem;">一般社団法人車両情報活用研究所</span>
@@ -35,31 +35,36 @@
             <a href="#" class="admin-link"><i class="fa-solid fa-gear"></i> サイト設定（未定義）</a>
         </div>
         <div class="logout-btn">
-            <button onclick="alert('ログアウトしました'); window.location.href='index.html';"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</button>
+            <button id="logout-btn"><i class="fa-solid fa-right-from-bracket"></i> ログアウト</button>
         </div>
     </div>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./admin-auth.js"></script>
+<script src="./admin-ui.js"></script>
 <script>
-    const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
-    const supabase = supabase || window.supabaseClient || window.supabase;
-    const supabaseClient = supabase?.createClient ? supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : window.supabaseClient;
+    // 必要に応じて管理者アクセス制御を有効化
+    // window.CIDM_ADMIN_AUTH_POLICY = {
+    //     allowedEmails: ['admin@example.com'],
+    //     requireAdminFlag: true
+    // };
+
+    // 必要に応じて管理画面UIテーマを上書き可能
+    // window.CIDM_ADMIN_UI_THEME = {
+    //     toast: { successBg: '#0f766e', errorBg: '#b91c1c' },
+    //     confirm: { confirmBg: '#dc2626', confirmBorder: '#991b1b' },
+    //     skeleton: { colorA: '#e2e8f0', colorB: '#f8fafc', speed: '1.1s' }
+    // };
+
+    const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+
     (async function() {
-        // 認証チェック
-        let user = null;
-        try {
-            const { data } = await (supabaseClient || supabase).auth.getUser();
-            user = data?.user;
-        } catch (e) { user = null; }
-        if (!user) {
-            window.location.href = 'index.html';
-        }
+        await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
     })();
-function openLoginModal(e) {
-    e.preventDefault();
-    alert('会員ログインはトップページ（index.html）から行ってください。');
-    window.location.href = 'index.html';
-}
+
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+        window.cidmAdminUi.showToast('ログアウトしました', 'success', 900);
+        await window.cidmAdminAuth.signOutAndRedirect(supabaseClient);
+    });
 </script>
 </html>

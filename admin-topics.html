@@ -33,7 +33,7 @@
     </div>
     <div class="container">
         <h1><i class="fa-solid fa-newspaper"></i> トピック（おしらせ）管理</h1>
-        <button class="btn btn-new" onclick="window.location.href='admin-topic-edit.html'"><i class="fa-solid fa-plus"></i> 新規作成</button>
+        <button id="topic-new-btn" class="btn btn-new"><i class="fa-solid fa-plus"></i> 新規作成</button>
         <table class="topic-table">
             <thead>
                 <tr>
@@ -48,20 +48,36 @@
         </table>
         <div id="pagination" style="display:flex;justify-content:center;gap:0.5rem;margin-bottom:1.5rem;max-width:600px;margin-left:auto;margin-right:auto;flex-wrap:wrap;"></div>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script src="./admin-auth.js"></script>
+        <script src="./admin-ui.js"></script>
         <script>
-        const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
 
         const PAGE_SIZE = 20;
         let currentPage = 1;
         let totalPages = 1;
         let allData = [];
 
+        function renderLoadingRows() {
+            const short = window.cidmAdminUi.getSkeletonLine('60%', '0.95rem');
+            const mid = window.cidmAdminUi.getSkeletonLine('80%', '0.95rem');
+            const long = window.cidmAdminUi.getSkeletonLine('95%', '2rem');
+            return Array.from({ length: 4 }).map(() => `
+                <tr>
+                    <td>${mid}</td>
+                    <td>${short}</td>
+                    <td>${short}</td>
+                </tr>
+                <tr>
+                    <td colspan="3">${long}</td>
+                </tr>
+            `).join('');
+        }
+
         async function loadTopics(page = 1) {
             const tbody = document.getElementById('topics-tbody');
             const pagination = document.getElementById('pagination');
-            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:#888;">読み込み中...</td></tr>';
+            tbody.innerHTML = renderLoadingRows();
             if (allData.length === 0) {
                 const { data, error } = await supabaseClient.from('meeting_reports').select('*').order('event_date', { ascending: false });
                 if (error) {
@@ -92,7 +108,7 @@
                         <div style="color:#374151; margin-bottom:0.7rem; min-height:3.5em;">${item.details ? item.details.replace(/\n/g, '<br>') : ''}</div>
                         <div class="actions" style="text-align:right;">
                             <a class="btn btn-edit" href="admin-topic-edit.html?id=${item.id}"><i class="fa-solid fa-pen"></i> 編集</a>
-                            <button class="btn btn-delete" onclick="if(confirm('削除しますか？')){alert('削除しました')}"<i class="fa-solid fa-trash"></i> 削除</button>
+                            <button class="btn btn-delete" data-topic-delete="${item.id}"><i class="fa-solid fa-trash"></i> 削除</button>
                         </div>
                     </td>
                 </tr>
@@ -100,7 +116,7 @@
             // ページネーション描画（省略記号対応）
             let pagHtml = '';
             if (totalPages > 1) {
-                pagHtml += `<button class="btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goPage(${currentPage - 1})">前へ</button>`;
+                pagHtml += `<button class="btn" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">前へ</button>`;
                 let pageArr = [];
                 if (totalPages <= 7) {
                     for (let i = 1; i <= totalPages; i++) pageArr.push(i);
@@ -117,10 +133,10 @@
                     if (p === '...') {
                         pagHtml += `<span style="padding:0 0.5em;">...</span>`;
                     } else {
-                        pagHtml += `<button class="btn" style="${p === currentPage ? 'background:#6b7280;color:#fff;' : ''}" onclick="goPage(${p})">${p}</button>`;
+                        pagHtml += `<button class="btn" style="${p === currentPage ? 'background:#6b7280;color:#fff;' : ''}" data-page="${p}">${p}</button>`;
                     }
                 }
-                pagHtml += `<button class="btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goPage(${currentPage + 1})">次へ</button>`;
+                pagHtml += `<button class="btn" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">次へ</button>`;
             }
             pagination.innerHTML = pagHtml;
         }
@@ -129,7 +145,56 @@
             loadTopics(page);
         }
 
-        document.addEventListener('DOMContentLoaded', () => { loadTopics(1); });
+        async function deleteTopic(id, triggerButton) {
+            await window.cidmAdminUi.runWithButtonBusy(triggerButton, async () => {
+                const accepted = await window.cidmAdminUi.showConfirm('削除しますか？', { confirmText: '削除する' });
+                if (!accepted) {
+                    return;
+                }
+                const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+                if (!ok) return;
+
+                const { error } = await supabaseClient.from('meeting_reports').delete().eq('id', id);
+                if (error) {
+                    window.cidmAdminUi.showToast('削除に失敗しました: ' + error.message, 'error', 3000);
+                    return;
+                }
+
+                window.cidmAdminUi.showToast('削除しました', 'success');
+                allData = allData.filter((item) => item.id !== id);
+                totalPages = Math.max(1, Math.ceil(allData.length / PAGE_SIZE));
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+                loadTopics(currentPage);
+            }, '削除中...');
+        }
+
+        document.getElementById('topic-new-btn')?.addEventListener('click', () => {
+            window.location.href = 'admin-topic-edit.html';
+        });
+
+        document.getElementById('topics-tbody')?.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-topic-delete]');
+            if (!button) return;
+            const id = button.getAttribute('data-topic-delete');
+            if (!id) return;
+            deleteTopic(id, button);
+        });
+
+        document.getElementById('pagination')?.addEventListener('click', (event) => {
+            const button = event.target.closest('button[data-page]');
+            if (!button || button.disabled) return;
+            const page = Number(button.getAttribute('data-page'));
+            if (!Number.isFinite(page)) return;
+            goPage(page);
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+            if (!ok) return;
+            loadTopics(1);
+        });
         </script>
     </div>
 </body>

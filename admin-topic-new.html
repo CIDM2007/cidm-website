@@ -22,7 +22,6 @@
         .btn-submit:hover { background: #4b5563; }
         .btn-cancel { background: #e5e7eb; color: #374151; margin-right: 1rem; }
         .btn-cancel:hover { background: #d1d5db; }
-        .msg { margin-bottom: 1rem; color: #e11d48; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -32,7 +31,6 @@
     </div>
     <div class="container">
         <h1><i class="fa-solid fa-plus"></i> トピック新規登録</h1>
-        <div id="msg" class="msg" style="display:none;"></div>
         <form id="topic-form">
             <div class="form-group">
                 <label for="title">タイトル</label>
@@ -54,40 +52,54 @@
                 <textarea id="details" name="details" required></textarea>
             </div>
             <div class="form-actions">
-                <button type="button" class="btn btn-cancel" onclick="window.history.back()">キャンセル</button>
+                <button type="button" id="cancel-btn" class="btn btn-cancel">キャンセル</button>
                 <button type="submit" class="btn btn-submit">登録</button>
             </div>
         </form>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./admin-auth.js"></script>
+    <script src="./admin-ui.js"></script>
     <script>
-    const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+
     const form = document.getElementById('topic-form');
-    const msg = document.getElementById('msg');
+    const cancelBtn = document.getElementById('cancel-btn');
+    const submitBtn = form.querySelector('.btn-submit');
+
+    cancelBtn?.addEventListener('click', async () => {
+        const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
+        if (!accepted) return;
+        window.history.back();
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+    });
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        msg.style.display = 'none';
-        const title = form.title.value.trim();
-        const event_date = form.event_date.value;
-        const is_visible = form.is_visible.value === 'true';
-        const details = form.details.value.trim();
-        if (!title || !event_date || !details) {
-            msg.textContent = '全ての項目を入力してください。';
-            msg.style.display = 'block';
-            return;
-        }
-        const { error } = await supabaseClient.from('meeting_reports').insert([{ title, event_date, is_visible, details }]);
-        if (error) {
-            msg.textContent = '登録に失敗しました: ' + error.message;
-            msg.style.display = 'block';
-        } else {
-            msg.textContent = '登録が完了しました。';
-            msg.style.color = '#22c55e';
-            msg.style.display = 'block';
-            setTimeout(() => { window.location.href = 'admin-topics.html'; }, 1200);
-        }
+        await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+            if (!ok) return;
+
+            const title = form.title.value.trim();
+            const event_date = form.event_date.value;
+            const is_visible = form.is_visible.value === 'true';
+            const details = form.details.value.trim();
+            if (!title || !event_date || !details) {
+                window.cidmAdminUi.showToast('全ての項目を入力してください。', 'error', 2200);
+                return;
+            }
+
+            const { error } = await supabaseClient.from('meeting_reports').insert([{ title, event_date, is_visible, details }]);
+            if (error) {
+                window.cidmAdminUi.showToast('登録に失敗しました: ' + error.message, 'error', 3000);
+            } else {
+                window.cidmAdminUi.showToast('登録が完了しました。', 'success', 900);
+                setTimeout(() => { window.location.href = 'admin-topics.html'; }, 500);
+            }
+        }, '登録中...');
     });
     </script>
 </body>
