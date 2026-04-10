@@ -7,66 +7,116 @@
     <link href="./output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #f3f4f6; font-family: 'Noto Sans JP', sans-serif; }
-        .top-bar { width:100%; background:#e5e7eb; color:#374151; padding:0.8rem 0; display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; font-weight:bold; letter-spacing:0.05em; }
-        .top-bar span { margin: 0 2rem; }
-        .container { max-width: 600px; margin: 60px auto; background: #fff; border-radius: 1.5rem; box-shadow: 0 4px 24px #0001; padding: 2.5rem 2rem; }
-        .title-bar {
-            background: linear-gradient(90deg, #e5e7eb 70%, #f3f4f6 100%);
-            color: #374151;
-            border-radius: 1rem 1rem 0 0;
-            padding: 1.1rem 2rem 1.1rem 2rem;
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin-bottom: 2rem;
-            display: flex;
-            align-items: center;
-            gap: 0.7rem;
-            box-shadow: 0 2px 8px #0001;
-            letter-spacing: 0.03em;
-        }
-        .form-group { margin-bottom: 1.5rem; }
-        label { display: block; font-weight: 500; color: #374151; margin-bottom: 0.5rem; }
-        input, textarea { width: 100%; padding: 0.7rem; border-radius: 0.7rem; border: 1px solid #d1d5db; background: #f9fafb; font-size: 1rem; }
-        .form-actions { text-align: right; }
-        .btn { padding: 0.6rem 1.5rem; border-radius: 0.7rem; border: none; font-weight: 500; cursor: pointer; transition: background 0.2s; }
-        .btn-submit { background: #6b7280; color: #fff; }
-        .btn-submit:hover { background: #4b5563; }
-        .btn-cancel { background: #e5e7eb; color: #374151; margin-right: 1rem; }
-        .btn-cancel:hover { background: #d1d5db; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0f172a; font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; display: flex; flex-direction: column; color: #cbd5e1; }
+        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:64px; background:#0f172a; border-bottom:1px solid #1e293b; position:sticky; top:0; z-index:10; }
+        .brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; }
+        .brand-icon { width:36px; height:36px; background:linear-gradient(135deg,#3b82f6,#6366f1); border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1rem; }
+        .brand-text { font-size:0.78rem; font-weight:700; color:#94a3b8; letter-spacing:0.1em; text-transform:uppercase; }
+        .brand-text span { display:block; color:#f1f5f9; font-size:0.9rem; letter-spacing:0.04em; }
+        .header-back { display:inline-flex; align-items:center; gap:0.4rem; color:#64748b; text-decoration:none; font-size:0.78rem; font-weight:700; letter-spacing:0.06em; border:1px solid #334155; border-radius:9999px; padding:0.3rem 0.9rem; transition:color 0.15s, border-color 0.15s; }
+        .header-back:hover { color:#93c5fd; border-color:#3b82f6; }
+        .admin-body { flex:1; padding:2.5rem 1.5rem 4rem; max-width:680px; margin:0 auto; width:100%; }
+        .form-card { background:#1e293b; border:1px solid #334155; border-radius:1rem; padding:2rem 2.2rem; }
+        .form-heading { margin-bottom:1.8rem; padding-bottom:1.4rem; border-bottom:1px solid #334155; }
+        .form-heading .eyebrow { font-size:0.7rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#3b82f6; margin-bottom:0.35rem; }
+        .form-heading h1 { font-size:1.5rem; font-weight:700; color:#f1f5f9; display:flex; align-items:center; gap:0.5rem; }
+        .form-section { margin-bottom:1.8rem; padding-bottom:1.8rem; border-bottom:1px solid #1e3a52; }
+        .form-section:last-of-type { border-bottom:none; margin-bottom:0; }
+        .section-label { font-size:0.7rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:#3b82f6; margin-bottom:1rem; }
+        .form-group { margin-bottom:1.2rem; }
+        label { display:block; font-size:0.78rem; font-weight:700; color:#94a3b8; letter-spacing:0.07em; text-transform:uppercase; margin-bottom:0.45rem; }
+        input, textarea { width:100%; padding:0.72rem 0.9rem; border-radius:0.6rem; border:1px solid #334155; background:#0f172a; color:#e2e8f0; font-size:0.92rem; font-family:inherit; transition:border-color 0.15s, box-shadow 0.15s; outline:none; }
+        input:focus, textarea:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
+        textarea { min-height:80px; resize:vertical; }
+        .form-actions { display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.8rem; padding-top:1.4rem; border-top:1px solid #334155; }
+        .btn { padding:0.6rem 1.4rem; border-radius:0.6rem; font-size:0.84rem; font-weight:700; cursor:pointer; transition:opacity 0.15s, transform 0.12s; display:inline-flex; align-items:center; gap:0.35rem; border:none; }
+        .btn:hover { transform:translateY(-1px); }
+        .btn-submit { background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; }
+        .btn-submit:hover { opacity:0.88; }
+        .btn-cancel { background:transparent; color:#64748b; border:1px solid #334155; }
+        .btn-cancel:hover { background:#263347; color:#cbd5e1; border-color:#475569; }
+        .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#334155; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #1e293b; }
+        select { width:100%; padding:0.72rem 0.9rem; border-radius:0.6rem; border:1px solid #334155; background:#0f172a; color:#e2e8f0; font-size:0.92rem; font-family:inherit; transition:border-color 0.15s; outline:none; appearance:none; }
+        select:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
+        .contact-row { background:#0f172a; border:1px solid #334155; border-radius:0.6rem; padding:1rem 1rem 0.4rem; margin-bottom:0.75rem; }
+        .contact-row-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; }
+        .contact-row-num { font-size:0.68rem; font-weight:700; color:#3b82f6; letter-spacing:0.12em; text-transform:uppercase; }
+        .contact-fields { display:grid; grid-template-columns:1fr 1fr; gap:0 1rem; }
+        .contact-fields .form-group { margin-bottom:0.9rem; }
+        .contact-fields .form-group.full { grid-column:1/-1; }
+        .contact-del-btn { background:transparent; border:1px solid #475569; color:#64748b; border-radius:0.4rem; padding:0.22rem 0.65rem; font-size:0.72rem; font-weight:700; cursor:pointer; transition:background 0.15s, color 0.15s; }
+        .contact-del-btn:hover { background:#7f1d1d; color:#fca5a5; border-color:#ef4444; }
+        .contact-primary-label { display:inline-flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:#64748b; cursor:pointer; }
+        .contact-primary-label input[type=radio] { accent-color:#3b82f6; }
+        .contact-add-btn { display:flex; align-items:center; justify-content:center; gap:0.4rem; width:100%; background:transparent; border:1px dashed #334155; color:#3b82f6; padding:0.55rem 1rem; border-radius:0.6rem; font-size:0.8rem; font-weight:700; cursor:pointer; transition:background 0.15s, border-color 0.15s; margin-top:0.2rem; }
+        .contact-add-btn:hover { background:#1e3a52; border-color:#3b82f6; }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <span>一般社団法人車両情報活用研究所</span>
-        <a href="admin-portal.html" style="color:inherit; text-decoration:none; cursor:pointer;">管理者ポータル</a>
-    </div>
-    <div class="container">
-        <div class="title-bar"><i class="fa-solid fa-user-plus"></i> 会員新規登録</div>
-        <form id="member-form">
-            <div class="form-group"><label for="company_name">会社名</label><input type="text" id="company_name" name="company_name" required></div>
-            <div class="form-group"><label for="representative_name">責任者名</label><input type="text" id="representative_name" name="representative_name" required></div>
-            <div class="form-group"><label for="zip_code">郵便番号</label><input type="text" id="zip_code" name="zip_code"></div>
-            <div class="form-group"><label for="address">住所</label><input type="text" id="address" name="address"></div>
-            <div class="form-group"><label for="phone_number">電話番号</label><input type="text" id="phone_number" name="phone_number"></div>
-            <div class="form-group"><label for="email">Email</label><input type="email" id="email" name="email" required></div>
-            <div class="form-group"><label for="login_id">会員ログインID</label><input type="text" id="login_id" name="login_id" required placeholder="member-001"></div>
-            <div class="form-group">
-                <label for="initial_password">初期パスワード</label>
-                <div style="position:relative;">
-                    <input type="password" id="initial_password" name="initial_password" required minlength="8" placeholder="8文字以上" style="padding-right:4.5rem;">
-                    <button type="button" id="initial-password-toggle" style="position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); border:none; background:transparent; color:#64748b; font-size:0.78rem; font-weight:700; cursor:pointer;">表示</button>
+    <header class="admin-header">
+        <a href="admin-portal.html" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="brand-text">CIDM <span>管理者ポータル</span></div>
+        </a>
+        <a href="admin-member-list.html" class="header-back"><i class="fa-solid fa-chevron-left"></i> 会員一覧へ戻る</a>
+    </header>
+
+    <div class="admin-body">
+        <div class="form-card">
+            <div class="form-heading">
+                <p class="eyebrow">Member Management</p>
+                <h1><i class="fa-solid fa-user-plus"></i> 会員新規登録</h1>
+            </div>
+            <form id="member-form">
+                <div class="form-section">
+                    <p class="section-label"><i class="fa-solid fa-building"></i> 会社情報</p>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1rem;">
+                        <div class="form-group">
+                            <label for="member_type">会員種別</label>
+                            <select id="member_type" name="member_type">
+                                <option value="">-- 未設定 --</option>
+                                <option value="役員">役員</option>
+                                <option value="正会員">正会員</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label for="cidm_role">CIDM役職</label><input type="text" id="cidm_role" name="cidm_role" placeholder="副理事長, 理事, 監事 等"></div>
+                    </div>
+                    <div class="form-group"><label for="company_name">会社名 <span style="color:#f87171">*</span></label><input type="text" id="company_name" name="company_name" required></div>
+                    <div class="form-group"><label for="representative_name">責任者名 <span style="color:#f87171">*</span></label><input type="text" id="representative_name" name="representative_name" required></div>
+                    <div class="form-group"><label for="zip_code">郵便番号</label><input type="text" id="zip_code" name="zip_code" placeholder="000-0000"></div>
+                    <div class="form-group"><label for="address">住所</label><input type="text" id="address" name="address"></div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1rem;">
+                        <div class="form-group"><label for="phone_number">電話番号</label><input type="text" id="phone_number" name="phone_number" placeholder="03-0000-0000"></div>
+                        <div class="form-group"><label for="fax_number">FAX番号</label><input type="text" id="fax_number" name="fax_number" placeholder="03-0000-0000"></div>
+                    </div>
+                    <div class="form-group"><label for="email">Email（会社代表） <span style="color:#f87171">*</span></label><input type="email" id="email" name="email" required></div>
                 </div>
-            </div>
-            <div class="form-group"><label for="staff_name">担当者</label><input type="text" id="staff_name" name="staff_name"></div>
-            <div class="form-group"><label for="staff_mobile">担当者携帯</label><input type="text" id="staff_mobile" name="staff_mobile"></div>
-            <div class="form-group"><label for="staff_email">担当者メルアド</label><input type="email" id="staff_email" name="staff_email"></div>
-            <div class="form-group"><label for="biko">備考</label><textarea id="biko" name="biko"></textarea></div>
-            <div class="form-actions">
-                <button type="button" id="cancel-btn" class="btn btn-cancel">キャンセル</button>
-                <button type="submit" class="btn btn-submit">登録</button>
-            </div>
-        </form>
+                <div class="form-section">
+                    <p class="section-label"><i class="fa-solid fa-key"></i> ログイン情報</p>
+                    <div class="form-group"><label for="login_id">会員ログインID <span style="color:#f87171">*</span></label><input type="text" id="login_id" name="login_id" required placeholder="member-001"></div>
+                    <div class="form-group">
+                        <label for="initial_password">初期パスワード <span style="color:#f87171">*</span></label>
+                        <div style="position:relative;">
+                            <input type="password" id="initial_password" name="initial_password" required minlength="8" placeholder="8文字以上" style="padding-right:4.5rem;">
+                            <button type="button" id="initial-password-toggle" style="position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); border:none; background:transparent; color:#64748b; font-size:0.78rem; font-weight:700; cursor:pointer;">表示</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-section">
+                    <p class="section-label"><i class="fa-solid fa-user"></i> 担当者情報</p>
+                    <p class="section-label"><i class="fa-solid fa-users"></i> 担当者情報</p>
+                    <div id="contacts-list"></div>
+                    <button type="button" id="add-contact-btn" class="contact-add-btn"><i class="fa-solid fa-plus"></i> 担当者を追加</button>
+                    <div class="form-group" style="margin-top:1.2rem;"><label for="biko">備考</label><textarea id="biko" name="biko"></textarea></div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancel-btn" class="btn btn-cancel">キャンセル</button>
+                    <button type="submit" class="btn btn-submit">登録</button>
+                </div>
+            </form>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./admin-auth.js"></script>
@@ -78,6 +128,8 @@
     const cancelBtn = document.getElementById('cancel-btn');
     const submitBtn = form.querySelector('.btn-submit');
 
+    const contactsList = document.getElementById('contacts-list');
+    const addContactBtn = document.getElementById('add-contact-btn');
     const initialPasswordInput = document.getElementById('initial_password');
     const initialPasswordToggle = document.getElementById('initial-password-toggle');
     initialPasswordToggle?.addEventListener('click', () => {
@@ -86,6 +138,48 @@
         initialPasswordInput.type = isPassword ? 'text' : 'password';
         initialPasswordToggle.textContent = isPassword ? '非表示' : '表示';
     });
+
+    // 担当者行を生成する関数
+    let contactIndex = 0;
+    function addContactRow(isPrimary = false) {
+        const idx = contactIndex++;
+        const num = contactsList.children.length + 1;
+        const row = document.createElement('div');
+        row.className = 'contact-row';
+        row.dataset.idx = idx;
+        row.innerHTML = `
+            <div class="contact-row-header">
+                <span class="contact-row-num">担当者 ${num}</span>
+                <div style="display:flex;align-items:center;gap:0.8rem;">
+                    <label class="contact-primary-label">
+                        <input type="radio" name="primary_contact" value="${idx}" ${isPrimary ? 'checked' : ''}> 主担当者
+                    </label>
+                    <button type="button" class="contact-del-btn" title="削除"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            </div>
+            <div class="contact-fields">
+                <div class="form-group full"><label>担当者名</label><input type="text" name="contact_name[]" placeholder="山田 太郎"></div>
+                <div class="form-group"><label>電話番号</label><input type="text" name="contact_phone[]" placeholder="090-0000-0000"></div>
+                <div class="form-group"><label>メールアドレス</label><input type="email" name="contact_email[]"></div>
+            </div>
+        `;
+        row.querySelector('.contact-del-btn').addEventListener('click', () => {
+            if (contactsList.children.length <= 1) return;
+            const wasPrimary = row.querySelector('input[type=radio]').checked;
+            row.remove();
+            [...contactsList.children].forEach((r, i) => {
+                r.querySelector('.contact-row-num').textContent = `担当者 ${i + 1}`;
+            });
+            if (wasPrimary && contactsList.children.length > 0) {
+                contactsList.children[0].querySelector('input[type=radio]').checked = true;
+            }
+        });
+        contactsList.appendChild(row);
+    }
+
+    // 初期1行追加
+    addContactRow(true);
+    addContactBtn.addEventListener('click', () => addContactRow(false));
 
     cancelBtn?.addEventListener('click', async () => {
         const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
@@ -103,17 +197,33 @@
             const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
             if (!ok) return;
 
+            // 担当者データ収集
+            const contactRows = [...contactsList.querySelectorAll('.contact-row')];
+            const primaryIdxVal = parseInt(form.querySelector('input[name=primary_contact]:checked')?.value ?? '-1');
+            const contacts = contactRows.map((row, i) => ({
+                name:       row.querySelector('input[name="contact_name[]"]').value.trim(),
+                phone:      row.querySelector('input[name="contact_phone[]"]').value.trim(),
+                email:      row.querySelector('input[name="contact_email[]"]').value.trim(),
+                is_primary: parseInt(row.dataset.idx) === primaryIdxVal,
+                sort_order: i
+            })).filter(c => c.name || c.email);
+
+            const primaryContact = contacts.find(c => c.is_primary) || contacts[0] || {};
+
             const data = {
-                company_name: form.company_name.value.trim(),
+                member_type:         form.member_type.value || null,
+                cidm_role:           form.cidm_role.value.trim() || null,
+                company_name:        form.company_name.value.trim(),
                 representative_name: form.representative_name.value.trim(),
-                zip_code: form.zip_code.value.trim(),
-                address: form.address.value.trim(),
-                phone_number: form.phone_number.value.trim(),
-                email: form.email.value.trim(),
-                staff_name: form.staff_name.value.trim(),
-                staff_mobile: form.staff_mobile.value.trim(),
-                staff_email: form.staff_email.value.trim(),
-                biko: form.biko.value.trim()
+                zip_code:            form.zip_code.value.trim(),
+                address:             form.address.value.trim(),
+                phone_number:        form.phone_number.value.trim(),
+                fax_number:          form.fax_number.value.trim() || null,
+                email:               form.email.value.trim(),
+                staff_name:          primaryContact.name  || null,
+                staff_mobile:        primaryContact.phone || null,
+                staff_email:         primaryContact.email || null,
+                biko:                form.biko.value.trim()
             };
             const loginId = form.login_id.value.trim();
             const initialPassword = form.initial_password.value.trim();
@@ -133,16 +243,26 @@
                 return;
             }
 
+            // ログイン情報設定
             const { error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
                 p_member_id: insertedMember.id,
                 p_login_id: loginId,
                 p_password: initialPassword
             });
-
             if (loginError) {
                 await supabaseClient.from('member').delete().eq('id', insertedMember.id);
                 window.cidmAdminUi.showToast('ログイン情報の登録に失敗しました: ' + loginError.message, 'error', 3600);
                 return;
+            }
+
+            // 担当者登録
+            if (contacts.length > 0) {
+                const contactsData = contacts.map(c => ({ ...c, member_id: insertedMember.id }));
+                const { error: contactError } = await supabaseClient.from('member_contacts').insert(contactsData);
+                if (contactError) {
+                    window.cidmAdminUi.showToast('担当者情報の登録に失敗しました: ' + contactError.message, 'error', 3600);
+                    return;
+                }
             }
 
             window.cidmAdminUi.showToast('登録が完了しました。', 'success', 900);
@@ -150,5 +270,7 @@
         }, '登録中...');
     });
     </script>
+
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
 </body>
 </html>
