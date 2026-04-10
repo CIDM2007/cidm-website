@@ -294,7 +294,17 @@
                 });
 
                 const member = Array.isArray(data) ? data[0] : null;
-                if (error || !member) {
+                if (error) {
+                    const rawMessage = (error.message || '').toLowerCase();
+                    if (rawMessage.includes('cidm_member_login') && rawMessage.includes('does not exist')) {
+                        window.cidmAdminUi.showToast('会員ログイン機能の初期設定が未完了です。管理者に連絡してください。', 'error', 3600);
+                    } else {
+                        window.cidmAdminUi.showToast('ログイン失敗: ' + (error.message || '不明なエラー'), 'error', 3600);
+                    }
+                    return;
+                }
+
+                if (!member) {
                     window.cidmAdminUi.showToast('ログインIDまたはパスワードが正しくありません。', 'error', 2800);
                     return;
                 }
