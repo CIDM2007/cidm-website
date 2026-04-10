@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>問い合わせ設定 | 管理者ポータル</title>
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background:#0f172a; font-family:'Noto Sans JP',sans-serif; min-height:100vh; display:flex; flex-direction:column; color:#cbd5e1; }
+        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:64px; border-bottom:1px solid #1e293b; }
+        .brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; }
+        .brand-icon { width:36px; height:36px; background:linear-gradient(135deg,#3b82f6,#6366f1); border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; }
+        .brand-text { font-size:0.78rem; font-weight:700; color:#94a3b8; letter-spacing:0.1em; text-transform:uppercase; }
+        .brand-text span { display:block; color:#f1f5f9; font-size:0.9rem; letter-spacing:0.04em; }
+        .header-back { display:inline-flex; align-items:center; gap:0.4rem; color:#64748b; text-decoration:none; font-size:0.78rem; font-weight:700; border:1px solid #334155; border-radius:9999px; padding:0.3rem 0.9rem; }
+        .header-back:hover { color:#93c5fd; border-color:#3b82f6; }
+        .admin-body { flex:1; max-width:680px; width:100%; margin:0 auto; padding:2.5rem 1.5rem 4rem; }
+        .card { background:#1e293b; border:1px solid #334155; border-radius:1rem; padding:2rem; }
+        .eyebrow { font-size:0.7rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#3b82f6; margin-bottom:0.35rem; }
+        h1 { font-size:1.5rem; color:#f1f5f9; margin-bottom:1.2rem; }
+        .form-group { margin-bottom:1.1rem; }
+        label { display:block; font-size:0.78rem; font-weight:700; color:#94a3b8; letter-spacing:0.07em; text-transform:uppercase; margin-bottom:0.4rem; }
+        input { width:100%; border:1px solid #334155; background:#0f172a; color:#e2e8f0; border-radius:0.6rem; padding:0.72rem 0.9rem; font-size:0.92rem; }
+        input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+        .help { color:#64748b; font-size:0.78rem; line-height:1.7; margin-top:0.2rem; }
+        .actions { display:flex; justify-content:flex-end; margin-top:1.4rem; }
+        .btn { border:none; border-radius:0.6rem; padding:0.58rem 1rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; }
+        .btn-primary { background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; }
+        .admin-footer { text-align:center; padding:1.25rem; color:#334155; font-size:0.68rem; border-top:1px solid #1e293b; }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <a href="admin-portal.html" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="brand-text">CIDM <span>管理者ポータル</span></div>
+        </a>
+        <a href="admin-portal.html" class="header-back"><i class="fa-solid fa-chevron-left"></i> ポータルへ戻る</a>
+    </header>
+
+    <div class="admin-body">
+        <div class="card">
+            <p class="eyebrow">Site Settings</p>
+            <h1><i class="fa-solid fa-envelope"></i> 問い合わせ送信先設定</h1>
+            <form id="contact-setting-form">
+                <div class="form-group">
+                    <label for="contact_to_email">通知先メールアドレス</label>
+                    <input type="email" id="contact_to_email" name="contact_to_email" required placeholder="example@cidm.or.jp">
+                    <p class="help">お問い合わせフォーム送信時、このメールアドレスに通知されます。</p>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-primary" type="submit" id="save-btn"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./admin-auth.js"></script>
+    <script src="./admin-ui.js"></script>
+    <script>
+    const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+    const form = document.getElementById('contact-setting-form');
+    const saveBtn = document.getElementById('save-btn');
+
+    async function loadSetting() {
+        const { data, error } = await supabaseClient
+            .from('app_settings')
+            .select('setting_value')
+            .eq('setting_key', 'contact_to_email')
+            .maybeSingle();
+
+        if (error) {
+            window.cidmAdminUi.showToast('設定取得に失敗しました: ' + error.message, 'error', 2800);
+            return;
+        }
+
+        if (data && data.setting_value) {
+            form.contact_to_email.value = data.setting_value;
+        }
+    }
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await window.cidmAdminUi.runWithButtonBusy(saveBtn, async () => {
+            const email = String(form.contact_to_email.value || '').trim();
+            if (!email) {
+                window.cidmAdminUi.showToast('メールアドレスを入力してください。', 'error', 2200);
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from('app_settings')
+                .upsert({ setting_key: 'contact_to_email', setting_value: email }, { onConflict: 'setting_key' });
+
+            if (error) {
+                window.cidmAdminUi.showToast('設定保存に失敗しました: ' + error.message, 'error', 3200);
+                return;
+            }
+
+            window.cidmAdminUi.showToast('設定を保存しました。', 'success', 1200);
+        }, '保存中...');
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+        if (!ok) return;
+        loadSetting();
+    });
+    </script>
+</body>
+</html>
