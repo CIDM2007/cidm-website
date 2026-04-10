@@ -51,7 +51,13 @@
             <div class="form-group"><label for="phone_number">電話番号</label><input type="text" id="phone_number" name="phone_number"></div>
             <div class="form-group"><label for="email">Email</label><input type="email" id="email" name="email" required></div>
             <div class="form-group"><label for="login_id">会員ログインID</label><input type="text" id="login_id" name="login_id" required placeholder="member-001"></div>
-            <div class="form-group"><label for="initial_password">初期パスワード</label><input type="password" id="initial_password" name="initial_password" required minlength="8" placeholder="8文字以上"></div>
+            <div class="form-group">
+                <label for="initial_password">初期パスワード</label>
+                <div style="position:relative;">
+                    <input type="password" id="initial_password" name="initial_password" required minlength="8" placeholder="8文字以上" style="padding-right:4.5rem;">
+                    <button type="button" id="initial-password-toggle" style="position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); border:none; background:transparent; color:#64748b; font-size:0.78rem; font-weight:700; cursor:pointer;">表示</button>
+                </div>
+            </div>
             <div class="form-group"><label for="staff_name">担当者</label><input type="text" id="staff_name" name="staff_name"></div>
             <div class="form-group"><label for="staff_mobile">担当者携帯</label><input type="text" id="staff_mobile" name="staff_mobile"></div>
             <div class="form-group"><label for="staff_email">担当者メルアド</label><input type="email" id="staff_email" name="staff_email"></div>
@@ -71,6 +77,15 @@
     const form = document.getElementById('member-form');
     const cancelBtn = document.getElementById('cancel-btn');
     const submitBtn = form.querySelector('.btn-submit');
+
+    const initialPasswordInput = document.getElementById('initial_password');
+    const initialPasswordToggle = document.getElementById('initial-password-toggle');
+    initialPasswordToggle?.addEventListener('click', () => {
+        const isPassword = initialPasswordInput?.type === 'password';
+        if (!initialPasswordInput) return;
+        initialPasswordInput.type = isPassword ? 'text' : 'password';
+        initialPasswordToggle.textContent = isPassword ? '非表示' : '表示';
+    });
 
     cancelBtn?.addEventListener('click', async () => {
         const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
