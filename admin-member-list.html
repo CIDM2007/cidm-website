@@ -7,41 +7,82 @@
     <link href="./output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #f3f4f6; font-family: 'Noto Sans JP', sans-serif; }
-        .top-bar { width:100%; background:#e5e7eb; color:#374151; padding:0.8rem 0; display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; font-weight:bold; letter-spacing:0.05em; }
-        .top-bar span { margin: 0 2rem; }
-        .container { max-width: 900px; margin: 60px auto; background: #fff; border-radius: 1.5rem; box-shadow: 0 4px 24px #0001; padding: 2.5rem 2rem; }
-        h1 { font-size: 1.6rem; font-weight: bold; color: #374151; margin-bottom: 2rem; }
-        .member-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
-        .member-table th, .member-table td { border-bottom: 1px solid #e5e7eb; padding: 0.9rem 0.7rem; text-align: left; }
-        .member-table th { background: #f1f5f9; color: #374151; font-weight: bold; }
-        .member-table td { background: #fff; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0f172a; font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; display: flex; flex-direction: column; color: #cbd5e1; }
+
+        /* Header */
+        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:64px; background:#0f172a; border-bottom:1px solid #1e293b; position:sticky; top:0; z-index:10; }
+        .brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; }
+        .brand-icon { width:36px; height:36px; background:linear-gradient(135deg,#3b82f6,#6366f1); border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1rem; }
+        .brand-text { font-size:0.78rem; font-weight:700; color:#94a3b8; letter-spacing:0.1em; text-transform:uppercase; }
+        .brand-text span { display:block; color:#f1f5f9; font-size:0.9rem; letter-spacing:0.04em; }
+        .header-back { display:inline-flex; align-items:center; gap:0.4rem; color:#64748b; text-decoration:none; font-size:0.78rem; font-weight:700; letter-spacing:0.06em; border:1px solid #334155; border-radius:9999px; padding:0.3rem 0.9rem; transition:color 0.15s, border-color 0.15s; }
+        .header-back:hover { color:#93c5fd; border-color:#3b82f6; }
+
+        /* Body */
+        .admin-body { flex:1; padding:2.5rem 1.5rem 4rem; max-width:980px; margin:0 auto; width:100%; }
+
+        /* Page heading */
+        .page-heading { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
+        .page-heading .left .eyebrow { font-size:0.7rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#3b82f6; margin-bottom:0.35rem; }
+        .page-heading .left h1 { font-size:1.7rem; font-weight:700; color:#f1f5f9; }
+
+        /* New button */
+        .btn-new { display:inline-flex; align-items:center; gap:0.5rem; background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; border:none; padding:0.65rem 1.4rem; border-radius:9999px; font-size:0.84rem; font-weight:700; cursor:pointer; text-decoration:none; transition:opacity 0.15s, transform 0.12s; }
+        .btn-new:hover { opacity:0.88; transform:translateY(-1px); }
+
+        /* Table card */
+        .table-card { background:#1e293b; border:1px solid #334155; border-radius:1rem; overflow:hidden; }
+        .member-table { width:100%; border-collapse:collapse; }
+        .member-table th { background:#0f172a; color:#64748b; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:0.85rem 1rem; text-align:left; border-bottom:1px solid #334155; }
+        .member-table td { padding:0.9rem 1rem; border-bottom:1px solid #243347; color:#cbd5e1; font-size:0.88rem; }
+        .member-table tbody tr:last-child td { border-bottom:none; }
+        .member-table tbody tr { cursor:pointer; transition:background 0.12s; }
+        .member-table tbody tr:hover td { background:#263347; }
+        .company-name { font-weight:700; color:#e2e8f0; }
+        .sub-text { color:#64748b; font-size:0.8rem; }
+
+        /* Footer */
+        .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#334155; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #1e293b; }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <span>一般社団法人車両情報活用研究所</span>
-        <a href="admin-portal.html" style="color:inherit; text-decoration:none; cursor:pointer;">管理者ポータル</a>
-    </div>
-    <div class="container">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
-            <h1 style="margin-bottom:0;"><i class="fa-solid fa-users"></i> 会員一覧</h1>
-            <a href="admin-member-new.html" class="btn btn-edit" style="background:#6b7280;color:#fff;font-weight:600;text-decoration:none;"><i class="fa-solid fa-user-plus"></i> 新規追加</a>
+    <header class="admin-header">
+        <a href="admin-portal.html" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="brand-text">CIDM <span>管理者ポータル</span></div>
+        </a>
+        <a href="admin-portal.html" class="header-back"><i class="fa-solid fa-chevron-left"></i> ポータルへ戻る</a>
+    </header>
+
+    <div class="admin-body">
+        <div class="page-heading">
+            <div class="left">
+                <p class="eyebrow">Member Management</p>
+                <h1>会員一覧</h1>
+            </div>
+            <a href="admin-member-new.html" class="btn-new"><i class="fa-solid fa-user-plus"></i> 新規追加</a>
         </div>
-        <table class="member-table">
-            <thead>
-                <tr>
-                    <th>会社名</th>
-                    <th>担当者名</th>
-                    <th>担当者携帯</th>
-                    <th>備考</th>
-                </tr>
-            </thead>
-            <tbody id="members-tbody">
-                <tr><td colspan="4" style="text-align:center; color:#888;">読み込み中...</td></tr>
-            </tbody>
-        </table>
+
+        <div class="table-card">
+            <table class="member-table">
+                <thead>
+                    <tr>
+                        <th>会社名</th>
+                        <th>担当者名</th>
+                        <th>担当者携帯</th>
+                        <th>備考</th>
+                    </tr>
+                </thead>
+                <tbody id="members-tbody">
+                    <tr><td colspan="4" style="text-align:center; color:#475569; padding:2rem;">読み込み中...</td></tr>
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./admin-auth.js"></script>
     <script src="./admin-ui.js"></script>
@@ -74,10 +115,10 @@
         }
         tbody.innerHTML = data.map(item => `
             <tr style="cursor:pointer;" data-member-id="${item.id}">
-                <td>${item.company_name || ''}</td>
+                <td><span class="company-name">${item.company_name || ''}</span></td>
                 <td>${item.staff_name || ''}</td>
-                <td>${item.staff_mobile || ''}</td>
-                <td>${item.biko || ''}</td>
+                <td><span class="sub-text">${item.staff_mobile || ''}</span></td>
+                <td><span class="sub-text">${item.biko || ''}</span></td>
             </tr>
         `).join('');
     }

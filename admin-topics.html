@@ -7,46 +7,99 @@
     <link href="./output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #f3f4f6; font-family: 'Noto Sans JP', sans-serif; }
-        .top-bar { width:100%; background:#e5e7eb; color:#374151; padding:0.8rem 0; display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; font-weight:bold; letter-spacing:0.05em; }
-        .top-bar span { margin: 0 2rem; }
-        .container { max-width: 900px; margin: 60px auto; background: #fff; border-radius: 1.5rem; box-shadow: 0 4px 24px #0001; padding: 2.5rem 2rem; }
-        h1 { font-size: 1.6rem; font-weight: bold; color: #374151; margin-bottom: 2rem; }
-        .topic-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
-        .topic-table th, .topic-table td { border-bottom: 1px solid #e5e7eb; padding: 0.9rem 0.7rem; text-align: left; }
-        .topic-table th { background: #f1f5f9; color: #374151; font-weight: bold; }
-        .topic-table td { background: #fff; }
-        .actions button { margin-right: 0.5rem; }
-        .btn { padding: 0.5rem 1.2rem; border-radius: 0.7rem; border: none; font-weight: 500; cursor: pointer; transition: background 0.2s; }
-        .btn-edit { background: #6b7280; color: #fff; }
-        .btn-edit:hover { background: #4b5563; }
-        .btn-delete { background: #e11d48; color: #fff; }
-        .btn-delete:hover { background: #be123c; }
-        .btn-new { background: #6b7280; color: #fff; margin-bottom: 1.5rem; }
-        .btn-new:hover { background: #4b5563; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0f172a; font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; display: flex; flex-direction: column; color: #cbd5e1; }
+
+        /* Header */
+        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:64px; background:#0f172a; border-bottom:1px solid #1e293b; position:sticky; top:0; z-index:10; }
+        .brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; }
+        .brand-icon { width:36px; height:36px; background:linear-gradient(135deg,#3b82f6,#6366f1); border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1rem; }
+        .brand-text { font-size:0.78rem; font-weight:700; color:#94a3b8; letter-spacing:0.1em; text-transform:uppercase; }
+        .brand-text span { display:block; color:#f1f5f9; font-size:0.9rem; letter-spacing:0.04em; }
+        .header-back { display:inline-flex; align-items:center; gap:0.4rem; color:#64748b; text-decoration:none; font-size:0.78rem; font-weight:700; letter-spacing:0.06em; border:1px solid #334155; border-radius:9999px; padding:0.3rem 0.9rem; transition:color 0.15s, border-color 0.15s; }
+        .header-back:hover { color:#93c5fd; border-color:#3b82f6; }
+
+        /* Body */
+        .admin-body { flex:1; padding:2.5rem 1.5rem 4rem; max-width:980px; margin:0 auto; width:100%; }
+
+        /* Page heading */
+        .page-heading { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
+        .page-heading .left .eyebrow { font-size:0.7rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#3b82f6; margin-bottom:0.35rem; }
+        .page-heading .left h1 { font-size:1.7rem; font-weight:700; color:#f1f5f9; }
+
+        /* New button */
+        .btn-new { display:inline-flex; align-items:center; gap:0.5rem; background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; border:none; padding:0.65rem 1.4rem; border-radius:9999px; font-size:0.84rem; font-weight:700; cursor:pointer; transition:opacity 0.15s, transform 0.12s; }
+        .btn-new:hover { opacity:0.88; transform:translateY(-1px); }
+
+        /* Table card */
+        .table-card { background:#1e293b; border:1px solid #334155; border-radius:1rem; overflow:hidden; }
+        .topic-table { width:100%; border-collapse:collapse; }
+        .topic-table th { background:#0f172a; color:#64748b; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:0.85rem 1rem; text-align:left; border-bottom:1px solid #334155; }
+        .topic-table td { padding:0.9rem 1rem; border-bottom:1px solid #1e3a52; vertical-align:top; color:#cbd5e1; font-size:0.9rem; }
+        .topic-table tbody tr:last-child td { border-bottom:none; }
+        .topic-table tbody tr.detail-row td { padding-top:0; padding-bottom:1rem; border-bottom:1px solid #334155; }
+        .topic-table tbody tr.title-row:hover td { background:#263347; }
+        .topic-title { font-weight:700; color:#e2e8f0; font-size:0.95rem; }
+        .topic-date { color:#64748b; font-size:0.82rem; white-space:nowrap; }
+        .badge { display:inline-block; padding:0.2rem 0.65rem; border-radius:9999px; font-size:0.7rem; font-weight:700; letter-spacing:0.06em; }
+        .badge-visible { background:#1d3a6e; color:#93c5fd; border:1px solid #3b82f6; }
+        .badge-hidden { background:#2d1b1b; color:#f87171; border:1px solid #b91c1c; }
+        .topic-details { color:#64748b; font-size:0.82rem; line-height:1.7; }
+
+        /* Action buttons */
+        .actions { display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.5rem; }
+        .btn { padding:0.45rem 1rem; border-radius:0.6rem; border:none; font-size:0.78rem; font-weight:700; cursor:pointer; transition:background 0.15s, transform 0.12s; display:inline-flex; align-items:center; gap:0.35rem; }
+        .btn:hover { transform:translateY(-1px); }
+        .btn-edit { background:#1e3a5f; color:#93c5fd; border:1px solid #2563eb; }
+        .btn-edit:hover { background:#1d3a6e; }
+        .btn-delete { background:#2d1b1b; color:#f87171; border:1px solid #b91c1c; }
+        .btn-delete:hover { background:#3d1f1f; }
+
+        /* Pagination */
+        #pagination { display:flex; justify-content:center; gap:0.4rem; margin-top:1.5rem; flex-wrap:wrap; }
+        #pagination .btn { background:#1e293b; color:#64748b; border:1px solid #334155; border-radius:0.5rem; }
+        #pagination .btn:hover:not(:disabled) { background:#263347; color:#93c5fd; border-color:#3b82f6; }
+        #pagination .btn:disabled { opacity:0.35; cursor:not-allowed; }
+        #pagination .btn-current { background:#1d3a6e; color:#93c5fd; border:1px solid #3b82f6; }
+
+        /* Footer */
+        .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#334155; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #1e293b; }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <span>一般社団法人車両情報活用研究所</span>
-        <a href="admin-portal.html" style="color:inherit; text-decoration:none; cursor:pointer;">管理者ポータル</a>
-    </div>
-    <div class="container">
-        <h1><i class="fa-solid fa-newspaper"></i> トピック（おしらせ）管理</h1>
-        <button id="topic-new-btn" class="btn btn-new"><i class="fa-solid fa-plus"></i> 新規作成</button>
-        <table class="topic-table">
-            <thead>
-                <tr>
-                    <th>タイトル</th>
-                    <th>日付</th>
-                    <th>公開</th>
-                </tr>
-            </thead>
-            <tbody id="topics-tbody">
-                <tr><td colspan="3" style="text-align:center; color:#888;">読み込み中...</td></tr>
-            </tbody>
-        </table>
-        <div id="pagination" style="display:flex;justify-content:center;gap:0.5rem;margin-bottom:1.5rem;max-width:600px;margin-left:auto;margin-right:auto;flex-wrap:wrap;"></div>
+    <header class="admin-header">
+        <a href="admin-portal.html" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="brand-text">CIDM <span>管理者ポータル</span></div>
+        </a>
+        <a href="admin-portal.html" class="header-back"><i class="fa-solid fa-chevron-left"></i> ポータルへ戻る</a>
+    </header>
+
+    <div class="admin-body">
+        <div class="page-heading">
+            <div class="left">
+                <p class="eyebrow">Content Management</p>
+                <h1>トピック管理</h1>
+            </div>
+            <button id="topic-new-btn" class="btn-new"><i class="fa-solid fa-plus"></i> 新規作成</button>
+        </div>
+
+        <div class="table-card">
+            <table class="topic-table">
+                <thead>
+                    <tr>
+                        <th>タイトル</th>
+                        <th>日付</th>
+                        <th>公開状態</th>
+                    </tr>
+                </thead>
+                <tbody id="topics-tbody">
+                    <tr><td colspan="3" style="text-align:center; color:#475569; padding:2rem;">読み込み中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="pagination"></div>
         <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
         <script src="./admin-auth.js"></script>
         <script src="./admin-ui.js"></script>
@@ -98,15 +151,15 @@
             const end = start + PAGE_SIZE;
             const pageData = allData.slice(start, end);
             tbody.innerHTML = pageData.map(item => `
-                <tr>
-                    <td style="font-weight:bold; font-size:1.1rem;">${item.title || ''}</td>
-                    <td>${item.event_date ? item.event_date.replace(/-/g, '.') : ''}</td>
-                    <td>${item.is_visible ? '公開' : '非公開'}</td>
+                <tr class="title-row">
+                    <td><span class="topic-title">${item.title || ''}</span></td>
+                    <td><span class="topic-date">${item.event_date ? item.event_date.replace(/-/g, '.') : ''}</span></td>
+                    <td><span class="badge ${item.is_visible ? 'badge-visible' : 'badge-hidden'}">${item.is_visible ? '公開' : '非公開'}</span></td>
                 </tr>
-                <tr>
+                <tr class="detail-row">
                     <td colspan="3">
-                        <div style="color:#374151; margin-bottom:0.7rem; min-height:3.5em;">${item.details ? item.details.replace(/\n/g, '<br>') : ''}</div>
-                        <div class="actions" style="text-align:right;">
+                        <div class="topic-details" style="margin-bottom:0.7rem; min-height:2.5em;">${item.details ? item.details.replace(/\n/g, '<br>') : ''}</div>
+                        <div class="actions">
                             <a class="btn btn-edit" href="admin-topic-edit.html?id=${item.id}"><i class="fa-solid fa-pen"></i> 編集</a>
                             <button class="btn btn-delete" data-topic-delete="${item.id}"><i class="fa-solid fa-trash"></i> 削除</button>
                         </div>
@@ -131,9 +184,9 @@
                 }
                 for (let p of pageArr) {
                     if (p === '...') {
-                        pagHtml += `<span style="padding:0 0.5em;">...</span>`;
+                        pagHtml += `<span style="padding:0 0.5em; color:#475569;">...</span>`;
                     } else {
-                        pagHtml += `<button class="btn" style="${p === currentPage ? 'background:#6b7280;color:#fff;' : ''}" data-page="${p}">${p}</button>`;
+                        pagHtml += `<button class="btn ${p === currentPage ? 'btn-current' : ''}" data-page="${p}">${p}</button>`;
                     }
                 }
                 pagHtml += `<button class="btn" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">次へ</button>`;
@@ -197,5 +250,7 @@
         });
         </script>
     </div>
+
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
 </body>
 </html>

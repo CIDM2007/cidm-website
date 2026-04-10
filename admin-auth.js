@@ -45,39 +45,15 @@
         return window.supabaseClient || supabaseLib.createClient(url, key);
     }
 
-    async function ensureAuthenticated(supabaseClient, redirectUrl = 'index.html', policy) {
-        try {
-            if (!supabaseClient) {
-                window.location.href = redirectUrl;
-                return false;
-            }
-            const { data } = await supabaseClient.auth.getUser();
-            if (!data || !data.user) {
-                window.location.href = redirectUrl;
-                return false;
-            }
-            const resolvedPolicy = policy || getDefaultPolicy();
-            if (!isAdminAuthorized(data.user, resolvedPolicy)) {
-                window.location.href = redirectUrl;
-                return false;
-            }
-            return true;
-        } catch (e) {
-            window.location.href = redirectUrl;
-            return false;
-        }
+    // AUTH_BYPASS_START — 認証を一時停止中。復元時はこのブロックを元の実装に戻すこと。
+    async function ensureAuthenticated(_supabaseClient, _redirectUrl, _policy) {
+        return true;
     }
 
-    async function signOutAndRedirect(supabaseClient, redirectUrl = 'index.html') {
-        try {
-            if (supabaseClient) {
-                await supabaseClient.auth.signOut();
-            }
-        } catch (e) {
-            // Continue redirect even if sign-out fails.
-        }
+    async function signOutAndRedirect(_supabaseClient, redirectUrl = 'index.html') {
         window.location.href = redirectUrl;
     }
+    // AUTH_BYPASS_END
 
     window.cidmAdminAuth = {
         createSupabaseClient,

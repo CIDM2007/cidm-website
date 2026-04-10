@@ -70,7 +70,7 @@
     cancelBtn?.addEventListener('click', async () => {
         const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
         if (!accepted) return;
-        window.history.back();
+        window.location.href = 'admin-topics.html';
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -81,7 +81,6 @@
     const urlParams = new URLSearchParams(window.location.search);
     const topicId = urlParams.get('id');
     const editTitle = document.getElementById('edit-title');
-    const submitBtn = form.querySelector('.btn-submit');
     if (!topicId) {
         // 新規登録モード
         editTitle.innerHTML = '<i class="fa-solid fa-plus"></i> トピック新規登録';
