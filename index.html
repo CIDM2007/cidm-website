@@ -218,8 +218,8 @@
 
         // 管理者ログインボタン処理（Supabase Auth）
         document.getElementById('admin-login-btn')?.addEventListener('click', async function() {
-            const email = document.getElementById('admin-email').value;
-            const password = document.getElementById('admin-password').value;
+            const email = document.getElementById('admin-email').value.trim();
+            const password = document.getElementById('admin-password').value.trim();
             const loginButton = document.getElementById('admin-login-btn');
 
             await window.cidmAdminUi.runWithButtonBusy(loginButton, async () => {
@@ -232,7 +232,13 @@
                 try {
                     const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
                     if (error) {
-                        window.cidmAdminUi.showToast('ログイン失敗: ' + error.message, 'error', 3200);
+                        let message = error.message || 'ログインに失敗しました。';
+                        if (message.toLowerCase().includes('invalid login credentials')) {
+                            message = 'メールアドレスまたはパスワードが正しくありません。';
+                        } else if (message.toLowerCase().includes('email not confirmed')) {
+                            message = 'メール確認が未完了です。Authentication > Users で確認してください。';
+                        }
+                        window.cidmAdminUi.showToast('ログイン失敗: ' + message, 'error', 3600);
                         isAdminLoginBusy = false;
                     } else {
                         // ログイン成功時
