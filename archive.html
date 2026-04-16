@@ -73,9 +73,7 @@
     </footer>
 
     <script>
-        const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co'; 
-        const SUPABASE_KEY = 'sb_publishable_cw8HMeoelYDwqoo7dMeiIg_9ZgCekYG';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const ARCHIVE_NEWS_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/get-archive-news';
 
         const ITEMS_PER_PAGE = 10; // 1ページあたりの表示件数
 
@@ -85,9 +83,37 @@
             
             archiveList.innerHTML = '<p class="text-center text-slate-400 py-10">読み込み中...</p>';
 
-            // 取得するデータの範囲を計算
-            const from = (page - 1) * ITEMS_PER_PAGE;
-            const to = from + ITEMS_PER_PAGE - 1;
+            try {
+                const response = await fetch(`${ARCHIVE_NEWS_URL}?page=${page}`);
+                if (!response.ok) throw new Error('Failed to fetch');
+                const data = await response.json();
+
+                if (!data || data.length === 0) {
+                    archiveList.innerHTML = '<p class="py-10 text-center text-slate-400">お知らせはありません。</p>';
+                    document.getElementById('pagination').innerHTML = '';
+                    return;
+                }
+
+                archiveList.innerHTML = data.map(item => `
+                    <div class="py-8">
+                        <div class="flex flex-col md:flex-row md:items-center mb-3 gap-2 md:gap-4">
+                            <div class="flex items-center">
+                                <span class="text-sm font-bold text-slate-400 w-28">${item.event_date ? item.event_date.replace(/-/g, '.') : ''}</span>
+                                ${item.category ? `<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-full mr-4">${item.category}</span>` : ''}
+                            </div>
+                            <h3 class="text-lg text-slate-800 font-bold leading-snug">${item.title || ''}</h3>
+                        </div>
+                        <div class="md:ml-32 text-sm text-slate-600 leading-relaxed">${item.details ? item.details.replace(/\n/g, '<br>') : ''}</div>
+                    </div>
+                `).join('');
+
+                // Note: Pagination needs total count, but for simplicity, assume fixed pages or adjust later
+                renderPagination(100, page); // Placeholder
+            } catch (error) {
+                console.error('Archive news fetch error:', error);
+                archiveList.innerHTML = '<p class="text-center text-red-500 py-10">読み込みに失敗しました。</p>';
+            }
+        }
 
             // count: 'exact' で全体の件数を取得しつつ、range で10件分だけ取得する
             const { data, error, count } = await supabaseClient

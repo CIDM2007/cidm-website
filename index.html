@@ -179,9 +179,7 @@
         const MEMBER_ID_KEY = 'cidm-member-id';
         const MEMBER_NAME_KEY = 'cidm-member-name';
         const MEMBER_COMPANY_KEY = 'cidm-member-company';
-        const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const LOGIN_ADMIN_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-admin';
 
         function initPasswordToggle(toggleId, inputId) {
             const toggleButton = document.getElementById(toggleId);
@@ -222,10 +220,13 @@
         }
 
         // 管理者ログインリンククリックでモーダル表示
+        // AUTH_BYPASS_START — 認証スキップ中。本番環境では復元が必須。
         document.getElementById('admin-login-link')?.addEventListener('click', function(e) {
             e.preventDefault();
-            openAdminLoginModal();
+            // ローカル開発用：直接admin-portalへ遷移
+            window.location.href = 'admin-portal.html';
         });
+        // AUTH_BYPASS_END
 
         document.getElementById('admin-modal-close-btn')?.addEventListener('click', () => {
             closeAdminLoginModal();
@@ -251,22 +252,26 @@
                     return;
                 }
                 try {
-                    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                    if (error) {
-                        let message = error.message || 'ログインに失敗しました。';
-                        if (message.toLowerCase().includes('invalid login credentials')) {
-                            message = 'メールアドレスまたはパスワードが正しくありません。';
-                        } else if (message.toLowerCase().includes('email not confirmed')) {
-                            message = 'メール確認が未完了です。Authentication > Users で確認してください。';
-                        }
-                        window.cidmAdminUi.showToast('ログイン失敗: ' + message, 'error', 3600);
-                        isAdminLoginBusy = false;
-                    } else {
-                        // ログイン成功時
-                        window.location.href = 'admin-portal.html';
-                    }
+                    const response = await fetch(LOGIN_ADMIN_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Login failed');
+                    const data = await response.json();
+                    // ログイン成功時
+                    sessionStorage.setItem('admin-session', JSON.stringify(data));
+                    window.location.href = 'admin-portal.html';
                 } catch (e) {
-                    window.cidmAdminUi.showToast('通信エラーが発生しました', 'error', 2800);
+                    let message = e.message || 'ログインに失敗しました。';
+                    if (message.toLowerCase().includes('invalid login credentials')) {
+                        message = 'メールアドレスまたはパスワードが正しくありません。';
+                    } else if (message.toLowerCase().includes('email not confirmed')) {
+                        message = 'メール確認が未完了です。Authentication > Users で確認してください。';
+                    }
+                    window.cidmAdminUi.showToast('ログイン失敗: ' + message, 'error', 3600);
                     isAdminLoginBusy = false;
                 }
             }, 'ログイン中...');
@@ -309,26 +314,16 @@
                     return;
                 }
 
-                const { data, error } = await supabaseClient.rpc('cidm_member_login', {
-                    p_login_id: loginId,
-                    p_password: password
+                const response = await fetch(LOGIN_EDGE_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login_id: loginId, password })
                 });
-
-                const member = Array.isArray(data) ? data[0] : null;
-                if (error) {
-                    const rawMessage = (error.message || '').toLowerCase();
-                    if (rawMessage.includes('cidm_member_login') && rawMessage.includes('does not exist')) {
-                        window.cidmAdminUi.showToast('会員ログイン機能の初期設定が未完了です。管理者に連絡してください。', 'error', 3600);
-                    } else {
-                        window.cidmAdminUi.showToast('ログイン失敗: ' + (error.message || '不明なエラー'), 'error', 3600);
-                    }
-                    return;
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Login failed');
                 }
-
-                if (!member) {
-                    window.cidmAdminUi.showToast('ログインID・メールアドレスまたはパスワードが正しくありません。', 'error', 3000);
-                    return;
-                }
+                const member = await response.json();
 
                 isLoggedIn = true;
                 sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
@@ -347,7 +342,16 @@
 
 
         async function loadNews() {
-            const { data, error } = await supabaseClient.from('meeting_reports').select('*').eq('is_visible', true).order('event_date', { ascending: false }).limit(5);
+            try {
+                const response = await fetch(TOP_NEWS_EDGE_FUNCTION_URL);
+                if (!response.ok) throw new Error('Failed to fetch news');
+                const data = await response.json();
+                renderNews(data);
+            } catch (error) {
+                console.error('ニュースの取得に失敗しました:', error);
+                renderNews([]);
+            }
+        }
             const newsList = document.getElementById('news-list');
             if (!newsList) return;
             

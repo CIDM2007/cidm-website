@@ -1,6 +1,6 @@
 (function () {
-    const DEFAULT_SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-    const DEFAULT_SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
+    // Note: Supabase keys are now handled via Edge Functions for security.
+    // Admin pages should use Edge Functions for data operations.
 
     function getDefaultPolicy() {
         const policy = window.CIDM_ADMIN_AUTH_POLICY;
@@ -37,17 +37,18 @@
         return true;
     }
 
-    function createSupabaseClient(url = DEFAULT_SUPABASE_URL, key = DEFAULT_SUPABASE_KEY) {
-        const supabaseLib = window.supabase;
-        if (!supabaseLib || typeof supabaseLib.createClient !== 'function') {
-            return null;
-        }
-        return window.supabaseClient || supabaseLib.createClient(url, key);
+    function createSupabaseClient() {
+        // Supabase client creation is disabled for security.
+        // Use Edge Functions instead.
+        console.warn('Supabase client creation is disabled. Use Edge Functions for data operations.');
+        return null;
     }
 
-    // AUTH_BYPASS_START — 認証を一時停止中。復元時はこのブロックを元の実装に戻すこと。
-    async function ensureAuthenticated(_supabaseClient, _redirectUrl, _policy) {
+    async function ensureAuthenticated(supabaseClient, redirectUrl = 'index.html', policy = {}) {
+        // AUTH_BYPASS_START — 認証を一時停止中。本番環境では復元が必須。
+        // ローカル開発・テスト用に認証をスキップします
         return true;
+        // AUTH_BYPASS_END
     }
 
     async function signOutAndRedirect(_supabaseClient, redirectUrl = 'index.html') {

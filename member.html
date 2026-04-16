@@ -131,15 +131,12 @@
         </div>
         <p class="text-[10px] tracking-tighter uppercase">© 2013-2026 Center for Innovative Data and Mobility.</p>
     </footer>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const MEMBER_AUTH_KEY = 'cidm-member-auth';
         const MEMBER_ID_KEY = 'cidm-member-id';
         const MEMBER_NAME_KEY = 'cidm-member-name';
         const MEMBER_COMPANY_KEY = 'cidm-member-company';
-        const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/get-member-data';
         let allDocuments = [];
         let activeDocFilter = 'all';
         let docSearchTerm = '';
@@ -298,18 +295,10 @@
         
         async function loadMemberNews() {
             try {
-                const { data, error } = await supabaseClient
-                    .from('meeting_reports')
-                    .select('event_date, category, title, details, detail_text')
-                    .eq('is_visible', true)
-                    .order('event_date', { ascending: false })
-                    .limit(3);
-
-                if (error) {
-                    throw error;
-                }
-
-                renderNews(data || []);
+                const response = await fetch(EDGE_FUNCTION_URL);
+                if (!response.ok) throw new Error('Failed to fetch data');
+                const data = await response.json();
+                renderNews(data.news || []);
             } catch (error) {
                 console.error('会員向けお知らせの取得に失敗しました:', error);
                 renderNews(fallbackNewsItems);
@@ -318,17 +307,10 @@
 
         async function loadMemberDocuments() {
             try {
-                const { data, error } = await supabaseClient
-                    .from('member_documents')
-                    .select('title, file_url, file_type, file_size, updated_at')
-                    .order('updated_at', { ascending: false })
-                    .limit(4);
-
-                if (error) {
-                    throw error;
-                }
-
-                allDocuments = data || [];
+                const response = await fetch(EDGE_FUNCTION_URL);
+                if (!response.ok) throw new Error('Failed to fetch data');
+                const data = await response.json();
+                allDocuments = data.documents || [];
                 if (!allDocuments.length) {
                     allDocuments = fallbackDocuments;
                 }
@@ -369,7 +351,9 @@
             sessionStorage.removeItem(MEMBER_NAME_KEY);
             sessionStorage.removeItem(MEMBER_COMPANY_KEY);
             alert('ログアウトしました。');
+            // AUTH_BYPASS_START — 認証スキップ中
             window.location.href = 'index.html';
+            // AUTH_BYPASS_END
         }
 
         loadMemberNews();

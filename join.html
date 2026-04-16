@@ -150,13 +150,10 @@
         </div>
         <p class="text-[10px] tracking-tighter uppercase">© 2013-2026 Center for Innovative Data and Mobility.</p>
     </footer>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
     // ★ご自身のSupabaseプロジェクトの値に置き換えてください
-    const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
+    const SUBMIT_APPLICATION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/submit-application';
     const SEND_APPLICATION_MAIL_URL = 'https://uhhhifbotqidqeceqyis.functions.supabase.co/send-application-mail';
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     document.getElementById('application-form')?.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -183,28 +180,15 @@
         submitButton.disabled = true;
 
         try {
-            const { error } = await supabaseClient.from('applications').insert([applicationData]);
+            const response = await fetch(SUBMIT_APPLICATION_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(applicationData)
+            });
 
-            if (error) {
-                alert('送信に失敗しました。再度お試しください。\\n' + error.message);
-                console.error('Application insert error:', error);
-                return;
-            }
-
-            try {
-                const mailResponse = await fetch(SEND_APPLICATION_MAIL_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(applicationData)
-                });
-
-                if (!mailResponse.ok) {
-                    console.error('Application mail send error:', await mailResponse.text());
-                }
-            } catch (mailError) {
-                console.error('Application mail send exception:', mailError);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Submission failed');
             }
 
             alert('送信が完了しました。ありがとうございました。');
