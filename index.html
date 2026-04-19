@@ -180,6 +180,9 @@
         const MEMBER_NAME_KEY = 'cidm-member-name';
         const MEMBER_COMPANY_KEY = 'cidm-member-company';
         const LOGIN_ADMIN_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-admin';
+        const LOGIN_EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-member';
+        const TOP_NEWS_EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/get-top-news';
+        const TOP_NEWS_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
 
         function initPasswordToggle(toggleId, inputId) {
             const toggleButton = document.getElementById(toggleId);
@@ -260,6 +263,7 @@
                     if (!response.ok) {
                         const errorData = await response.json();
                         throw new Error(errorData.error || 'Login failed');
+                    }
                     const data = await response.json();
                     // ログイン成功時
                     sessionStorage.setItem('admin-session', JSON.stringify(data));
@@ -343,28 +347,39 @@
 
         async function loadNews() {
             try {
-                const response = await fetch(TOP_NEWS_EDGE_FUNCTION_URL);
-                if (!response.ok) throw new Error('Failed to fetch news');
+                const response = await fetch(TOP_NEWS_EDGE_FUNCTION_URL, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TOP_NEWS_ANON_KEY}`,
+                        'apikey': TOP_NEWS_ANON_KEY
+                    }
+                });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to fetch news: ${response.status} ${response.statusText} - ${errorText}`);
+                }
                 const data = await response.json();
                 renderNews(data);
             } catch (error) {
                 console.error('ニュースの取得に失敗しました:', error);
-                renderNews([]);
+                renderNews([], true);
             }
         }
+
+        function renderNews(data, hasError = false) {
             const newsList = document.getElementById('news-list');
             if (!newsList) return;
-            
-            if (error) {
-                console.error('ニュース取得エラー:', error);
+
+            if (hasError) {
                 newsList.innerHTML = '<p class="p-4 text-red-500">新着情報の取得に失敗しました。</p>';
                 return;
             }
-            
-            if (!data || data.length === 0) { 
-                newsList.innerHTML = '<p class="p-4 text-slate-400">新着情報はありません。</p>'; 
-                return; 
+
+            if (!data || data.length === 0) {
+                newsList.innerHTML = '<p class="p-4 text-slate-400">新着情報はありません。</p>';
+                return;
             }
+
             newsList.innerHTML = data.map(item => `
                 <div class="py-6 border-b border-slate-50 last:border-0">
                     <div class="flex items-center mb-2">

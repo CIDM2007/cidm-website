@@ -38,17 +38,58 @@
     }
 
     function createSupabaseClient() {
-        // Supabase client creation is disabled for security.
-        // Use Edge Functions instead.
-        console.warn('Supabase client creation is disabled. Use Edge Functions for data operations.');
-        return null;
+        // Initialize Supabase client from global config
+        // Both CIDM_SUPABASE_URL and CIDM_SUPABASE_ANON_KEY must be set in the calling HTML page
+        const SUPABASE_URL = window.CIDM_SUPABASE_URL;
+        const SUPABASE_ANON_KEY = window.CIDM_SUPABASE_ANON_KEY;
+        
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.error('Supabase configuration is missing. Each admin page must set window.CIDM_SUPABASE_URL and window.CIDM_SUPABASE_ANON_KEY before admin-auth.js is loaded.');
+            return null;
+        }
+        
+        try {
+            if (!window.supabase || !window.supabase.createClient) {
+                console.error('Supabase library (@supabase/supabase-js) is not loaded.');
+                return null;
+            }
+            return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } catch (e) {
+            console.error('Failed to create Supabase client:', e);
+            return null;
+        }
     }
 
     async function ensureAuthenticated(supabaseClient, redirectUrl = 'index.html', policy = {}) {
-        // AUTH_BYPASS_START — 認証を一時停止中。本番環境では復元が必須。
-        // ローカル開発・テスト用に認証をスキップします
-        return true;
-        // AUTH_BYPASS_END
+        if (!supabaseClient) {
+            console.warn('Supabase client is not available. Redirecting to login.');
+            window.location.href = redirectUrl;
+            return false;
+        }
+
+        try {
+            const { data: { user }, error } = await supabaseClient.auth.getUser();
+            
+            if (error || !user) {
+                console.warn('User not authenticated:', error?.message || 'No user found');
+                window.location.href = redirectUrl;
+                return false;
+            }
+
+            // Check authorization policy
+            const policy_obj = getDefaultPolicy();
+            if (!isAdminAuthorized(user, policy_obj)) {
+                console.warn('User is not authorized as admin:', user.email);
+                window.location.href = redirectUrl;
+                return false;
+            }
+
+            return true;
+        } catch (e) {
+            console.error('Authentication check failed:', e);
+            window.location.href = redirectUrl;
+            return false;
+        }
     }
 
     async function signOutAndRedirect(_supabaseClient, redirectUrl = 'index.html') {

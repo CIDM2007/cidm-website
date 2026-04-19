@@ -77,28 +77,43 @@
         return p.get('token') || '';
     }
 
+    function sanitizeText(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function setMessage(text, type) {
-        statusArea.innerHTML = `<div class="msg ${type}">${text}</div>`;
+        statusArea.innerHTML = `<div class="msg ${sanitizeText(type)}">${sanitizeText(text)}</div>`;
     }
 
     function renderEvent(inv) {
+        const companyName = sanitizeText(inv.company_name || '');
+        const staffName = sanitizeText(inv.staff_name || '');
+        const eventName = sanitizeText(inv.event_name || '');
+        const locationInfo = sanitizeText(inv.location_info || '');
+        const eventDescription = sanitizeText(inv.event_description || '');
+        const responseStatus = sanitizeText(inv.response_status || '未回答');
+
         eventInfo.innerHTML = `
             <div class="label">対象者</div>
-            <div class="value">${inv.company_name || ''} ${inv.staff_name ? '(' + inv.staff_name + ')' : ''}</div>
+            <div class="value">${companyName}${staffName ? ' (' + staffName + ')' : ''}</div>
             <div class="label">イベント名</div>
-            <div class="value">${inv.event_name || ''}</div>
+            <div class="value">${eventName}</div>
             <div class="label">開催日時</div>
             <div class="value">${inv.starts_at ? new Date(inv.starts_at).toLocaleString('ja-JP') : ''}</div>
             <div class="label">場所/接続情報</div>
-            <div class="value">${inv.location_info || ''}</div>
+            <div class="value">${locationInfo}</div>
             <div class="label">イベント内容</div>
-            <div class="value">${inv.event_description || ''}</div>
+            <div class="value">${eventDescription}</div>
         `;
 
-        const status = inv.response_status || '未回答';
-        const radio = form.querySelector(`input[name="response_status"][value="${status}"]`);
+        const radio = form.querySelector(`input[name="response_status"][value="${responseStatus}"]`);
         if (radio) radio.checked = true;
-        document.getElementById('memo').value = inv.memo || '';
+        document.getElementById('memo').value = sanitizeText(inv.memo || '');
     }
 
     async function loadInvite() {

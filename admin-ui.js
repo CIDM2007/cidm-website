@@ -114,6 +114,79 @@
         }, duration);
     }
 
+    function loadDomPurify() {
+        if (window.DOMPurify) {
+            return;
+        }
+
+        if (document.getElementById('cidm-dompurify-script')) {
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.id = 'cidm-dompurify-script';
+        script.src = 'https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js';
+        script.crossOrigin = 'anonymous';
+        script.onload = () => {
+            console.info('DOMPurify loaded.');
+        };
+        script.onerror = () => {
+            console.warn('DOMPurify failed to load. Falling back to built-in sanitization.');
+        };
+        document.head.appendChild(script);
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function sanitizeText(value) {
+        const raw = String(value == null ? '' : value);
+        if (window.DOMPurify && window.DOMPurify.sanitize) {
+            return window.DOMPurify.sanitize(raw, {
+                ALLOWED_TAGS: [],
+                ALLOWED_ATTR: []
+            });
+        }
+        return escapeHtml(raw);
+    }
+
+    function sanitizeUrl(value) {
+        const urlString = String(value == null ? '' : value).trim();
+        if (!urlString) return '#';
+
+        try {
+            const parsed = new URL(urlString, window.location.href);
+            const allowed = ['http:', 'https:', 'mailto:'];
+            if (!allowed.includes(parsed.protocol)) {
+                return '#';
+            }
+            return window.DOMPurify && window.DOMPurify.sanitize
+                ? window.DOMPurify.sanitize(parsed.toString(), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
+                : parsed.toString();
+        } catch (_e) {
+            return '#';
+        }
+    }
+
+    function sanitizeHtml(value) {
+        const raw = String(value == null ? '' : value);
+        if (window.DOMPurify && window.DOMPurify.sanitize) {
+            return window.DOMPurify.sanitize(raw, {
+                ALLOWED_TAGS: ['br'],
+                ALLOWED_ATTR: []
+            });
+        }
+        return escapeHtml(raw);
+    }
+
+    loadDomPurify();
+
     function createConfirmElements(message, confirmText, cancelText) {
         const theme = getTheme();
         const backdrop = document.createElement('div');
@@ -284,6 +357,9 @@
         showToast: showToast,
         showConfirm: showConfirm,
         runWithButtonBusy: runWithButtonBusy,
-        getSkeletonLine: getSkeletonLine
+        getSkeletonLine: getSkeletonLine,
+        sanitizeText: sanitizeText,
+        sanitizeUrl: sanitizeUrl,
+        sanitizeHtml: sanitizeHtml
     };
 })();

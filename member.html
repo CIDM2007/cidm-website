@@ -189,15 +189,6 @@
             return dateString.replace(/-/g, '.');
         }
 
-        function escapeHtml(value) {
-            return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
         function renderNews(items) {
             const container = document.getElementById('member-news-list');
             if (!container) return;
@@ -207,14 +198,22 @@
                 return;
             }
 
-            container.innerHTML = items.map((item) => `
-                <a href="archive.html" class="block rounded-xl border border-slate-100 p-4 hover:border-blue-200 hover:bg-blue-50/40 transition">
-                    <p class="text-xs text-slate-400 mb-2">${formatDate(item.event_date || item.date)} | ${item.category || 'お知らせ'}</p>
-                    <p class="text-slate-800 font-bold">${item.title || ''}</p>
-                    ${item.details ? `<p class="text-sm text-slate-600 mt-2 leading-relaxed">${escapeHtml(item.details).replace(/\n/g, '<br>')}</p>` : ''}
-                    ${item.detail_text ? `<div class="mt-2"><p class="text-[11px] font-bold text-blue-700 tracking-wide">詳細</p><p class="text-sm text-slate-700 leading-relaxed">${escapeHtml(item.detail_text).replace(/\n/g, '<br>')}</p></div>` : ''}
-                </a>
-            `).join('');
+            container.innerHTML = items.map((item) => {
+                const title = window.cidmAdminUi.sanitizeText(item.title || '');
+                const category = window.cidmAdminUi.sanitizeText(item.category || 'お知らせ');
+                const details = item.details ? window.cidmAdminUi.sanitizeText(item.details).replace(/\n/g, '<br>') : '';
+                const detailText = item.detail_text ? window.cidmAdminUi.sanitizeText(item.detail_text).replace(/\n/g, '<br>') : '';
+                const date = formatDate(item.event_date || item.date);
+
+                return `
+                    <a href="archive.html" class="block rounded-xl border border-slate-100 p-4 hover:border-blue-200 hover:bg-blue-50/40 transition">
+                        <p class="text-xs text-slate-400 mb-2">${date} | ${category}</p>
+                        <p class="text-slate-800 font-bold">${title}</p>
+                        ${details ? `<p class="text-sm text-slate-600 mt-2 leading-relaxed">${details}</p>` : ''}
+                        ${detailText ? `<div class="mt-2"><p class="text-[11px] font-bold text-blue-700 tracking-wide">詳細</p><p class="text-sm text-slate-700 leading-relaxed">${detailText}</p></div>` : ''}
+                    </a>
+                `;
+            }).join('');
 
             const unreadNews = document.getElementById('unread-news-count');
             if (unreadNews) {
@@ -262,10 +261,10 @@
                     const fileSize = item.file_size || '-';
 
                     return `
-                        <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="rounded-xl border border-slate-100 p-5 hover:border-blue-200 hover:bg-blue-50/40 transition">
-                            <p class="text-xs text-slate-400 mb-2">最新更新: ${updatedAt || '未設定'}</p>
-                            <p class="font-bold text-slate-800">${escapeHtml(item.title || '名称未設定')}</p>
-                            <p class="text-sm text-slate-500 mt-2">${escapeHtml(fileType)} / ${escapeHtml(fileSize)}</p>
+                        <a href="${window.cidmAdminUi.sanitizeUrl(href)}" target="_blank" rel="noopener noreferrer" class="rounded-xl border border-slate-100 p-5 hover:border-blue-200 hover:bg-blue-50/40 transition">
+                            <p class="text-xs text-slate-400 mb-2">最新更新: ${window.cidmAdminUi.sanitizeText(updatedAt || '未設定')}</p>
+                            <p class="font-bold text-slate-800">${window.cidmAdminUi.sanitizeText(item.title || '名称未設定')}</p>
+                            <p class="text-sm text-slate-500 mt-2">${window.cidmAdminUi.sanitizeText(fileType)} / ${window.cidmAdminUi.sanitizeText(fileSize)}</p>
                         </a>
                     `;
                 }).join('');

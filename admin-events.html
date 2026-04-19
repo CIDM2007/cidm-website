@@ -173,6 +173,7 @@
     <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./cidm-config.js"></script>
     <script src="./admin-auth.js"></script>
     <script src="./admin-ui.js"></script>
     <script>
@@ -186,13 +187,8 @@
         '大変お忙しい中かとは存じますが、何卒ご出席を賜りますよう、宜しくお願い致します。'
     ].join('\n');
 
-    function escapeHtml(v) {
-        return String(v || '')
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
+    function sanitizeValue(v) {
+        return window.cidmAdminUi.sanitizeText(v || '');
     }
 
     function uniqueNonEmpty(values) {
@@ -206,7 +202,10 @@
             el.innerHTML = '<span style="color:#64748b;font-size:.78rem;">選択肢なし</span>';
             return;
         }
-        el.innerHTML = values.map((v) => `<label><input type="checkbox" name="${name}" value="${escapeHtml(v)}"> ${escapeHtml(v)}</label>`).join('');
+        el.innerHTML = values.map((v) => {
+            const safeValue = sanitizeValue(v);
+            return `<label><input type="checkbox" name="${name}" value="${safeValue}"> ${safeValue}</label>`;
+        }).join('');
     }
 
     function renderManualMembers(items) {
@@ -217,8 +216,9 @@
             return;
         }
         wrap.innerHTML = items.map((m) => {
-            const label = `${m.company_name || ''}${m.staff_name ? ' / ' + m.staff_name : ''}`;
-            return `<label><input type="checkbox" name="manual_member_id" value="${m.id}"><span class="member-text">${escapeHtml(label)}</span></label>`;
+            const label = `${window.cidmAdminUi.sanitizeText(m.company_name || '')}${m.staff_name ? ' / ' + window.cidmAdminUi.sanitizeText(m.staff_name) : ''}`;
+            const memberId = window.cidmAdminUi.sanitizeText(m.id || '');
+            return `<label><input type="checkbox" name="manual_member_id" value="${memberId}"><span class="member-text">${label}</span></label>`;
         }).join('');
     }
 

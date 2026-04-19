@@ -1,13 +1,31 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+function getCorsHeaders(origin: string): Record<string, string> {
+  const allowedOrigins = [
+    'https://cidm-website.example.com',  // 本番環境：実際のドメインに置き換え
+    'http://localhost:3000',
+    'http://localhost:5500',
+  ];
+  
+  const isAllowed = allowedOrigins.some(allowed => origin === allowed);
+  
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : "null",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+  };
+}
 
 serve(async (req) => {
+  const origin = req.headers.get("origin") || "";
+  const corsHeaders = getCorsHeaders(origin);
+  
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { 
+      status: 204,
+      headers: corsHeaders 
+    });
   }
 
   if (req.method !== "POST") {
