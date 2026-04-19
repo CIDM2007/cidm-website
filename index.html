@@ -183,7 +183,6 @@
         const LOGIN_ADMIN_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-admin';
         const LOGIN_EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-member';
         const TOP_NEWS_EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/get-top-news';
-        const TOP_NEWS_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
 
         function initPasswordToggle(toggleId, inputId) {
             const toggleButton = document.getElementById(toggleId);
@@ -348,13 +347,7 @@
 
         async function loadNews() {
             try {
-                const response = await fetch(TOP_NEWS_EDGE_FUNCTION_URL, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${TOP_NEWS_ANON_KEY}`,
-                        'apikey': TOP_NEWS_ANON_KEY
-                    }
-                });
+                const response = await fetch(TOP_NEWS_EDGE_FUNCTION_URL);
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(`Failed to fetch news: ${response.status} ${response.statusText} - ${errorText}`);

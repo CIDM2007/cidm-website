@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.send-meeting-invite-mail]
 verify_jwt = false
+
+[functions.get-top-news]
+verify_jwt = false
