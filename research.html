@@ -166,10 +166,10 @@
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // 管理者ログインリンククリックでモーダル表示
+        // 管理者ログインリンククリックで管理画面トップへ遷移
         document.getElementById('admin-login-link')?.addEventListener('click', function(e) {
             e.preventDefault();
-            alert('管理者ログインはトップページから行ってください。');
+            window.location.href = 'admin-portal.html';
         });
     </script>
 </body>

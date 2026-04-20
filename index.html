@@ -223,10 +223,10 @@
             if (passwordInput) passwordInput.value = '';
         }
 
-        // 管理者ログインリンククリックで管理画面の認証ページへ遷移
+        // 管理者ログインリンククリックで管理画面トップへ遷移
         document.getElementById('admin-login-link')?.addEventListener('click', function(e) {
             e.preventDefault();
-            window.location.href = 'admin.html';
+            window.location.href = 'admin-portal.html';
         });
 
         document.getElementById('admin-modal-close-btn')?.addEventListener('click', () => {
