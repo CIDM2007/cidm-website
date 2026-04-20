@@ -182,8 +182,73 @@
         const MEMBER_COMPANY_KEY = 'cidm-member-company';
         const LOGIN_ADMIN_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-admin';
         const LOGIN_EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-member';
+        const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
+        const LOGIN_RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/cidm_member_login`;
+        const LOGIN_TIMEOUT_MS = 15000;
         const TOP_NEWS_API_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/rest/v1/meeting_reports?select=event_date,category,title,details&is_visible=eq.true&order=event_date.desc&limit=5';
         const TOP_NEWS_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
+
+        async function fetchJsonWithTimeout(url, options = {}, timeoutMs = LOGIN_TIMEOUT_MS) {
+            const controller = new AbortController();
+            const timerId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+
+                const text = await response.text();
+                const json = text ? JSON.parse(text) : {};
+                return { response, json };
+            } catch (error) {
+                if (error && error.name === 'AbortError') {
+                    throw new Error('通信がタイムアウトしました。時間をおいて再度お試しください。');
+                }
+                throw error;
+            } finally {
+                window.clearTimeout(timerId);
+            }
+        }
+
+        function isTransportErrorMessage(message) {
+            const normalized = String(message || '').toLowerCase();
+            return normalized.includes('timeout')
+                || normalized.includes('タイムアウト')
+                || normalized.includes('failed to fetch')
+                || normalized.includes('networkerror')
+                || normalized.includes('network request failed');
+        }
+
+        async function loginMemberViaRpc(loginId, password) {
+            const { response, json } = await fetchJsonWithTimeout(LOGIN_RPC_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: TOP_NEWS_ANON_KEY,
+                    Authorization: `Bearer ${TOP_NEWS_ANON_KEY}`
+                },
+                body: JSON.stringify({
+                    p_login_id: loginId,
+                    p_password: password
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error((json && (json.error || json.message)) || 'Login failed');
+            }
+
+            const member = Array.isArray(json) ? json[0] : null;
+            if (!member) {
+                throw new Error('Invalid credentials');
+            }
+
+            return {
+                login_id: member.login_id,
+                staff_name: member.staff_name,
+                company_name: member.company_name
+            };
+        }
 
         function initPasswordToggle(toggleId, inputId) {
             const toggleButton = document.getElementById(toggleId);
@@ -316,23 +381,51 @@
                     return;
                 }
 
-                const response = await fetch(LOGIN_EDGE_FUNCTION_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login_id: loginId, password })
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || 'Login failed');
-                }
-                const member = await response.json();
+                try {
+                    let member = null;
 
-                isLoggedIn = true;
-                sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
-                sessionStorage.setItem(MEMBER_ID_KEY, member.login_id || loginId);
-                sessionStorage.setItem(MEMBER_NAME_KEY, member.staff_name || '');
-                sessionStorage.setItem(MEMBER_COMPANY_KEY, member.company_name || '');
-                window.location.href = 'member.html';
+                    try {
+                        const { response, json } = await fetchJsonWithTimeout(LOGIN_EDGE_FUNCTION_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ login_id: loginId, password })
+                        });
+
+                        if (!response.ok) {
+                            throw new Error((json && json.error) || 'Login failed');
+                        }
+
+                        member = json || {};
+                    } catch (edgeError) {
+                        const edgeMessage = String(edgeError && edgeError.message ? edgeError.message : edgeError);
+                        if (!isTransportErrorMessage(edgeMessage)) {
+                            throw edgeError;
+                        }
+
+                        // Edge Function がネットワーク要因で不達のときは RPC 直呼びにフォールバック。
+                        member = await loginMemberViaRpc(loginId, password);
+                    }
+
+                    isLoggedIn = true;
+                    sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
+                    sessionStorage.setItem(MEMBER_ID_KEY, member.login_id || loginId);
+                    sessionStorage.setItem(MEMBER_NAME_KEY, member.staff_name || '');
+                    sessionStorage.setItem(MEMBER_COMPANY_KEY, member.company_name || '');
+                    window.location.href = 'member.html';
+                } catch (error) {
+                    const raw = String(error && error.message ? error.message : 'ログインに失敗しました。');
+                    const normalized = raw.toLowerCase();
+                    const message = normalized.includes('invalid credentials') || normalized.includes('invalid login')
+                        ? 'ログインID/メールアドレスまたはパスワードが正しくありません。'
+                        : normalized.includes('timeout') || raw.includes('タイムアウト')
+                            ? 'ログイン通信がタイムアウトしました。時間をおいて再度お試しください。'
+                            : normalized.includes('failed to fetch')
+                                ? '通信に失敗しました。ネットワーク接続を確認してください。'
+                                : raw;
+
+                    console.error('Member login failed:', error);
+                    window.cidmAdminUi.showToast(message, 'error', 3600);
+                }
             }, 'ログイン中...');
         }
         function handleLogout() { isLoggedIn = false; showPage('home'); }

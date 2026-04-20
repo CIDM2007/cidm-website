@@ -5,11 +5,25 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+const corsHeaders = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey'
+}
+
 export default async function handler(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      status: 200,
+      headers: corsHeaders
+    })
+  }
+
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     })
   }
 
@@ -19,7 +33,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (!login_id || !password) {
       return new Response(JSON.stringify({ error: 'Missing login_id or password' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       })
     }
 
@@ -31,7 +45,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       })
     }
 
@@ -39,7 +53,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (!member) {
       return new Response(JSON.stringify({ error: 'Invalid credentials' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       })
     }
 
@@ -49,18 +63,13 @@ export default async function handler(req: Request): Promise<Response> {
       company_name: member.company_name
     }), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      }
+      headers: corsHeaders
     })
   } catch (error) {
     console.error('Error logging in member:', error)
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     })
   }
 }
