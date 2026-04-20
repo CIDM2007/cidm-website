@@ -4,6 +4,13 @@
 -- =========================
 -- meeting_events / meeting_event_invites
 -- =========================
+drop policy if exists "meeting_reports_select_visible" on public.meeting_reports;
+create policy "meeting_reports_select_visible"
+on public.meeting_reports
+for select
+to anon, authenticated
+using (coalesce(is_visible, false) = true);
+
 drop policy if exists "meeting_events_admin_all" on public.meeting_events;
 create policy "meeting_events_admin_all"
 on public.meeting_events
