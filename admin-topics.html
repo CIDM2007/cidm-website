@@ -239,7 +239,7 @@
                 if (!accepted) {
                     return;
                 }
-                const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+                const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
                 if (!ok) return;
 
                 const { error } = await supabaseClient.from('meeting_reports').delete().eq('id', id);
@@ -279,7 +279,7 @@
         });
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
             if (!ok) return;
             loadTopics(1);
         });

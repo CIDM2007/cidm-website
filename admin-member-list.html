@@ -210,7 +210,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
-        const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+        const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
         if (!ok) return;
         document.getElementById('division-member')?.addEventListener('change', applyDivisionFilterAndRender);
         document.getElementById('division-related')?.addEventListener('change', applyDivisionFilterAndRender);

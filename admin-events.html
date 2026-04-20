@@ -416,7 +416,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
-        const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+        const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
         if (!ok) return;
         form.invite_mail_body.value = DEFAULT_INVITE_MAIL_BODY;
         await loadMemberMaster();

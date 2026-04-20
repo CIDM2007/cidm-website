@@ -76,13 +76,13 @@
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
-        await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+        await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
     });
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
-            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
             if (!ok) return;
 
             const title = form.title.value.trim();

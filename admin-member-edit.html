@@ -209,7 +209,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
-        await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+        await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
         if (!memberId) {
             window.cidmAdminUi.showToast('IDが指定されていません。', 'error', 3000);
             form.style.display = 'none';
@@ -285,7 +285,7 @@
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
-            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
             if (!ok || !memberId) return;
 
             const contactRows = [...contactsList.querySelectorAll('.contact-row')];
