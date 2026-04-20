@@ -324,7 +324,7 @@
 
     document.getElementById('logout-btn')?.addEventListener('click', async () => {
         window.cidmAdminUi.showToast('ログアウトしました', 'success', 900);
-        await window.cidmAdminAuth.signOutAndRedirect(supabaseClient, 'admin.html');
+        await window.cidmAdminAuth.signOutAndRedirect(supabaseClient, 'index.html');
     });
 </script>
 </html>
