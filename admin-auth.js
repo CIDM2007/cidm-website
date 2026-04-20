@@ -185,6 +185,58 @@
             window.location.href = redirectUrl;
         }
     }
+
+    function shouldShowSharedLogout() {
+        const path = (window.location && window.location.pathname ? window.location.pathname : '').toLowerCase();
+        const fileName = path.split('/').pop() || '';
+        if (!fileName.startsWith('admin-') && fileName !== 'admin.html') {
+            return false;
+        }
+        if (fileName === 'admin.html') {
+            return false;
+        }
+        if (document.getElementById('logout-btn') || document.getElementById('cidm-shared-logout-btn')) {
+            return false;
+        }
+        return true;
+    }
+
+    function addSharedLogoutButton() {
+        if (!shouldShowSharedLogout()) {
+            return;
+        }
+
+        const button = document.createElement('button');
+        button.id = 'cidm-shared-logout-btn';
+        button.type = 'button';
+        button.textContent = 'ログアウト';
+        button.style.position = 'fixed';
+        button.style.right = '16px';
+        button.style.bottom = '16px';
+        button.style.zIndex = '9999';
+        button.style.background = '#ffffff';
+        button.style.color = '#0f172a';
+        button.style.border = '1px solid #cbd5e1';
+        button.style.borderRadius = '9999px';
+        button.style.padding = '10px 14px';
+        button.style.fontSize = '12px';
+        button.style.fontWeight = '700';
+        button.style.cursor = 'pointer';
+        button.style.boxShadow = '0 8px 20px rgba(15, 23, 42, 0.12)';
+
+        button.addEventListener('click', async () => {
+            const supabaseClient = createSupabaseClient();
+            await signOutAndRedirect(supabaseClient, 'index.html');
+        });
+
+        document.body.appendChild(button);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', addSharedLogoutButton);
+    } else {
+        addSharedLogoutButton();
+    }
     // AUTH_BYPASS_END
 
     window.cidmAdminAuth = {
