@@ -182,7 +182,8 @@
         const MEMBER_COMPANY_KEY = 'cidm-member-company';
         const LOGIN_ADMIN_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-admin';
         const LOGIN_EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-member';
-        const TOP_NEWS_EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/get-top-news';
+        const TOP_NEWS_API_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/rest/v1/meeting_reports?select=event_date,category,title,details&is_visible=eq.true&order=event_date.desc&limit=5';
+        const TOP_NEWS_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
 
         function initPasswordToggle(toggleId, inputId) {
             const toggleButton = document.getElementById(toggleId);
@@ -347,7 +348,12 @@
 
         async function loadNews() {
             try {
-                const response = await fetch(TOP_NEWS_EDGE_FUNCTION_URL);
+                const response = await fetch(TOP_NEWS_API_URL, {
+                    headers: {
+                        apikey: TOP_NEWS_ANON_KEY,
+                        Authorization: `Bearer ${TOP_NEWS_ANON_KEY}`
+                    }
+                });
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(`Failed to fetch news: ${response.status} ${response.statusText} - ${errorText}`);
@@ -377,12 +383,12 @@
             newsList.innerHTML = data.map(item => `
                 <div class="py-6 border-b border-slate-50 last:border-0">
                     <div class="flex items-center mb-2">
-                        <span class="text-sm font-bold text-slate-400 w-32">${item.event_date ? item.event_date.replace(/-/g, '.') : ''}</span>
-                        ${item.category ? `<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded mr-4">${item.category}</span>` : ''}
-                        <h3 class="text-slate-800 font-bold">${item.title || ''}</h3>
+                        <span class="text-sm font-bold text-slate-400 w-32">${item.event_date ? window.cidmAdminUi.sanitizeText(item.event_date.replace(/-/g, '.')) : ''}</span>
+                        ${item.category ? `<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded mr-4">${window.cidmAdminUi.sanitizeText(item.category)}</span>` : ''}
+                        <h3 class="text-slate-800 font-bold">${window.cidmAdminUi.sanitizeText(item.title || '')}</h3>
                     </div>
                     <div class="ml-32 text-sm text-slate-500 line-clamp-3 leading-relaxed">
-                        ${item.details || ''}
+                        ${window.cidmAdminUi.sanitizeText(item.details || '').replace(/\n/g, '<br>')}
                     </div>
                 </div>
             `).join('');

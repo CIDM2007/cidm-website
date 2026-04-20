@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>過去のお知らせ | 一般社団法人 車両情報活用研究所</title>
+    <link rel="icon" type="image/png" href="./CIDMchara.png">
     <link href="output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="./nav.js" defer></script>
@@ -73,24 +74,59 @@
     </footer>
 
     <script>
-        const ARCHIVE_NEWS_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/get-archive-news';
+        const ARCHIVE_NEWS_API_BASE = 'https://uhhhifbotqidqeceqyis.supabase.co/rest/v1/meeting_reports';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
+        const ITEMS_PER_PAGE = 10;
 
-        const ITEMS_PER_PAGE = 10; // 1ページあたりの表示件数
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
 
         async function loadArchiveNews(page = 1) {
             const archiveList = document.getElementById('archive-list');
-            if (!archiveList) return;
-            
+            const pagination = document.getElementById('pagination');
+            if (!archiveList || !pagination) return;
+
+            const from = (page - 1) * ITEMS_PER_PAGE;
+            const to = from + ITEMS_PER_PAGE - 1;
+            const url = `${ARCHIVE_NEWS_API_BASE}?select=event_date,category,title,details,is_visible&is_visible=eq.true&order=event_date.desc&limit=${ITEMS_PER_PAGE}&offset=${from}`;
+
             archiveList.innerHTML = '<p class="text-center text-slate-400 py-10">読み込み中...</p>';
 
             try {
-                const response = await fetch(`${ARCHIVE_NEWS_URL}?page=${page}`);
-                if (!response.ok) throw new Error('Failed to fetch');
-                const data = await response.json();
+                const [dataResponse, countResponse] = await Promise.all([
+                    fetch(url, {
+                        headers: {
+                            apikey: SUPABASE_ANON_KEY,
+                            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+                        }
+                    }),
+                    fetch(`${ARCHIVE_NEWS_API_BASE}?select=id&is_visible=eq.true`, {
+                        headers: {
+                            apikey: SUPABASE_ANON_KEY,
+                            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                            Prefer: 'count=exact',
+                            Range: '0-0'
+                        }
+                    })
+                ]);
+
+                if (!dataResponse.ok) {
+                    throw new Error(`Failed to fetch archive data: ${dataResponse.status}`);
+                }
+
+                const data = await dataResponse.json();
+                const contentRange = countResponse.headers.get('content-range') || '0-0/0';
+                const totalCount = Number(contentRange.split('/')[1] || '0');
 
                 if (!data || data.length === 0) {
                     archiveList.innerHTML = '<p class="py-10 text-center text-slate-400">お知らせはありません。</p>';
-                    document.getElementById('pagination').innerHTML = '';
+                    pagination.innerHTML = '';
                     return;
                 }
 
@@ -98,48 +134,21 @@
                     <div class="py-8">
                         <div class="flex flex-col md:flex-row md:items-center mb-3 gap-2 md:gap-4">
                             <div class="flex items-center">
-                                <span class="text-sm font-bold text-slate-400 w-28">${item.event_date ? item.event_date.replace(/-/g, '.') : ''}</span>
-                                ${item.category ? `<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-full mr-4">${item.category}</span>` : ''}
+                                <span class="text-sm font-bold text-slate-400 w-28">${item.event_date ? escapeHtml(item.event_date.replace(/-/g, '.')) : ''}</span>
+                                ${item.category ? `<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-full mr-4">${escapeHtml(item.category)}</span>` : ''}
                             </div>
-                            <h3 class="text-lg text-slate-800 font-bold leading-snug">${item.title || ''}</h3>
+                            <h3 class="text-lg text-slate-800 font-bold leading-snug">${escapeHtml(item.title || '')}</h3>
                         </div>
-                        <div class="md:ml-32 text-sm text-slate-600 leading-relaxed">${item.details ? item.details.replace(/\n/g, '<br>') : ''}</div>
+                        <div class="md:ml-32 text-sm text-slate-600 leading-relaxed">${escapeHtml(item.details || '').replace(/\n/g, '<br>')}</div>
                     </div>
                 `).join('');
 
-                // Note: Pagination needs total count, but for simplicity, assume fixed pages or adjust later
-                renderPagination(100, page); // Placeholder
+                renderPagination(totalCount, page);
             } catch (error) {
                 console.error('Archive news fetch error:', error);
                 archiveList.innerHTML = '<p class="text-center text-red-500 py-10">読み込みに失敗しました。</p>';
+                pagination.innerHTML = '';
             }
-        }
-
-            // count: 'exact' で全体の件数を取得しつつ、range で10件分だけ取得する
-            const { data, error, count } = await supabaseClient
-                .from('meeting_reports')
-                .select('*', { count: 'exact' })
-                .eq('is_visible', true)
-                .order('event_date', { ascending: false })
-                .range(from, to);
-            
-            if (error) { archiveList.innerHTML = '<p class="py-10 text-center text-red-500">お知らせの取得に失敗しました。</p>'; document.getElementById('pagination').innerHTML = ''; return; }
-            if (!data || data.length === 0) { archiveList.innerHTML = '<p class="py-10 text-center text-slate-400">お知らせはありません。</p>'; document.getElementById('pagination').innerHTML = ''; return; }
-            
-            archiveList.innerHTML = data.map(item => `
-                <div class="py-8">
-                    <div class="flex flex-col md:flex-row md:items-center mb-3 gap-2 md:gap-4">
-                        <div class="flex items-center">
-                            <span class="text-sm font-bold text-slate-400 w-28">${item.event_date ? item.event_date.replace(/-/g, '.') : ''}</span>
-                            ${item.category ? `<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-full mr-4">${item.category}</span>` : ''}
-                        </div>
-                        <h3 class="text-lg text-slate-800 font-bold leading-snug">${item.title || ''}</h3>
-                    </div>
-                    <div class="md:ml-32 text-sm text-slate-600 leading-relaxed">${item.details ? item.details.replace(/\n/g, '<br>') : ''}</div>
-                </div>
-            `).join('');
-
-            renderPagination(count, page);
         }
 
         function renderPagination(totalCount, currentPage) {
