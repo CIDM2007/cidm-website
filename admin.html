@@ -158,7 +158,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const user = await window.cidmAdminAuth.getAuthenticatedAdminUser(supabaseClient);
             if (user) {
-                showAdminContent();
+                window.location.href = 'admin-portal.html';
                 return;
             }
             showAdminLoginScreen();
@@ -217,7 +217,7 @@
 
                     window.cidmAdminUi.showToast('管理者認証に成功しました。', 'success', 1800);
                     adminLoginForm.reset();
-                    showAdminContent();
+                    window.location.href = 'admin-portal.html';
                 }, '認証中...');
             } catch (error) {
                 const raw = String(error && error.message ? error.message : 'ログインに失敗しました。');
