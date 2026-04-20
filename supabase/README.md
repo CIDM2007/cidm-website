@@ -27,7 +27,37 @@ npx supabase link --project-ref uhhhifbotqidqeceqyis
 4. マイグレーションを反映
 
 ```powershell
-npx supabase db push
+npx supabase db push --linked --yes
+```
+
+## チーム向け: migration 作成テンプレート（PowerShell）
+
+重複しない 14 桁タイムスタンプ（`yyyyMMddHHmmss`）で migration を作るため、
+次のテンプレートを追加しています。
+
+- `supabase/new-migration.ps1`
+
+### 使い方
+
+```powershell
+./supabase/new-migration.ps1 -Name "harden_admin_policy"
+```
+
+作成されるファイル名の例:
+
+- `supabase/migrations/20260421123045_harden_admin_policy.sql`
+
+### Dry Run（作成せずコマンドだけ確認）
+
+```powershell
+./supabase/new-migration.ps1 -Name "add_member_index" -DryRun
+```
+
+### 作成後の標準手順
+
+```powershell
+npx supabase db push --linked --dry-run --yes
+npx supabase db push --linked --yes
 ```
 
 ## 現在のブロッカー
