@@ -1,5 +1,5 @@
 // Copy this file to cidm-config.js and fill in the actual values.
-// cidm-config.js is ignored by git to avoid accidental secret disclosure.
+// cidm-config.js is intended to be deployed for static hosting.
 
 window.CIDM_SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
 window.CIDM_SUPABASE_ANON_KEY = 'REPLACE_WITH_YOUR_ANON_PUBLIC_KEY';

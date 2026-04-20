@@ -1,6 +1,3 @@
-# Ignore local configuration containing public API keys or environment-specific values
-cidm-config.js
-
 # Node modules and build artifacts
 node_modules/
 .DS_Store
