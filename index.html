@@ -184,7 +184,8 @@
         const LOGIN_EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-member';
         const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
         const LOGIN_RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/cidm_member_login`;
-        const LOGIN_TIMEOUT_MS = 15000;
+        const LOGIN_TIMEOUT_MS = 8000;
+        const LOGIN_GUARD_TIMEOUT_MS = 12000;
         const TOP_NEWS_API_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/rest/v1/meeting_reports?select=event_date,category,title,details&is_visible=eq.true&order=event_date.desc&limit=5';
         const TOP_NEWS_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
 
@@ -208,6 +209,24 @@
                 throw error;
             } finally {
                 window.clearTimeout(timerId);
+            }
+        }
+
+        async function withTimeout(task, timeoutMs, timeoutMessage) {
+            let timerId = null;
+            try {
+                return await Promise.race([
+                    task(),
+                    new Promise((_, reject) => {
+                        timerId = window.setTimeout(() => {
+                            reject(new Error(timeoutMessage || '通信がタイムアウトしました。'));
+                        }, timeoutMs);
+                    })
+                ]);
+            } finally {
+                if (timerId) {
+                    window.clearTimeout(timerId);
+                }
             }
         }
 
@@ -248,6 +267,27 @@
                 staff_name: member.staff_name,
                 company_name: member.company_name
             };
+        }
+
+        async function loginMemberWithFallback(loginId, password) {
+            try {
+                const { response, json } = await fetchJsonWithTimeout(LOGIN_EDGE_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login_id: loginId, password })
+                }, 5000);
+
+                if (!response.ok) {
+                    throw new Error((json && json.error) || 'Login failed');
+                }
+                return json || {};
+            } catch (edgeError) {
+                const edgeMessage = String(edgeError && edgeError.message ? edgeError.message : edgeError);
+                if (!isTransportErrorMessage(edgeMessage)) {
+                    throw edgeError;
+                }
+                return await loginMemberViaRpc(loginId, password);
+            }
         }
 
         function initPasswordToggle(toggleId, inputId) {
@@ -382,29 +422,11 @@
                 }
 
                 try {
-                    let member = null;
-
-                    try {
-                        const { response, json } = await fetchJsonWithTimeout(LOGIN_EDGE_FUNCTION_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ login_id: loginId, password })
-                        });
-
-                        if (!response.ok) {
-                            throw new Error((json && json.error) || 'Login failed');
-                        }
-
-                        member = json || {};
-                    } catch (edgeError) {
-                        const edgeMessage = String(edgeError && edgeError.message ? edgeError.message : edgeError);
-                        if (!isTransportErrorMessage(edgeMessage)) {
-                            throw edgeError;
-                        }
-
-                        // Edge Function がネットワーク要因で不達のときは RPC 直呼びにフォールバック。
-                        member = await loginMemberViaRpc(loginId, password);
-                    }
+                    const member = await withTimeout(
+                        () => loginMemberWithFallback(loginId, password),
+                        LOGIN_GUARD_TIMEOUT_MS,
+                        'ログイン処理がタイムアウトしました。再度お試しください。'
+                    );
 
                     isLoggedIn = true;
                     sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
