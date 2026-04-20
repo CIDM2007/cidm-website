@@ -121,7 +121,6 @@
     <script>
         // 1. Supabaseクライアントを共通ヘルパーから取得
         const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
-        const LOGIN_ADMIN_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-admin';
         const adminLoginScreen = document.getElementById('admin-login-screen');
         const adminLoginForm = document.getElementById('admin-login-form');
         const adminLoginIdInput = document.getElementById('admin-login-id');
@@ -183,27 +182,19 @@
                         return;
                     }
 
-                    let response;
-                    try {
-                        response = await fetch(LOGIN_ADMIN_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email, password })
-                        });
-                    } catch (_networkError) {
-                        throw new Error('認証サーバーに接続できませんでした。ネットワークまたはCORS設定を確認してください。');
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({
+                        email,
+                        password
+                    });
+
+                    if (error) {
+                        throw new Error(error.message || 'ログインに失敗しました。');
                     }
 
-                    let payload = {};
-                    try {
-                        payload = await response.json();
-                    } catch (_jsonError) {
-                        payload = {};
-                    }
-
-                    if (!response.ok) {
-                        throw new Error(payload.error || `ログインに失敗しました。(HTTP ${response.status})`);
-                    }
+                    const payload = {
+                        user: data && data.user ? data.user : null,
+                        session: data && data.session ? data.session : null
+                    };
 
                     if (!payload.session || !payload.session.access_token || !payload.session.refresh_token) {
                         throw new Error('認証セッションの取得に失敗しました。');
