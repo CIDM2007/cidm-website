@@ -493,7 +493,7 @@
             const modal = document.getElementById('password-reset-modal');
             const requestStep = document.getElementById('password-reset-request-step');
             const updateStep = document.getElementById('password-reset-update-step');
-            if (!modal || !requestStep || !updateStep) return;
+            if (!modal || !requestStep || !updateStep) return false;
 
             requestStep.classList.toggle('hidden', mode !== 'request');
             updateStep.classList.toggle('hidden', mode !== 'update');
@@ -504,6 +504,20 @@
                 document.getElementById('password-reset-new-password')?.focus();
             } else {
                 document.getElementById('password-reset-login-id')?.focus();
+            }
+            return true;
+        }
+
+        function handleOpenPasswordResetFromLogin(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            closeLogin();
+            const opened = openPasswordResetModal('request');
+            if (!opened) {
+                openLogin();
+                window.cidmAdminUi.showToast('パスワード回復画面を開けませんでした。再読み込み後に再度お試しください。', 'error', 3200);
+                return;
             }
         }
 
@@ -726,10 +740,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('login-close-btn')?.addEventListener('click', closeLogin);
             document.getElementById('login-form')?.addEventListener('submit', handleLogin);
-            document.getElementById('open-password-reset-btn')?.addEventListener('click', () => {
-                closeLogin();
-                openPasswordResetModal('request');
-            });
+            document.getElementById('open-password-reset-btn')?.addEventListener('click', handleOpenPasswordResetFromLogin);
             document.getElementById('password-reset-close-btn')?.addEventListener('click', closePasswordResetModal);
             document.getElementById('password-reset-request-form')?.addEventListener('submit', requestMemberPasswordReset);
             document.getElementById('password-reset-update-form')?.addEventListener('submit', updateMemberPassword);
