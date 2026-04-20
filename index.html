@@ -223,14 +223,11 @@
             if (passwordInput) passwordInput.value = '';
         }
 
-        // 管理者ログインリンククリックでモーダル表示
-        // AUTH_BYPASS_START — 認証スキップ中。本番環境では復元が必須。
+        // 管理者ログインリンククリックで管理画面の認証ページへ遷移
         document.getElementById('admin-login-link')?.addEventListener('click', function(e) {
             e.preventDefault();
-            // ローカル開発用：直接admin-portalへ遷移
-            window.location.href = 'admin-portal.html';
+            window.location.href = 'admin.html';
         });
-        // AUTH_BYPASS_END
 
         document.getElementById('admin-modal-close-btn')?.addEventListener('click', () => {
             closeAdminLoginModal();

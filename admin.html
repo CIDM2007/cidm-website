@@ -20,6 +20,31 @@
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
+    <div id="admin-login-screen" class="min-h-screen flex items-center justify-center px-6 py-12">
+        <div class="w-full max-w-md bg-white p-8 md:p-10 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-white">
+            <div class="text-center mb-8">
+                <span class="text-blue-600 font-bold tracking-widest text-xs uppercase mb-3 block">Restricted</span>
+                <h1 class="text-3xl font-bold serif text-slate-800">管理者ログイン</h1>
+                <p class="text-sm text-slate-500 mt-4 leading-relaxed">管理者が発行した ID とパスワードで認証された場合のみ、この画面を利用できます。</p>
+                <div class="w-12 h-1 bg-blue-600 mx-auto mt-6 rounded-full"></div>
+            </div>
+
+            <form id="admin-login-form" class="space-y-5">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">管理者ID</label>
+                    <input type="email" id="admin-login-id" placeholder="メールアドレス" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">パスワード</label>
+                    <input type="password" id="admin-login-password" placeholder="パスワード" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition">
+                </div>
+                <button id="admin-login-submit" type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-full hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                    <i class="fa-solid fa-lock-open mr-2"></i> ログインして開始
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- 管理画面コンテンツ（認証完了後に表示） -->
     <div id="admin-content" class="hidden flex-col min-h-screen w-full">
 
@@ -96,11 +121,30 @@
     <script>
         // 1. Supabaseクライアントを共通ヘルパーから取得
         const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+        const LOGIN_ADMIN_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-admin';
+        const adminLoginScreen = document.getElementById('admin-login-screen');
+        const adminLoginForm = document.getElementById('admin-login-form');
+        const adminLoginIdInput = document.getElementById('admin-login-id');
+        const adminLoginPasswordInput = document.getElementById('admin-login-password');
+        const adminLoginSubmitBtn = document.getElementById('admin-login-submit');
         const adminContent = document.getElementById('admin-content');
         const reportForm = document.getElementById('reportForm');
         const reportSubmitBtn = reportForm.querySelector('button[type="submit"]');
         const adminHomeLink = document.getElementById('admin-home-link');
         const adminLogoImg = document.getElementById('admin-logo-img');
+
+        function showAdminContent() {
+            adminLoginScreen.classList.add('hidden');
+            adminContent.classList.remove('hidden');
+            adminContent.classList.add('flex');
+        }
+
+        function showAdminLoginScreen() {
+            adminContent.classList.add('hidden');
+            adminContent.classList.remove('flex');
+            adminLoginScreen.classList.remove('hidden');
+            adminLoginIdInput?.focus();
+        }
 
         adminHomeLink?.addEventListener('click', () => {
             window.location.href = 'index.html';
@@ -113,10 +157,65 @@
         });
 
         document.addEventListener('DOMContentLoaded', async () => {
-            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
-            if (!ok) return;
-            adminContent.classList.remove('hidden');
-            adminContent.classList.add('flex');
+            const user = await window.cidmAdminAuth.getAuthenticatedAdminUser(supabaseClient);
+            if (user) {
+                showAdminContent();
+                return;
+            }
+            showAdminLoginScreen();
+        });
+
+        adminLoginForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            await window.cidmAdminUi.runWithButtonBusy(adminLoginSubmitBtn, async () => {
+                const email = adminLoginIdInput.value.trim();
+                const password = adminLoginPasswordInput.value.trim();
+
+                if (!email || !password) {
+                    window.cidmAdminUi.showToast('管理者IDとパスワードを入力してください。', 'error', 3000);
+                    return;
+                }
+
+                if (!supabaseClient) {
+                    window.cidmAdminUi.showToast('Supabaseクライアントの初期化に失敗しました。', 'error', 3000);
+                    return;
+                }
+
+                const response = await fetch(LOGIN_ADMIN_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload.error || 'ログインに失敗しました。');
+                }
+
+                if (!payload.session || !payload.session.access_token || !payload.session.refresh_token) {
+                    throw new Error('認証セッションの取得に失敗しました。');
+                }
+
+                if (!window.cidmAdminAuth.isAdminAuthorized(payload.user, window.CIDM_ADMIN_AUTH_POLICY || {})) {
+                    throw new Error('管理者権限がありません。');
+                }
+
+                sessionStorage.setItem('admin-session', JSON.stringify(payload));
+
+                const { error: sessionError } = await supabaseClient.auth.setSession({
+                    access_token: payload.session.access_token,
+                    refresh_token: payload.session.refresh_token
+                });
+
+                if (sessionError) {
+                    throw new Error(sessionError.message || 'セッションの復元に失敗しました。');
+                }
+
+                window.cidmAdminUi.showToast('管理者認証に成功しました。', 'success', 1800);
+                adminLoginForm.reset();
+                showAdminContent();
+            }, '認証中...');
         });
 
         // 2. 送信ボタンが押された時の処理

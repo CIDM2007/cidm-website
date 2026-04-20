@@ -2,6 +2,8 @@
     // Note: Supabase keys are now handled via Edge Functions for security.
     // Admin pages should use Edge Functions for data operations.
 
+    const ADMIN_SESSION_STORAGE_KEY = 'admin-session';
+
     function getDefaultPolicy() {
         const policy = window.CIDM_ADMIN_AUTH_POLICY;
         if (!policy || typeof policy !== 'object') {
@@ -60,6 +62,76 @@
         }
     }
 
+    async function restoreAdminSession(supabaseClient) {
+        if (!supabaseClient || !supabaseClient.auth || typeof supabaseClient.auth.setSession !== 'function') {
+            return false;
+        }
+
+        try {
+            const raw = sessionStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
+            if (!raw) {
+                return false;
+            }
+
+            const parsed = JSON.parse(raw);
+            const session = parsed && parsed.session ? parsed.session : parsed;
+            const accessToken = session && session.access_token;
+            const refreshToken = session && session.refresh_token;
+
+            if (!accessToken || !refreshToken) {
+                return false;
+            }
+
+            const { error } = await supabaseClient.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken
+            });
+
+            if (error) {
+                console.warn('Failed to restore admin session:', error.message);
+                return false;
+            }
+
+            return true;
+        } catch (e) {
+            console.warn('Failed to parse saved admin session:', e);
+            return false;
+        }
+    }
+
+    async function getAuthenticatedAdminUser(supabaseClient, policy = {}) {
+        if (!supabaseClient) {
+            return null;
+        }
+
+        try {
+            let { data: { user }, error } = await supabaseClient.auth.getUser();
+
+            if (!user) {
+                const restored = await restoreAdminSession(supabaseClient);
+                if (restored) {
+                    const retry = await supabaseClient.auth.getUser();
+                    user = retry.data && retry.data.user;
+                    error = retry.error;
+                }
+            }
+
+            if (error || !user) {
+                return null;
+            }
+
+            const effectivePolicy = policy && typeof policy === 'object' ? { ...getDefaultPolicy(), ...policy } : getDefaultPolicy();
+            if (!isAdminAuthorized(user, effectivePolicy)) {
+                return null;
+            }
+
+            return user;
+        } catch (e) {
+            console.error('Authentication check failed:', e);
+            return null;
+        }
+    }
+
     async function ensureAuthenticated(supabaseClient, redirectUrl = 'index.html', policy = {}) {
         if (!supabaseClient) {
             console.warn('Supabase client is not available. Redirecting to login.');
@@ -67,38 +139,25 @@
             return false;
         }
 
-        try {
-            const { data: { user }, error } = await supabaseClient.auth.getUser();
-            
-            if (error || !user) {
-                console.warn('User not authenticated:', error?.message || 'No user found');
-                window.location.href = redirectUrl;
-                return false;
-            }
-
-            // Check authorization policy
-            const policy_obj = getDefaultPolicy();
-            if (!isAdminAuthorized(user, policy_obj)) {
-                console.warn('User is not authorized as admin:', user.email);
-                window.location.href = redirectUrl;
-                return false;
-            }
-
-            return true;
-        } catch (e) {
-            console.error('Authentication check failed:', e);
+        const user = await getAuthenticatedAdminUser(supabaseClient, policy);
+        if (!user) {
+            console.warn('User is not authenticated or authorized as admin.');
             window.location.href = redirectUrl;
             return false;
         }
+
+        return true;
     }
 
     async function signOutAndRedirect(_supabaseClient, redirectUrl = 'index.html') {
+        sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
         window.location.href = redirectUrl;
     }
     // AUTH_BYPASS_END
 
     window.cidmAdminAuth = {
         createSupabaseClient,
+        getAuthenticatedAdminUser,
         ensureAuthenticated,
         signOutAndRedirect,
         isAdminAuthorized
