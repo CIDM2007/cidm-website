@@ -168,54 +168,77 @@
         adminLoginForm?.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            await window.cidmAdminUi.runWithButtonBusy(adminLoginSubmitBtn, async () => {
-                const email = adminLoginIdInput.value.trim();
-                const password = adminLoginPasswordInput.value.trim();
+            try {
+                await window.cidmAdminUi.runWithButtonBusy(adminLoginSubmitBtn, async () => {
+                    const email = adminLoginIdInput.value.trim();
+                    const password = adminLoginPasswordInput.value.trim();
 
-                if (!email || !password) {
-                    window.cidmAdminUi.showToast('管理者IDとパスワードを入力してください。', 'error', 3000);
-                    return;
-                }
+                    if (!email || !password) {
+                        window.cidmAdminUi.showToast('管理者IDとパスワードを入力してください。', 'error', 3000);
+                        return;
+                    }
 
-                if (!supabaseClient) {
-                    window.cidmAdminUi.showToast('Supabaseクライアントの初期化に失敗しました。', 'error', 3000);
-                    return;
-                }
+                    if (!supabaseClient) {
+                        window.cidmAdminUi.showToast('Supabaseクライアントの初期化に失敗しました。', 'error', 3000);
+                        return;
+                    }
 
-                const response = await fetch(LOGIN_ADMIN_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
+                    let response;
+                    try {
+                        response = await fetch(LOGIN_ADMIN_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+                    } catch (_networkError) {
+                        throw new Error('認証サーバーに接続できませんでした。ネットワークまたはCORS設定を確認してください。');
+                    }
 
-                const payload = await response.json();
-                if (!response.ok) {
-                    throw new Error(payload.error || 'ログインに失敗しました。');
-                }
+                    let payload = {};
+                    try {
+                        payload = await response.json();
+                    } catch (_jsonError) {
+                        payload = {};
+                    }
 
-                if (!payload.session || !payload.session.access_token || !payload.session.refresh_token) {
-                    throw new Error('認証セッションの取得に失敗しました。');
-                }
+                    if (!response.ok) {
+                        throw new Error(payload.error || `ログインに失敗しました。(HTTP ${response.status})`);
+                    }
 
-                if (!window.cidmAdminAuth.isAdminAuthorized(payload.user, window.CIDM_ADMIN_AUTH_POLICY || {})) {
-                    throw new Error('管理者権限がありません。');
-                }
+                    if (!payload.session || !payload.session.access_token || !payload.session.refresh_token) {
+                        throw new Error('認証セッションの取得に失敗しました。');
+                    }
 
-                sessionStorage.setItem('admin-session', JSON.stringify(payload));
+                    if (!window.cidmAdminAuth.isAdminAuthorized(payload.user, window.CIDM_ADMIN_AUTH_POLICY || {})) {
+                        throw new Error('管理者権限がありません。');
+                    }
 
-                const { error: sessionError } = await supabaseClient.auth.setSession({
-                    access_token: payload.session.access_token,
-                    refresh_token: payload.session.refresh_token
-                });
+                    sessionStorage.setItem('admin-session', JSON.stringify(payload));
 
-                if (sessionError) {
-                    throw new Error(sessionError.message || 'セッションの復元に失敗しました。');
-                }
+                    const { error: sessionError } = await supabaseClient.auth.setSession({
+                        access_token: payload.session.access_token,
+                        refresh_token: payload.session.refresh_token
+                    });
 
-                window.cidmAdminUi.showToast('管理者認証に成功しました。', 'success', 1800);
-                adminLoginForm.reset();
-                showAdminContent();
-            }, '認証中...');
+                    if (sessionError) {
+                        throw new Error(sessionError.message || 'セッションの復元に失敗しました。');
+                    }
+
+                    window.cidmAdminUi.showToast('管理者認証に成功しました。', 'success', 1800);
+                    adminLoginForm.reset();
+                    showAdminContent();
+                }, '認証中...');
+            } catch (error) {
+                const raw = String(error && error.message ? error.message : 'ログインに失敗しました。');
+                const normalized = raw.toLowerCase();
+                const message = normalized.includes('invalid login credentials')
+                    ? 'メールアドレスまたはパスワードが正しくありません。'
+                    : normalized.includes('email not confirmed')
+                        ? 'メール確認が未完了です。Authentication > Users で確認してください。'
+                        : raw;
+                console.error('Admin login failed:', error);
+                window.cidmAdminUi.showToast(message, 'error', 3800);
+            }
         });
 
         // 2. 送信ボタンが押された時の処理
