@@ -186,8 +186,11 @@
         const LOGIN_RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/cidm_member_login`;
         const LOGIN_TIMEOUT_MS = 8000;
         const LOGIN_GUARD_TIMEOUT_MS = 12000;
+        const LOGIN_HARD_RESET_MS = 15000;
         const TOP_NEWS_API_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/rest/v1/meeting_reports?select=event_date,category,title,details&is_visible=eq.true&order=event_date.desc&limit=5';
         const TOP_NEWS_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
+        let memberLoginBusy = false;
+        let memberLoginSeq = 0;
 
         async function fetchJsonWithTimeout(url, options = {}, timeoutMs = LOGIN_TIMEOUT_MS) {
             const controller = new AbortController();
@@ -288,6 +291,24 @@
                 }
                 return await loginMemberViaRpc(loginId, password);
             }
+        }
+
+        function setMemberLoginButtonBusy(button, busy) {
+            if (!button) return;
+            if (!button.dataset.originalText) {
+                button.dataset.originalText = button.textContent || 'ログイン';
+            }
+            if (busy) {
+                button.disabled = true;
+                button.textContent = 'ログイン中...';
+                button.style.opacity = '0.7';
+                button.style.cursor = 'not-allowed';
+                return;
+            }
+            button.disabled = false;
+            button.textContent = button.dataset.originalText || 'ログイン';
+            button.style.opacity = '';
+            button.style.cursor = '';
         }
 
         function initPasswordToggle(toggleId, inputId) {
@@ -413,42 +434,63 @@
         async function handleLogin(e) {
             e.preventDefault();
             const loginBtn = document.getElementById('member-login-btn');
-            await window.cidmAdminUi.runWithButtonBusy(loginBtn, async () => {
-                const loginId = document.getElementById('member-id').value.trim();
-                const password = document.getElementById('password').value.trim();
-                if (!loginId || !password) {
-                    window.cidmAdminUi.showToast('ログインID/メールアドレスとパスワードを入力してください。', 'error', 2600);
-                    return;
+            if (memberLoginBusy) return;
+
+            const loginId = document.getElementById('member-id').value.trim();
+            const password = document.getElementById('password').value.trim();
+            if (!loginId || !password) {
+                window.cidmAdminUi.showToast('ログインID/メールアドレスとパスワードを入力してください。', 'error', 2600);
+                return;
+            }
+
+            memberLoginBusy = true;
+            const seq = ++memberLoginSeq;
+            setMemberLoginButtonBusy(loginBtn, true);
+
+            const hardResetTimer = window.setTimeout(() => {
+                if (seq !== memberLoginSeq) return;
+                memberLoginBusy = false;
+                memberLoginSeq += 1;
+                setMemberLoginButtonBusy(loginBtn, false);
+                window.cidmAdminUi.showToast('ログイン処理が停止したため解除しました。再度お試しください。', 'error', 4200);
+            }, LOGIN_HARD_RESET_MS);
+
+            try {
+                const member = await withTimeout(
+                    () => loginMemberWithFallback(loginId, password),
+                    LOGIN_GUARD_TIMEOUT_MS,
+                    'ログイン処理がタイムアウトしました。再度お試しください。'
+                );
+
+                if (seq !== memberLoginSeq) return;
+
+                isLoggedIn = true;
+                sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
+                sessionStorage.setItem(MEMBER_ID_KEY, member.login_id || loginId);
+                sessionStorage.setItem(MEMBER_NAME_KEY, member.staff_name || '');
+                sessionStorage.setItem(MEMBER_COMPANY_KEY, member.company_name || '');
+                window.location.href = 'member.html';
+            } catch (error) {
+                if (seq !== memberLoginSeq) return;
+                const raw = String(error && error.message ? error.message : 'ログインに失敗しました。');
+                const normalized = raw.toLowerCase();
+                const message = normalized.includes('invalid credentials') || normalized.includes('invalid login')
+                    ? 'ログインID/メールアドレスまたはパスワードが正しくありません。'
+                    : normalized.includes('timeout') || raw.includes('タイムアウト')
+                        ? 'ログイン通信がタイムアウトしました。時間をおいて再度お試しください。'
+                        : normalized.includes('failed to fetch')
+                            ? '通信に失敗しました。ネットワーク接続を確認してください。'
+                            : raw;
+
+                console.error('Member login failed:', error);
+                window.cidmAdminUi.showToast(message, 'error', 3600);
+            } finally {
+                window.clearTimeout(hardResetTimer);
+                if (seq === memberLoginSeq) {
+                    memberLoginBusy = false;
+                    setMemberLoginButtonBusy(loginBtn, false);
                 }
-
-                try {
-                    const member = await withTimeout(
-                        () => loginMemberWithFallback(loginId, password),
-                        LOGIN_GUARD_TIMEOUT_MS,
-                        'ログイン処理がタイムアウトしました。再度お試しください。'
-                    );
-
-                    isLoggedIn = true;
-                    sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
-                    sessionStorage.setItem(MEMBER_ID_KEY, member.login_id || loginId);
-                    sessionStorage.setItem(MEMBER_NAME_KEY, member.staff_name || '');
-                    sessionStorage.setItem(MEMBER_COMPANY_KEY, member.company_name || '');
-                    window.location.href = 'member.html';
-                } catch (error) {
-                    const raw = String(error && error.message ? error.message : 'ログインに失敗しました。');
-                    const normalized = raw.toLowerCase();
-                    const message = normalized.includes('invalid credentials') || normalized.includes('invalid login')
-                        ? 'ログインID/メールアドレスまたはパスワードが正しくありません。'
-                        : normalized.includes('timeout') || raw.includes('タイムアウト')
-                            ? 'ログイン通信がタイムアウトしました。時間をおいて再度お試しください。'
-                            : normalized.includes('failed to fetch')
-                                ? '通信に失敗しました。ネットワーク接続を確認してください。'
-                                : raw;
-
-                    console.error('Member login failed:', error);
-                    window.cidmAdminUi.showToast(message, 'error', 3600);
-                }
-            }, 'ログイン中...');
+            }
         }
         function handleLogout() { isLoggedIn = false; showPage('home'); }
 
