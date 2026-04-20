@@ -10,45 +10,55 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0f172a; font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; display: flex; flex-direction: column; color: #cbd5e1; }
+        body {
+            background:
+                radial-gradient(1200px 500px at 20% -10%, #dbeafe 0%, transparent 60%),
+                radial-gradient(900px 400px at 85% -5%, #e0e7ff 0%, transparent 55%),
+                #eef2f7;
+            font-family: 'Noto Sans JP', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #1e293b;
+        }
 
         /* Header */
-        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 2rem; height:64px; background:#0f172a; border-bottom:1px solid #1e293b; position:sticky; top:0; z-index:10; }
+        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 1.5rem; height:72px; background:rgba(255, 255, 255, 0.78); backdrop-filter:blur(8px); border-bottom:1px solid #dbe4ef; position:sticky; top:0; z-index:10; box-shadow:0 1px 8px rgba(15, 23, 42, 0.06); }
         .brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; }
-        .brand-icon { width:36px; height:36px; background:linear-gradient(135deg,#3b82f6,#6366f1); border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1rem; }
-        .brand-text { font-size:0.78rem; font-weight:700; color:#94a3b8; letter-spacing:0.1em; text-transform:uppercase; }
-        .brand-text span { display:block; color:#f1f5f9; font-size:0.9rem; letter-spacing:0.04em; }
-        .header-back { display:inline-flex; align-items:center; gap:0.4rem; color:#64748b; text-decoration:none; font-size:0.78rem; font-weight:700; letter-spacing:0.06em; border:1px solid #334155; border-radius:9999px; padding:0.3rem 0.9rem; transition:color 0.15s, border-color 0.15s; }
-        .header-back:hover { color:#93c5fd; border-color:#3b82f6; }
+        .brand-icon { width:38px; height:38px; background:linear-gradient(135deg,#2563eb,#0ea5e9); border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1rem; }
+        .brand-text { font-size:0.78rem; font-weight:700; color:#64748b; letter-spacing:0.1em; text-transform:uppercase; }
+        .brand-text span { display:block; color:#1e293b; font-size:0.9rem; letter-spacing:0.04em; }
+        .header-back { display:inline-flex; align-items:center; gap:0.4rem; color:#475569; background:#eff6ff; text-decoration:none; font-size:0.76rem; font-weight:700; letter-spacing:0.06em; border:1px solid #bfdbfe; border-radius:9999px; padding:0.35rem 0.95rem; transition:color 0.15s, border-color 0.15s, background 0.15s; }
+        .header-back:hover { color:#1d4ed8; border-color:#93c5fd; background:#dbeafe; }
 
         /* Body */
-        .admin-body { flex:1; padding:2.5rem 1.5rem 4rem; max-width:980px; margin:0 auto; width:100%; }
+        .admin-body { flex:1; padding:2.25rem 1.2rem 4rem; max-width:980px; margin:0 auto; width:100%; }
 
         /* Page heading */
         .page-heading { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:2rem; flex-wrap:wrap; gap:1rem; }
         .page-heading .left .eyebrow { font-size:0.7rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#3b82f6; margin-bottom:0.35rem; }
-        .page-heading .left h1 { font-size:1.7rem; font-weight:700; color:#f1f5f9; }
+        .page-heading .left h1 { font-size:1.7rem; font-weight:700; color:#1e293b; }
 
         /* New button */
-        .btn-new { display:inline-flex; align-items:center; gap:0.5rem; background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; border:none; padding:0.65rem 1.4rem; border-radius:9999px; font-size:0.84rem; font-weight:700; cursor:pointer; text-decoration:none; transition:opacity 0.15s, transform 0.12s; }
+        .btn-new { display:inline-flex; align-items:center; gap:0.5rem; background:linear-gradient(135deg,#2563eb,#0ea5e9); color:#fff; border:none; padding:0.65rem 1.4rem; border-radius:9999px; font-size:0.84rem; font-weight:700; cursor:pointer; text-decoration:none; transition:opacity 0.15s, transform 0.12s; box-shadow:0 8px 18px rgba(37, 99, 235, 0.2); }
         .btn-new:hover { opacity:0.88; transform:translateY(-1px); }
-        .filter-bar { margin-top:0.4rem; display:flex; gap:1rem; align-items:center; color:#94a3b8; font-size:0.84rem; }
-        .filter-chip { display:inline-flex; align-items:center; gap:0.45rem; border:1px solid #334155; border-radius:9999px; padding:0.35rem 0.75rem; background:#1e293b; }
+        .filter-bar { margin-top:0.4rem; display:flex; gap:1rem; align-items:center; color:#64748b; font-size:0.84rem; }
+        .filter-chip { display:inline-flex; align-items:center; gap:0.45rem; border:1px solid #cbd5e1; border-radius:9999px; padding:0.35rem 0.75rem; background:#ffffff; }
         .filter-chip input[type=checkbox] { accent-color:#3b82f6; }
 
         /* Table card */
-        .table-card { background:#1e293b; border:1px solid #334155; border-radius:1rem; overflow:hidden; }
+        .table-card { background:#ffffff; border:1px solid #dbe4ef; border-radius:1rem; overflow:hidden; box-shadow:0 1px 6px rgba(15, 23, 42, 0.08); }
         .member-table { width:100%; border-collapse:collapse; }
-        .member-table th { background:#0f172a; color:#64748b; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:0.85rem 1rem; text-align:left; border-bottom:1px solid #334155; }
-        .member-table td { padding:0.9rem 1rem; border-bottom:1px solid #243347; color:#cbd5e1; font-size:0.88rem; }
+        .member-table th { background:#f8fbff; color:#64748b; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; padding:0.85rem 1rem; text-align:left; border-bottom:1px solid #e2e8f0; }
+        .member-table td { padding:0.9rem 1rem; border-bottom:1px solid #edf2f7; color:#334155; font-size:0.88rem; }
         .member-table tbody tr:last-child td { border-bottom:none; }
         .member-table tbody tr { cursor:pointer; transition:background 0.12s; }
-        .member-table tbody tr:hover td { background:#263347; }
-        .company-name { font-weight:700; color:#e2e8f0; }
+        .member-table tbody tr:hover td { background:#f8fbff; }
+        .company-name { font-weight:700; color:#1e293b; }
         .sub-text { color:#64748b; font-size:0.8rem; }
 
         /* Footer */
-        .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#334155; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #1e293b; }
+        .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#64748b; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #e2e8f0; }
     </style>
 </head>
 <body>

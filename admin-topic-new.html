@@ -8,30 +8,50 @@
     <link href="./output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background: #f3f4f6; font-family: 'Noto Sans JP', sans-serif; }
-        .top-bar { width:100%; background:#e5e7eb; color:#374151; padding:0.8rem 0; display:flex; justify-content:space-between; align-items:center; font-size:1.1rem; font-weight:bold; letter-spacing:0.05em; }
-        .top-bar span { margin: 0 2rem; }
-        .container { max-width: 600px; margin: 60px auto; background: #fff; border-radius: 1.5rem; box-shadow: 0 4px 24px #0001; padding: 2.5rem 2rem; }
-        h1 { font-size: 1.5rem; font-weight: bold; color: #374151; margin-bottom: 2rem; }
-        .form-group { margin-bottom: 1.5rem; }
-        label { display: block; font-weight: 500; color: #374151; margin-bottom: 0.5rem; }
-        input, textarea, select { width: 100%; padding: 0.7rem; border-radius: 0.7rem; border: 1px solid #d1d5db; background: #f9fafb; font-size: 1rem; }
-        textarea { min-height: 100px; }
-        .form-actions { text-align: right; }
-        .btn { padding: 0.6rem 1.5rem; border-radius: 0.7rem; border: none; font-weight: 500; cursor: pointer; transition: background 0.2s; }
-        .btn-submit { background: #6b7280; color: #fff; }
-        .btn-submit:hover { background: #4b5563; }
-        .btn-cancel { background: #e5e7eb; color: #374151; margin-right: 1rem; }
-        .btn-cancel:hover { background: #d1d5db; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: radial-gradient(1200px 500px at 20% -10%, #dbeafe 0%, transparent 60%), radial-gradient(900px 400px at 85% -5%, #e0e7ff 0%, transparent 55%), #eef2f7; font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; display: flex; flex-direction: column; color: #1e293b; }
+        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 1.5rem; height:72px; background:rgba(255, 255, 255, 0.78); backdrop-filter:blur(8px); border-bottom:1px solid #dbe4ef; position:sticky; top:0; z-index:10; box-shadow:0 1px 8px rgba(15, 23, 42, 0.06); }
+        .brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; }
+        .brand-icon { width:38px; height:38px; background:linear-gradient(135deg,#2563eb,#0ea5e9); border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1rem; }
+        .brand-text { font-size:0.78rem; font-weight:700; color:#64748b; letter-spacing:0.1em; text-transform:uppercase; }
+        .brand-text span { display:block; color:#1e293b; font-size:0.9rem; letter-spacing:0.04em; }
+        .header-back { display:inline-flex; align-items:center; gap:0.4rem; color:#475569; text-decoration:none; font-size:0.76rem; font-weight:700; letter-spacing:0.06em; border:1px solid #bfdbfe; background:#eff6ff; border-radius:9999px; padding:0.35rem 0.95rem; transition:color 0.15s, border-color 0.15s, background 0.15s; }
+        .header-back:hover { color:#1d4ed8; border-color:#93c5fd; background:#dbeafe; }
+        .admin-body { flex:1; padding:2.25rem 1.2rem 4rem; max-width:680px; margin:0 auto; width:100%; }
+        .form-card { background:#ffffff; border:1px solid #dbe4ef; border-radius:1rem; padding:2rem 2.2rem; box-shadow:0 1px 6px rgba(15, 23, 42, 0.08); }
+        .form-heading { margin-bottom:1.8rem; }
+        .eyebrow { font-size:0.7rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#3b82f6; margin-bottom:0.35rem; }
+        h1 { font-size:1.5rem; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:0.5rem; }
+        .form-group { margin-bottom:1.4rem; }
+        label { display:block; font-size:0.78rem; font-weight:700; color:#64748b; letter-spacing:0.07em; text-transform:uppercase; margin-bottom:0.45rem; }
+        input, textarea, select { width:100%; padding:0.72rem 0.9rem; border-radius:0.6rem; border:1px solid #cbd5e1; background:#f8fbff; color:#1e293b; font-size:0.92rem; font-family:inherit; transition:border-color 0.15s, box-shadow 0.15s; outline:none; }
+        input:focus, textarea:focus, select:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
+        textarea { min-height: 120px; resize: vertical; }
+        .form-actions { display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.8rem; padding-top:1.4rem; border-top:1px solid #e2e8f0; }
+        .btn { padding:0.6rem 1.4rem; border-radius:0.6rem; font-size:0.84rem; font-weight:700; cursor:pointer; transition:opacity 0.15s, transform 0.12s; display:inline-flex; align-items:center; gap:0.35rem; border:none; }
+        .btn:hover { transform:translateY(-1px); }
+        .btn-submit { background:linear-gradient(135deg,#2563eb,#0ea5e9); color:#fff; box-shadow:0 8px 18px rgba(37, 99, 235, 0.2); }
+        .btn-submit:hover { opacity:0.88; }
+        .btn-cancel { background:#eff6ff; color:#475569; border:1px solid #bfdbfe; }
+        .btn-cancel:hover { background:#dbeafe; color:#1d4ed8; border-color:#93c5fd; }
+        .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#64748b; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #e2e8f0; }
     </style>
 </head>
 <body>
-    <div class="top-bar">
-        <span>一般社団法人車両情報活用研究所</span>
-        <span>管理者ポータル</span>
-    </div>
-    <div class="container">
-        <h1><i class="fa-solid fa-plus"></i> トピック新規登録</h1>
+    <header class="admin-header">
+        <a href="admin-portal.html" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="brand-text">CIDM <span>管理者ポータル</span></div>
+        </a>
+        <a href="admin-topics.html" class="header-back"><i class="fa-solid fa-chevron-left"></i> トピック管理へ戻る</a>
+    </header>
+    <div class="admin-body">
+        <div class="form-card">
+        <div class="form-heading">
+            <p class="eyebrow">Content Management</p>
+            <h1><i class="fa-solid fa-plus"></i> トピック新規登録</h1>
+        </div>
         <form id="topic-form">
             <div class="form-group">
                 <label for="title">タイトル</label>
@@ -57,6 +77,7 @@
                 <button type="submit" class="btn btn-submit">登録</button>
             </div>
         </form>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./cidm-config.js"></script>
@@ -104,5 +125,6 @@
         }, '登録中...');
     });
     </script>
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
 </body>
 </html>
