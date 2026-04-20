@@ -8,40 +8,441 @@
     <link href="./output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
+            background:
+                radial-gradient(1200px 500px at 20% -10%, #dbeafe 0%, transparent 60%),
+                radial-gradient(900px 400px at 85% -5%, #e0e7ff 0%, transparent 55%),
+                #eef2f7;
             font-family: 'Noto Sans JP', sans-serif;
-            color: #334155;
+            color: #1e293b;
         }
-        .serif {
-            font-family: 'Noto Serif JP', serif;
+
+        .admin-login-screen {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.25rem;
+        }
+
+        .login-shell {
+            width: 100%;
+            max-width: 1100px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(320px, 430px);
+            gap: 1.25rem;
+            align-items: stretch;
+        }
+
+        .login-intro,
+        .login-card,
+        .content-card {
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid #dbe4ef;
+            box-shadow: 0 1px 8px rgba(15, 23, 42, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        .login-intro {
+            border-radius: 1.5rem;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-intro::after {
+            content: '';
+            position: absolute;
+            inset: auto -10% -18% auto;
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.18), rgba(14, 165, 233, 0));
+            pointer-events: none;
+        }
+
+        .intro-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.8rem;
+            background: #eff6ff;
+            color: #2563eb;
+            border: 1px solid #bfdbfe;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        .login-intro h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            line-height: 1.15;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.9rem;
+        }
+
+        .login-intro p {
+            max-width: 34rem;
+            font-size: 0.98rem;
+            line-height: 1.8;
+            color: #475569;
+        }
+
+        .intro-points {
+            margin-top: 1.4rem;
+            display: grid;
+            gap: 0.8rem;
+        }
+
+        .intro-point {
+            display: grid;
+            grid-template-columns: 38px 1fr;
+            gap: 0.8rem;
+            align-items: start;
+            padding: 0.9rem 1rem;
+            border-radius: 1rem;
+            background: #f8fbff;
+            border: 1px solid #dbeafe;
+        }
+
+        .intro-point-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 0.85rem;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        .intro-point strong {
+            display: block;
+            font-size: 0.92rem;
+            color: #1e293b;
+            margin-bottom: 0.2rem;
+        }
+
+        .intro-point span {
+            display: block;
+            font-size: 0.84rem;
+            line-height: 1.6;
+            color: #64748b;
+        }
+
+        .login-card {
+            border-radius: 1.5rem;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .card-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #3b82f6;
+            margin-bottom: 0.45rem;
+        }
+
+        .card-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-copy {
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+
+        .field-group { margin-bottom: 1.15rem; }
+
+        .field-label {
+            display: block;
+            margin-bottom: 0.45rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .field-input,
+        .field-textarea,
+        .field-date {
+            width: 100%;
+            padding: 0.82rem 0.95rem;
+            border-radius: 0.8rem;
+            border: 1px solid #cbd5e1;
+            background: #f8fbff;
+            color: #1e293b;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+        }
+
+        .field-input:focus,
+        .field-textarea:focus,
+        .field-date:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            background: #ffffff;
+        }
+
+        .field-textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        .primary-button {
+            width: 100%;
+            border: none;
+            border-radius: 9999px;
+            padding: 0.95rem 1.2rem;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            color: #fff;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 22px rgba(37, 99, 235, 0.2);
+            transition: transform 0.14s, opacity 0.15s;
+        }
+
+        .primary-button:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: 72px;
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #dbe4ef;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 1px 8px rgba(15, 23, 42, 0.06);
+        }
+
+        .admin-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .admin-header .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .admin-header .brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .admin-header .brand-text {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .admin-header .brand-text span {
+            display: block;
+            color: #1e293b;
+            font-size: 0.9rem;
+            letter-spacing: 0.04em;
+        }
+
+        .header-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #475569;
+            text-decoration: none;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            border-radius: 9999px;
+            padding: 0.35rem 0.95rem;
+            transition: color 0.15s, border-color 0.15s, background 0.15s;
+        }
+
+        .header-back:hover {
+            color: #1d4ed8;
+            border-color: #93c5fd;
+            background: #dbeafe;
+        }
+
+        .admin-body {
+            flex-grow: 1;
+            padding: 2.25rem 1.2rem 4rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .content-card {
+            width: 100%;
+            max-width: 760px;
+            border-radius: 1.25rem;
+            padding: 2rem 2rem 1.8rem;
+        }
+
+        .content-heading {
+            margin-bottom: 1.6rem;
+            padding-bottom: 1.2rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .content-heading h1 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-top: 0.35rem;
+        }
+
+        .content-heading p {
+            margin-top: 0.55rem;
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.7;
+        }
+
+        .visibility-card {
+            background: #f8fbff;
+            border: 1px solid #dbeafe;
+            border-radius: 0.95rem;
+            padding: 1rem 1rem;
+            margin-top: 0.35rem;
+        }
+
+        .visibility-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        .visibility-label input {
+            width: 18px;
+            height: 18px;
+            accent-color: #2563eb;
+        }
+
+        .visibility-label span {
+            margin-left: 0.7rem;
+        }
+
+        .submit-wrap {
+            padding-top: 0.6rem;
+        }
+
+        @media (max-width: 920px) {
+            .login-shell {
+                grid-template-columns: 1fr;
+                max-width: 560px;
+            }
+
+            .login-intro {
+                padding: 1.6rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .admin-header {
+                padding: 0 1rem;
+                height: auto;
+                min-height: 72px;
+                gap: 0.8rem;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+
+            .login-card,
+            .login-intro,
+            .content-card {
+                padding: 1.4rem;
+            }
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col">
-    <div id="admin-login-screen" class="min-h-screen flex items-center justify-center px-6 py-12">
-        <div class="w-full max-w-md bg-white p-8 md:p-10 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-white">
-            <div class="text-center mb-8">
-                <span class="text-blue-600 font-bold tracking-widest text-xs uppercase mb-3 block">Restricted</span>
-                <h1 class="text-3xl font-bold serif text-slate-800">管理者ログイン</h1>
-                <p class="text-sm text-slate-500 mt-4 leading-relaxed">管理者が発行した ID とパスワードで認証された場合のみ、この画面を利用できます。</p>
-                <div class="w-12 h-1 bg-blue-600 mx-auto mt-6 rounded-full"></div>
-            </div>
+<body>
+    <div id="admin-login-screen" class="admin-login-screen">
+        <div class="login-shell">
+            <section class="login-intro">
+                <div class="intro-badge"><i class="fa-solid fa-shield-halved"></i> Admin Access</div>
+                <h1>管理者ポータルへ<br>安全にログイン</h1>
+                <p>認証済みの管理者アカウントのみが、ニュース登録や会員情報、会議案内の管理機能へアクセスできます。公開サイトと切り分けた管理導線で運用します。</p>
+                <div class="intro-points">
+                    <div class="intro-point">
+                        <div class="intro-point-icon"><i class="fa-solid fa-user-shield"></i></div>
+                        <div>
+                            <strong>認証済み管理者のみ</strong>
+                            <span>Supabase Auth のセッションを利用して、管理者画面への導線を保護します。</span>
+                        </div>
+                    </div>
+                    <div class="intro-point">
+                        <div class="intro-point-icon"><i class="fa-solid fa-newspaper"></i></div>
+                        <div>
+                            <strong>投稿と公開状態を一元管理</strong>
+                            <span>新着情報の登録、会員データ更新、問い合わせ設定の変更を同じUIトーンで扱えます。</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-            <form id="admin-login-form" class="space-y-5">
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">管理者ID</label>
-                    <input type="email" id="admin-login-id" placeholder="メールアドレス" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">パスワード</label>
-                    <input type="password" id="admin-login-password" placeholder="パスワード" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition">
-                </div>
-                <button id="admin-login-submit" type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-full hover:bg-blue-700 transition shadow-lg shadow-blue-200">
-                    <i class="fa-solid fa-lock-open mr-2"></i> ログインして開始
-                </button>
-            </form>
+            <section class="login-card">
+                <div class="card-eyebrow">Restricted</div>
+                <h2 class="card-title">管理者ログイン</h2>
+                <p class="card-copy">管理者が発行した ID とパスワードで認証された場合のみ、この画面を利用できます。</p>
+
+                <form id="admin-login-form">
+                    <div class="field-group">
+                        <label class="field-label">管理者ID</label>
+                        <input type="email" id="admin-login-id" placeholder="メールアドレス" required class="field-input">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">パスワード</label>
+                        <input type="password" id="admin-login-password" placeholder="パスワード" required class="field-input">
+                    </div>
+                    <button id="admin-login-submit" type="submit" class="primary-button">
+                        <i class="fa-solid fa-lock-open"></i> ログインして開始
+                    </button>
+                </form>
+            </section>
         </div>
     </div>
 
@@ -49,63 +450,60 @@
     <div id="admin-content" class="hidden flex-col min-h-screen w-full">
 
     <!-- ヘッダーナビゲーション -->
-    <nav class="bg-white/90 backdrop-blur-md border-b border-blue-100 shadow-sm w-full z-50 fixed top-0">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div id="admin-home-link" class="flex items-center space-x-3 cursor-pointer">
-                <div class="w-10 h-10 bg-white flex items-center justify-center rounded-lg shadow-sm border border-blue-50">
+    <nav class="admin-header">
+        <a id="admin-home-link" class="brand" href="admin-portal.html">
+                <div class="brand-icon">
                     <img id="admin-logo-img" src="CIDMchara.png" data-fallback-src="https://placehold.jp/24/2563eb/ffffff/200x200.png?text=C" alt="CIDM Logo" class="max-w-full max-h-full object-contain">
                 </div>
                 <div>
-                    <span class="block font-bold text-lg tracking-wider text-slate-800 leading-none">CIDM</span>
-                    <span class="block text-[9px] text-blue-500 mt-1 font-bold uppercase tracking-tighter">Admin Portal</span>
+                    <span class="brand-text">CIDM<span>管理者ポータル</span></span>
                 </div>
-            </div>
-            <a href="index.html" class="text-sm font-bold text-slate-500 hover:text-blue-600 transition">
-                <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> サイトに戻る
-            </a>
-        </div>
+        </a>
+        <a href="index.html" class="header-back">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> サイトに戻る
+        </a>
     </nav>
 
     <!-- フォームエリア -->
-    <main class="flex-grow pt-32 pb-12 px-6 flex items-center justify-center">
-        <div class="w-full max-w-2xl bg-white p-8 md:p-12 rounded-[2rem] shadow-xl shadow-blue-900/5 border border-white">
-            <div class="text-center mb-10">
-                <span class="text-blue-600 font-bold tracking-widest text-xs uppercase mb-3 block">Management</span>
-                <h1 class="text-3xl font-bold serif text-slate-800">News & Topics 登録</h1>
-                <div class="w-12 h-1 bg-blue-600 mx-auto mt-6 rounded-full"></div>
+    <main class="admin-body">
+        <div class="content-card">
+            <div class="content-heading">
+                <span class="card-eyebrow">Management</span>
+                <h1>News & Topics 登録</h1>
+                <p>公開サイトに表示する新着情報を登録します。表示可否も含めて管理者画面から直接更新できます。</p>
             </div>
             
-            <form id="reportForm" class="space-y-6">
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">日付 <span class="text-red-500 ml-1">*</span></label>
-                    <input type="date" id="event_date" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition">
+            <form id="reportForm">
+                <div class="field-group">
+                    <label class="field-label">日付 <span class="text-red-500 ml-1">*</span></label>
+                    <input type="date" id="event_date" required class="field-date">
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">カテゴリー <span class="text-red-500 ml-1">*</span></label>
-                    <input type="text" id="category" placeholder="例: お知らせ、イベント情報" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition">
+                <div class="field-group">
+                    <label class="field-label">カテゴリー <span class="text-red-500 ml-1">*</span></label>
+                    <input type="text" id="category" placeholder="例: お知らせ、イベント情報" required class="field-input">
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">タイトル <span class="text-red-500 ml-1">*</span></label>
-                    <input type="text" id="title" placeholder="ニュースのタイトルを入力" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition">
+                <div class="field-group">
+                    <label class="field-label">タイトル <span class="text-red-500 ml-1">*</span></label>
+                    <input type="text" id="title" placeholder="ニュースのタイトルを入力" required class="field-input">
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">詳細 <span class="text-red-500 ml-1">*</span></label>
-                    <textarea id="details" rows="5" placeholder="ニュースの詳細内容を入力" required class="w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 outline-none focus:border-blue-400 transition"></textarea>
+                <div class="field-group">
+                    <label class="field-label">詳細 <span class="text-red-500 ml-1">*</span></label>
+                    <textarea id="details" rows="5" placeholder="ニュースの詳細内容を入力" required class="field-textarea"></textarea>
                 </div>
                 
-                <div class="bg-slate-50 p-5 rounded-xl border border-slate-200">
-                    <label class="flex items-center cursor-pointer">
-                        <input type="checkbox" id="is_visible" checked class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500">
-                        <span class="ml-3 font-bold text-slate-700">サイト上に表示する (公開)</span>
+                <div class="visibility-card">
+                    <label class="visibility-label">
+                        <input type="checkbox" id="is_visible" checked>
+                        <span>サイト上に表示する (公開)</span>
                     </label>
                 </div>
                 
-                <div class="pt-6">
-                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-full hover:bg-blue-700 transition shadow-lg shadow-blue-200">
-                        <i class="fa-solid fa-paper-plane mr-2"></i> 登録する
+                <div class="submit-wrap">
+                    <button type="submit" class="primary-button">
+                        <i class="fa-solid fa-paper-plane"></i> 登録する
                     </button>
                 </div>
             </form>
@@ -144,10 +542,6 @@
             adminLoginScreen.classList.remove('hidden');
             adminLoginIdInput?.focus();
         }
-
-        adminHomeLink?.addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
 
         adminLogoImg?.addEventListener('error', () => {
             const fallbackSrc = adminLogoImg.getAttribute('data-fallback-src');
