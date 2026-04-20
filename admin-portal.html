@@ -319,12 +319,12 @@
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
 
     (async function() {
-        await window.cidmAdminAuth.ensureAuthenticated(supabaseClient);
+        await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
     })();
 
     document.getElementById('logout-btn')?.addEventListener('click', async () => {
         window.cidmAdminUi.showToast('ログアウトしました', 'success', 900);
-        await window.cidmAdminAuth.signOutAndRedirect(supabaseClient);
+        await window.cidmAdminAuth.signOutAndRedirect(supabaseClient, 'admin.html');
     });
 </script>
 </html>

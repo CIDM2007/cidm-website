@@ -149,9 +149,41 @@
         return true;
     }
 
-    async function signOutAndRedirect(_supabaseClient, redirectUrl = 'index.html') {
-        sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
-        window.location.href = redirectUrl;
+    function clearSupabaseStorageTokens() {
+        const supabaseUrl = String(window.CIDM_SUPABASE_URL || '');
+        const match = supabaseUrl.match(/^https:\/\/([^.]+)\.supabase\.co/i);
+        if (!match) {
+            return;
+        }
+
+        const projectRef = match[1];
+        const tokenKeys = [
+            `sb-${projectRef}-auth-token`,
+            `sb-${projectRef}-auth-token-code-verifier`
+        ];
+
+        tokenKeys.forEach((key) => {
+            try {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            } catch (_e) {
+                // Ignore storage cleanup errors and continue logout flow.
+            }
+        });
+    }
+
+    async function signOutAndRedirect(supabaseClient, redirectUrl = 'index.html') {
+        try {
+            if (supabaseClient && supabaseClient.auth && typeof supabaseClient.auth.signOut === 'function') {
+                await supabaseClient.auth.signOut({ scope: 'local' });
+            }
+        } catch (e) {
+            console.warn('Supabase signOut failed. Continuing local cleanup.', e);
+        } finally {
+            sessionStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+            clearSupabaseStorageTokens();
+            window.location.href = redirectUrl;
+        }
     }
     // AUTH_BYPASS_END
 
