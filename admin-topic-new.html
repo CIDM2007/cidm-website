@@ -90,21 +90,6 @@
     const cancelBtn = document.getElementById('cancel-btn');
     const submitBtn = form.querySelector('.btn-submit');
 
-    function createUuidV4Fallback() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
-            const rand = Math.floor(Math.random() * 16);
-            const value = ch === 'x' ? rand : ((rand & 0x3) | 0x8);
-            return value.toString(16);
-        });
-    }
-
-    function createTopicId() {
-        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-            return window.crypto.randomUUID();
-        }
-        return createUuidV4Fallback();
-    }
-
     cancelBtn?.addEventListener('click', async () => {
         const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
         if (!accepted) return;
@@ -124,16 +109,16 @@
             const title = form.title.value.trim();
             const event_date = form.event_date.value;
             const is_visible = form.is_visible.value === 'true';
+            const category = '会議報告';
             const details = form.details.value.trim();
             if (!title || !event_date || !details) {
                 window.cidmAdminUi.showToast('全ての項目を入力してください。', 'error', 2200);
                 return;
             }
 
-            const id = createTopicId();
             const { error } = await supabaseClient
                 .from('meeting_reports')
-                .insert([{ id, title, event_date, is_visible, details }]);
+                .insert([{ title, category, event_date, is_visible, details }]);
             if (error) {
                 window.cidmAdminUi.showToast('登録に失敗しました: ' + error.message, 'error', 3000);
             } else {
