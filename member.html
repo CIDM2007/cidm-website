@@ -26,6 +26,15 @@
             box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
         }
 
+        .member-hero-office-card {
+            width: min(100%, 340px);
+            border: 1px solid rgba(191, 219, 254, 0.5);
+            border-radius: 1.25rem;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(6px);
+            padding: 1rem;
+        }
+
         .member-news-card {
             min-height: 34rem;
         }
@@ -51,42 +60,39 @@
                         </p>
                         <p id="member-greeting" class="mt-4 text-sm text-blue-100/90"></p>
                     </div>
-                    <button id="member-logout-btn" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-full bg-white text-slate-800 font-bold hover:bg-blue-50 transition">
-                        <i class="fa-solid fa-right-from-bracket"></i> ログアウト
-                    </button>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-10">
-                    <div class="rounded-2xl border border-blue-300/40 bg-white/10 px-5 py-4 backdrop-blur-sm">
-                        <p class="text-blue-100 text-xs uppercase tracking-widest">次回定例会</p>
-                        <p id="next-meeting-date" class="mt-2 text-xl font-bold">調整中</p>
-                    </div>
-                    <div class="rounded-2xl border border-blue-300/40 bg-white/10 px-5 py-4 backdrop-blur-sm">
-                        <p class="text-blue-100 text-xs uppercase tracking-widest">クイックメニュー</p>
-                        <p id="quick-menu-count" class="mt-2 text-xl font-bold">3 件</p>
-                    </div>
-                    <div class="rounded-2xl border border-blue-300/40 bg-white/10 px-5 py-4 backdrop-blur-sm">
-                        <p class="text-blue-100 text-xs uppercase tracking-widest">未読のお知らせ</p>
-                        <p id="unread-news-count" class="mt-2 text-xl font-bold">0 件</p>
-                    </div>
+                    <aside class="member-hero-office-card self-start md:self-auto">
+                        <div class="flex items-start justify-between gap-3 mb-3">
+                            <h2 class="text-base font-bold">事務局より</h2>
+                            <button id="member-logout-btn" class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs rounded-full bg-white text-slate-800 font-bold hover:bg-blue-50 transition">
+                                <i class="fa-solid fa-right-from-bracket"></i> ログアウト
+                            </button>
+                        </div>
+                        <p class="text-sm text-blue-100 leading-relaxed mb-3">
+                            会員情報の更新や請求関連のお問い合わせは、以下の窓口までご連絡ください。
+                        </p>
+                        <div class="rounded-xl border border-blue-200/50 bg-white/10 p-3 text-sm text-blue-50 space-y-1.5">
+                            <p><i class="fa-solid fa-envelope mr-2"></i> office@cidm.or.jp</p>
+                            <p><i class="fa-solid fa-phone mr-2"></i> 03-0000-0000（平日 10:00-17:00）</p>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </section>
 
         <section class="bg-slate-50 py-14 md:py-16 min-h-screen">
             <div class="max-w-7xl mx-auto px-6">
-                <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,1fr)] gap-6 items-start">
+                <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.75fr)_minmax(300px,1fr)] gap-6 items-start">
                     <article class="member-grid-card member-news-card p-7">
                         <div class="flex items-center justify-between mb-5">
-                            <h2 class="text-2xl font-bold text-slate-800">会員向けお知らせ</h2>
+                            <h2 class="text-2xl font-bold text-slate-800">会議の報告</h2>
                             <a href="archive.html" class="text-sm font-bold text-blue-600 hover:text-blue-700">一覧を見る</a>
                         </div>
                         <div id="member-news-list" class="space-y-4">
-                            <p class="text-sm text-slate-500">お知らせを読み込み中です...</p>
+                            <p class="text-sm text-slate-500">会議の報告を読み込み中です...</p>
                         </div>
                     </article>
 
-                    <aside class="member-grid-card p-7">
+                    <aside id="quick-menu-card" class="member-grid-card p-7">
                         <h2 class="text-xl font-bold text-slate-800 mb-5">クイックメニュー</h2>
                         <div class="space-y-3">
                             <a href="join.html" class="flex items-center justify-between rounded-xl border border-slate-100 px-4 py-3 text-slate-700 hover:border-blue-200 hover:bg-blue-50/40 transition">
@@ -103,17 +109,6 @@
                             </a>
                         </div>
                     </aside>
-
-                    <article class="member-grid-card p-7">
-                        <h2 class="text-xl font-bold text-slate-800 mb-4">事務局より</h2>
-                        <p class="text-slate-600 leading-relaxed mb-4">
-                            会員情報の更新や請求関連のお問い合わせは、以下の窓口までご連絡ください。
-                        </p>
-                        <div class="rounded-xl bg-slate-50 border border-slate-100 p-4 text-sm text-slate-600 space-y-2">
-                            <p><i class="fa-solid fa-envelope text-blue-600 mr-2"></i> office@cidm.or.jp</p>
-                            <p><i class="fa-solid fa-phone text-blue-600 mr-2"></i> 03-0000-0000（平日 10:00-17:00）</p>
-                        </div>
-                    </article>
                 </div>
             </div>
         </section>
@@ -130,25 +125,33 @@
 
         const fallbackNewsItems = [
             {
-                date: '2026-04-08',
-                category: '事務局連絡',
-                title: '第2回データ利活用分科会の事前資料を公開しました',
-                details: '資料公開に関する概要です。',
-                detail_text: '会員向け補足情報です。'
+                date: '2026-04-18',
+                title: '4月度定例会報告（ハイブリッド開催）',
+                summary: '研究会全体の進捗共有と、次期実証実験の論点整理を実施しました。',
+                details: '会場参加とオンライン参加を併用し、各分科会から直近の成果報告を共有。次回までのアクションとして、データ連携手順の標準化案を取りまとめる方針で合意しました。',
+                participants: '32名（会場18名 / オンライン14名）',
+                attachments: [
+                    { name: '会議資料_20260418.pdf', url: '#' },
+                    { name: '議事録_20260418.pdf', url: '#' }
+                ]
             },
             {
-                date: '2026-04-02',
-                category: 'システム更新',
-                title: '会員専用資料アーカイブの検索機能を追加しました',
-                details: '更新内容の概要です。',
-                detail_text: '会員向け詳細説明です。'
+                date: '2026-04-04',
+                title: '第1回運営会議報告',
+                summary: '年度計画の確認と、会員向け情報発信の改善案を協議しました。',
+                details: '年間スケジュールの見直し、会議報告の公開フォーマット統一、配布資料管理フローの更新を決定しました。',
+                participants: '18名',
+                attachments: [
+                    { name: '会議報告スライド_20260404.pdf', url: '#' }
+                ]
             },
             {
-                date: '2026-03-27',
-                category: '会議案内',
-                title: '4月度定例会（ハイブリッド開催）参加登録の受付を開始しました',
-                details: '案内の概要です。',
-                detail_text: '会員向け詳細案内です。'
+                date: '2026-03-22',
+                title: '3月度定例会報告',
+                summary: '車両情報活用に関する最新動向を共有しました。',
+                details: '事業者ヒアリング結果と実証プロジェクトの中間報告を実施。次回までに追加検証項目を整理することになりました。',
+                participants: '26名',
+                attachments: []
             }
         ];
 
@@ -171,49 +174,109 @@
             return dateString.replace(/-/g, '.');
         }
 
+        function parseDateValue(value) {
+            if (!value) return Number.NEGATIVE_INFINITY;
+            const parsed = Date.parse(value);
+            return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+        }
+
+        function normalizeParticipants(value) {
+            if (Array.isArray(value)) {
+                return value.join('、');
+            }
+            return value ? String(value) : '未記載';
+        }
+
+        function normalizeAttachments(value) {
+            if (!value) return [];
+            if (Array.isArray(value)) {
+                return value.map((item) => {
+                    if (typeof item === 'string') {
+                        return { name: item, url: '#' };
+                    }
+                    return {
+                        name: item?.name || item?.file_name || item?.title || '添付ファイル',
+                        url: item?.url || item?.file_url || '#'
+                    };
+                });
+            }
+            if (typeof value === 'string') {
+                return [{ name: value, url: '#' }];
+            }
+            return [];
+        }
+
+        function normalizeMeetingReport(item) {
+            return {
+                date: item.event_date || item.date || item.report_date || '',
+                title: item.title || item.subject || '会議報告',
+                summary: item.summary || item.details || item.outline || '',
+                details: item.detail_text || item.details_long || item.detail || item.details || '',
+                participants: normalizeParticipants(item.participants || item.attendees || item.participant_count),
+                attachments: normalizeAttachments(item.attachments || item.files || item.attachment_files)
+            };
+        }
+
         function renderNews(items) {
             const container = document.getElementById('member-news-list');
             if (!container) return;
 
-            if (!items.length) {
-                container.innerHTML = '<p class="text-sm text-slate-500">現在お知らせはありません。</p>';
+            const reports = items
+                .map(normalizeMeetingReport)
+                .sort((a, b) => parseDateValue(b.date) - parseDateValue(a.date));
+
+            if (!reports.length) {
+                container.innerHTML = '<p class="text-sm text-slate-500">現在会議の報告はありません。</p>';
                 return;
             }
 
-            container.innerHTML = items.map((item) => {
-                const title = window.cidmAdminUi.sanitizeText(item.title || '');
-                const category = window.cidmAdminUi.sanitizeText(item.category || 'お知らせ');
-                const details = item.details ? window.cidmAdminUi.sanitizeText(item.details).replace(/\n/g, '<br>') : '';
-                const detailText = item.detail_text ? window.cidmAdminUi.sanitizeText(item.detail_text).replace(/\n/g, '<br>') : '';
-                const date = formatDate(item.event_date || item.date);
+            container.innerHTML = reports.map((report) => {
+                const title = window.cidmAdminUi.sanitizeText(report.title || '会議報告');
+                const summary = report.summary ? window.cidmAdminUi.sanitizeText(report.summary).replace(/\n/g, '<br>') : '未記載';
+                const details = report.details ? window.cidmAdminUi.sanitizeText(report.details).replace(/\n/g, '<br>') : '未記載';
+                const participants = window.cidmAdminUi.sanitizeText(report.participants || '未記載');
+                const date = window.cidmAdminUi.sanitizeText(formatDate(report.date) || '未設定');
+                const attachmentsHtml = report.attachments.length
+                    ? report.attachments.map((attachment) => `
+                        <a href="${window.cidmAdminUi.sanitizeUrl(attachment.url || '#')}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full border border-blue-200 px-3 py-1 text-xs font-bold text-blue-700 hover:bg-blue-50 transition">
+                            <i class="fa-solid fa-paperclip mr-1.5"></i>${window.cidmAdminUi.sanitizeText(attachment.name || '添付ファイル')}
+                        </a>
+                    `).join('')
+                    : '<span class="text-xs text-slate-500">なし</span>';
 
                 return `
-                    <a href="archive.html" class="block rounded-xl border border-slate-100 p-4 hover:border-blue-200 hover:bg-blue-50/40 transition">
-                        <p class="text-xs text-slate-400 mb-2">${date} | ${category}</p>
-                        <p class="text-slate-800 font-bold">${title}</p>
-                        ${details ? `<p class="text-sm text-slate-600 mt-2 leading-relaxed">${details}</p>` : ''}
-                        ${detailText ? `<div class="mt-2"><p class="text-[11px] font-bold text-blue-700 tracking-wide">詳細</p><p class="text-sm text-slate-700 leading-relaxed">${detailText}</p></div>` : ''}
-                    </a>
+                    <article class="rounded-xl border border-slate-100 p-5 hover:border-blue-200 hover:bg-blue-50/20 transition">
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mb-2">
+                            <p class="text-xs font-bold text-blue-700 tracking-wide">日付: ${date}</p>
+                            <p class="text-xs text-slate-500">参加者: ${participants}</p>
+                        </div>
+                        <h3 class="text-slate-800 font-bold text-lg">${title}</h3>
+                        <div class="mt-3">
+                            <p class="text-[11px] font-bold text-blue-700 tracking-wide">概要</p>
+                            <p class="text-sm text-slate-600 leading-relaxed mt-1">${summary}</p>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-[11px] font-bold text-blue-700 tracking-wide">詳細</p>
+                            <p class="text-sm text-slate-700 leading-relaxed mt-1">${details}</p>
+                        </div>
+                        <div class="mt-3">
+                            <p class="text-[11px] font-bold text-blue-700 tracking-wide mb-1.5">添付ファイル</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${attachmentsHtml}
+                            </div>
+                        </div>
+                    </article>
                 `;
             }).join('');
-
-            const unreadNews = document.getElementById('unread-news-count');
-            if (unreadNews) {
-                unreadNews.textContent = `${items.length} 件`;
-            }
-
-            const nextMeeting = items.find((item) => (item.category || '').includes('会議'));
-            const nextMeetingDate = document.getElementById('next-meeting-date');
-            if (nextMeetingDate) {
-                nextMeetingDate.textContent = nextMeeting ? formatDate(nextMeeting.event_date || nextMeeting.date) : '調整中';
-            }
         }
 
         function updateQuickMenuCount() {
-            const quickMenuCount = document.getElementById('quick-menu-count');
-            const quickMenuItems = document.querySelectorAll('aside .space-y-3 a');
-            if (quickMenuCount) {
-                quickMenuCount.textContent = `${quickMenuItems.length} 件`;
+            const quickMenuCard = document.getElementById('quick-menu-card');
+            if (!quickMenuCard) return;
+            const quickMenuItems = quickMenuCard.querySelectorAll('.space-y-3 a');
+            const quickMenuTitle = quickMenuCard.querySelector('h2');
+            if (quickMenuTitle) {
+                quickMenuTitle.textContent = `クイックメニュー（${quickMenuItems.length}）`;
             }
         }
 
@@ -224,7 +287,7 @@
                 const data = await response.json();
                 renderNews(data.news || []);
             } catch (error) {
-                console.error('会員向けお知らせの取得に失敗しました:', error);
+                console.error('会議報告の取得に失敗しました:', error);
                 renderNews(fallbackNewsItems);
             }
         }
