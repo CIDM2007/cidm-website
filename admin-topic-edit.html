@@ -243,7 +243,8 @@
 
     // URLからid取得
     const urlParams = new URLSearchParams(window.location.search);
-    const topicId = urlParams.get('id');
+    const topicIdParam = urlParams.get('id');
+    const topicId = topicIdParam && /^\d+$/.test(topicIdParam) ? Number(topicIdParam) : null;
     const editTitle = document.getElementById('edit-title');
     if (!topicId) {
         // 新規登録モード
@@ -318,7 +319,10 @@
                 const uploadedUrls = await uploadSelectedFiles();
                 const attachment_urls = [...existingAttachmentUrls, ...uploadedUrls];
 
-                const { error } = await supabaseClient.from('meeting_reports').update({ title, event_date, is_visible, details, detail_text, attachment_urls }).eq('id', topicId);
+                const { error } = await supabaseClient
+                    .from('meeting_reports')
+                    .update({ title, event_date, is_visible, details, detail_text, attachment_urls })
+                    .eq('id', topicId);
                 if (error) {
                     window.cidmAdminUi.showToast('更新に失敗しました: ' + error.message, 'error', 3000);
                 } else {

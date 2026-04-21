@@ -391,6 +391,14 @@
         let totalPages = 1;
         let allData = [];
 
+        function normalizeTopicId(value) {
+            if (typeof value === 'number' && Number.isInteger(value)) {
+                return value;
+            }
+            const normalized = Number(value);
+            return Number.isInteger(normalized) ? normalized : null;
+        }
+
         function escapeHtml(v) {
             return String(v || '')
                 .replace(/&/g, '&amp;')
@@ -467,8 +475,8 @@
                         ${item.detail_text ? `<div class="topic-subtitle">詳細</div><div class="topic-details" style="margin-bottom:0.7rem;">${item.detail_text.replace(/\n/g, '<br>')}</div>` : ''}
                         ${attachmentHtml}
                         <div class="actions">
-                            <a class="btn btn-edit" href="admin-topic-edit.html?id=${item.id}"><i class="fa-solid fa-pen"></i> 編集</a>
-                            <button class="btn btn-delete" data-topic-delete="${item.id}"><i class="fa-solid fa-trash"></i> 削除</button>
+                            <a class="btn btn-edit" href="admin-topic-edit.html?id=${normalizeTopicId(item.id) ?? ''}"><i class="fa-solid fa-pen"></i> 編集</a>
+                            <button class="btn btn-delete" data-topic-delete="${normalizeTopicId(item.id) ?? ''}"><i class="fa-solid fa-trash"></i> 削除</button>
                         </div>
                     </td>
                 </tr>
@@ -516,14 +524,20 @@
                 const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
                 if (!ok) return;
 
-                const { error } = await supabaseClient.from('meeting_reports').delete().eq('id', id);
+                const normalizedId = normalizeTopicId(id);
+                if (normalizedId === null) {
+                    window.cidmAdminUi.showToast('対象IDの形式が不正です。', 'error', 3000);
+                    return;
+                }
+
+                const { error } = await supabaseClient.from('meeting_reports').delete().eq('id', normalizedId);
                 if (error) {
                     window.cidmAdminUi.showToast('削除に失敗しました: ' + error.message, 'error', 3000);
                     return;
                 }
 
                 window.cidmAdminUi.showToast('削除しました', 'success');
-                allData = allData.filter((item) => item.id !== id);
+                allData = allData.filter((item) => normalizeTopicId(item.id) !== normalizedId);
                 totalPages = Math.max(1, Math.ceil(allData.length / PAGE_SIZE));
                 if (currentPage > totalPages) {
                     currentPage = totalPages;
