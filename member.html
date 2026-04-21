@@ -25,6 +25,16 @@
             background: #ffffff;
             box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
         }
+
+        .member-news-card {
+            min-height: 34rem;
+        }
+
+        @media (min-width: 1024px) {
+            .member-news-card {
+                min-height: 42rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-white" data-nav-current="member">
@@ -41,7 +51,7 @@
                         </p>
                         <p id="member-greeting" class="mt-4 text-sm text-blue-100/90"></p>
                     </div>
-                    <button id="member-logout-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-slate-800 font-bold hover:bg-blue-50 transition">
+                    <button id="member-logout-btn" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-full bg-white text-slate-800 font-bold hover:bg-blue-50 transition">
                         <i class="fa-solid fa-right-from-bracket"></i> ログアウト
                     </button>
                 </div>
@@ -52,8 +62,8 @@
                         <p id="next-meeting-date" class="mt-2 text-xl font-bold">調整中</p>
                     </div>
                     <div class="rounded-2xl border border-blue-300/40 bg-white/10 px-5 py-4 backdrop-blur-sm">
-                        <p class="text-blue-100 text-xs uppercase tracking-widest">今月の配布資料</p>
-                        <p id="monthly-doc-count" class="mt-2 text-xl font-bold">2 件</p>
+                        <p class="text-blue-100 text-xs uppercase tracking-widest">クイックメニュー</p>
+                        <p id="quick-menu-count" class="mt-2 text-xl font-bold">3 件</p>
                     </div>
                     <div class="rounded-2xl border border-blue-300/40 bg-white/10 px-5 py-4 backdrop-blur-sm">
                         <p class="text-blue-100 text-xs uppercase tracking-widest">未読のお知らせ</p>
@@ -65,8 +75,8 @@
 
         <section class="bg-slate-50 py-14 md:py-16 min-h-screen">
             <div class="max-w-7xl mx-auto px-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <article class="member-grid-card p-7 lg:col-span-2">
+                <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(300px,1fr)] gap-6 items-start">
+                    <article class="member-grid-card member-news-card p-7">
                         <div class="flex items-center justify-between mb-5">
                             <h2 class="text-2xl font-bold text-slate-800">会員向けお知らせ</h2>
                             <a href="archive.html" class="text-sm font-bold text-blue-600 hover:text-blue-700">一覧を見る</a>
@@ -94,22 +104,6 @@
                         </div>
                     </aside>
 
-                    <article class="member-grid-card p-7 lg:col-span-2">
-                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
-                            <h2 class="text-2xl font-bold text-slate-800">資料ダウンロード</h2>
-                            <input id="member-doc-search" type="search" placeholder="資料名で検索" class="w-full md:w-64 rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-blue-400">
-                        </div>
-                        <div id="member-doc-type-filters" class="flex flex-wrap gap-2 mb-4">
-                            <button type="button" data-doc-filter="all" class="rounded-full border border-slate-300 bg-slate-900 text-white px-3 py-1.5 text-xs font-bold">すべて</button>
-                            <button type="button" data-doc-filter="pdf" class="rounded-full border border-slate-300 bg-white text-slate-600 px-3 py-1.5 text-xs font-bold">PDF</button>
-                            <button type="button" data-doc-filter="zip" class="rounded-full border border-slate-300 bg-white text-slate-600 px-3 py-1.5 text-xs font-bold">ZIP</button>
-                            <button type="button" data-doc-filter="other" class="rounded-full border border-slate-300 bg-white text-slate-600 px-3 py-1.5 text-xs font-bold">その他</button>
-                        </div>
-                        <div id="member-doc-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <p class="text-sm text-slate-500">資料を読み込み中です...</p>
-                        </div>
-                    </article>
-
                     <article class="member-grid-card p-7">
                         <h2 class="text-xl font-bold text-slate-800 mb-4">事務局より</h2>
                         <p class="text-slate-600 leading-relaxed mb-4">
@@ -133,9 +127,6 @@
         const MEMBER_NAME_KEY = 'cidm-member-name';
         const MEMBER_COMPANY_KEY = 'cidm-member-company';
         const EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/get-member-data';
-        let allDocuments = [];
-        let activeDocFilter = 'all';
-        let docSearchTerm = '';
 
         const fallbackNewsItems = [
             {
@@ -159,11 +150,6 @@
                 details: '案内の概要です。',
                 detail_text: '会員向け詳細案内です。'
             }
-        ];
-
-        const fallbackDocuments = [
-            { updated_at: '2026-04-05', title: '車両情報活用ガイドライン 2026版', file_type: 'PDF', file_size: '2.4MB', file_url: '#' },
-            { updated_at: '2026-03-22', title: '定例会アーカイブ資料（2025年度）', file_type: 'ZIP', file_size: '18.1MB', file_url: '#' }
         ];
 
         const memberId = sessionStorage.getItem(MEMBER_ID_KEY) || '';
@@ -223,71 +209,14 @@
             }
         }
 
-        function setActiveDocFilterButton() {
-            const buttons = document.querySelectorAll('[data-doc-filter]');
-            buttons.forEach((button) => {
-                const isActive = button.dataset.docFilter === activeDocFilter;
-                button.classList.toggle('bg-slate-900', isActive);
-                button.classList.toggle('text-white', isActive);
-                button.classList.toggle('border-slate-900', isActive);
-                button.classList.toggle('bg-white', !isActive);
-                button.classList.toggle('text-slate-600', !isActive);
-                button.classList.toggle('border-slate-300', !isActive);
-            });
-        }
-
-        function updateDocumentCount(items) {
-            const monthlyDocCount = document.getElementById('monthly-doc-count');
-            if (monthlyDocCount) {
-                monthlyDocCount.textContent = `${items.length} 件`;
+        function updateQuickMenuCount() {
+            const quickMenuCount = document.getElementById('quick-menu-count');
+            const quickMenuItems = document.querySelectorAll('aside .space-y-3 a');
+            if (quickMenuCount) {
+                quickMenuCount.textContent = `${quickMenuItems.length} 件`;
             }
         }
 
-        function renderDocuments(items) {
-            const container = document.getElementById('member-doc-list');
-            if (!container) return;
-
-            if (!items.length) {
-                container.innerHTML = '<p class="text-sm text-slate-500">現在ダウンロード可能な資料はありません。</p>';
-            } else {
-                container.innerHTML = items.map((item) => {
-                    const href = item.file_url || '#';
-                    const updatedAt = formatDate(item.updated_at || item.date || '');
-                    const fileType = item.file_type || 'FILE';
-                    const fileSize = item.file_size || '-';
-
-                    return `
-                        <a href="${window.cidmAdminUi.sanitizeUrl(href)}" target="_blank" rel="noopener noreferrer" class="rounded-xl border border-slate-100 p-5 hover:border-blue-200 hover:bg-blue-50/40 transition">
-                            <p class="text-xs text-slate-400 mb-2">最新更新: ${window.cidmAdminUi.sanitizeText(updatedAt || '未設定')}</p>
-                            <p class="font-bold text-slate-800">${window.cidmAdminUi.sanitizeText(item.title || '名称未設定')}</p>
-                            <p class="text-sm text-slate-500 mt-2">${window.cidmAdminUi.sanitizeText(fileType)} / ${window.cidmAdminUi.sanitizeText(fileSize)}</p>
-                        </a>
-                    `;
-                }).join('');
-            }
-        }
-
-        function applyDocumentFilters() {
-            const normalizedSearch = docSearchTerm.trim().toLowerCase();
-            const filtered = allDocuments.filter((item) => {
-                const fileType = String(item.file_type || '').toLowerCase();
-                const title = String(item.title || '').toLowerCase();
-
-                const typeMatched = (() => {
-                    if (activeDocFilter === 'all') return true;
-                    if (activeDocFilter === 'other') return fileType !== 'pdf' && fileType !== 'zip';
-                    return fileType === activeDocFilter;
-                })();
-
-                const searchMatched = !normalizedSearch || title.includes(normalizedSearch);
-                return typeMatched && searchMatched;
-            });
-
-            setActiveDocFilterButton();
-            renderDocuments(filtered);
-        }
-
-        
         async function loadMemberNews() {
             try {
                 const response = await fetch(EDGE_FUNCTION_URL);
@@ -299,37 +228,6 @@
                 renderNews(fallbackNewsItems);
             }
         }
-
-        async function loadMemberDocuments() {
-            try {
-                const response = await fetch(EDGE_FUNCTION_URL);
-                if (!response.ok) throw new Error('Failed to fetch data');
-                const data = await response.json();
-                allDocuments = data.documents || [];
-                if (!allDocuments.length) {
-                    allDocuments = fallbackDocuments;
-                }
-            } catch (error) {
-                console.error('会員向け資料の取得に失敗しました:', error);
-                allDocuments = fallbackDocuments;
-            }
-
-            updateDocumentCount(allDocuments);
-            applyDocumentFilters();
-        }
-
-        const docSearchInput = document.getElementById('member-doc-search');
-        docSearchInput?.addEventListener('input', (event) => {
-            docSearchTerm = event.target.value || '';
-            applyDocumentFilters();
-        });
-
-        document.querySelectorAll('[data-doc-filter]').forEach((button) => {
-            button.addEventListener('click', () => {
-                activeDocFilter = button.dataset.docFilter || 'all';
-                applyDocumentFilters();
-            });
-        });
 
         document.getElementById('member-logout-btn')?.addEventListener('click', () => {
             handleLogout();
@@ -347,7 +245,7 @@
         }
 
         loadMemberNews();
-        loadMemberDocuments();
+        updateQuickMenuCount();
     </script>
 </body>
 </html>
