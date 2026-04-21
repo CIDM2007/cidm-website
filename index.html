@@ -63,9 +63,9 @@
 <body class="bg-white" data-nav-current="home">
     <div id="nav-placeholder"></div>
 
-    <div id="login-modal" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+    <div id="login-modal" role="dialog" aria-modal="true" tabindex="-1" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative border border-blue-50">
-            <button id="login-close-btn" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+            <button type="button" id="login-close-btn" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
             <div class="text-center mb-8">
@@ -94,9 +94,9 @@
         </div>
     </div>
 
-    <div id="password-reset-modal" role="dialog" aria-modal="true" class="hidden fixed inset-0 z-[101] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+    <div id="password-reset-modal" role="dialog" aria-modal="true" tabindex="-1" class="hidden fixed inset-0 z-[101] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white p-9 rounded-2xl shadow-2xl w-full max-w-md relative border border-blue-50">
-            <button id="password-reset-close-btn" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
+            <button type="button" id="password-reset-close-btn" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
 
@@ -211,7 +211,7 @@
     </footer>
 
     <!-- 管理者ログインモーダル（Supabase Auth用） -->
-    <div id="admin-login-modal" role="dialog" aria-modal="true" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:#0008;">
+    <div id="admin-login-modal" role="dialog" aria-modal="true" tabindex="-1" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:#0008;">
             <div id="admin-login-dialog" style="background:#fff; max-width:350px; margin:10vh auto; padding:2rem; border-radius:1rem; box-shadow:0 4px 24px #0003;">
         <h2 style="font-size:1.2rem; margin-bottom:1rem;">管理者ログイン</h2>
         <input id="admin-email" type="email" placeholder="メールアドレス" style="width:100%;margin-bottom:1rem;padding:0.5rem;">
@@ -368,6 +368,9 @@
             button.style.cursor = '';
         }
 
+        const MODAL_FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+        let modalFocusReturnTarget = null;
+
         function initPasswordToggle(toggleId, inputId) {
             const toggleButton = document.getElementById(toggleId);
             const input = document.getElementById(inputId);
@@ -383,27 +386,174 @@
         initPasswordToggle('member-password-toggle', 'password');
         initPasswordToggle('admin-password-toggle', 'admin-password');
 
+        function isModalVisible(modal) {
+            if (!modal) return false;
+            if (modal.id === 'admin-login-modal') {
+                return modal.style.display === 'block';
+            }
+            return !modal.classList.contains('hidden');
+        }
+
+        function getActiveModal() {
+            const resetModal = document.getElementById('password-reset-modal');
+            if (isModalVisible(resetModal)) return resetModal;
+
+            const adminModal = document.getElementById('admin-login-modal');
+            if (isModalVisible(adminModal)) return adminModal;
+
+            const memberModal = document.getElementById('login-modal');
+            if (isModalVisible(memberModal)) return memberModal;
+
+            return null;
+        }
+
+        function syncBodyScrollLock() {
+            document.body.style.overflow = getActiveModal() ? 'hidden' : '';
+        }
+
+        function rememberFocusBeforeModal() {
+            if (modalFocusReturnTarget) return;
+            const activeElement = document.activeElement;
+            if (activeElement instanceof HTMLElement) {
+                modalFocusReturnTarget = activeElement;
+            }
+        }
+
+        function restoreFocusAfterModal() {
+            if (getActiveModal()) return;
+            const target = modalFocusReturnTarget;
+            modalFocusReturnTarget = null;
+            if (target instanceof HTMLElement && document.contains(target)) {
+                target.focus({ preventScroll: true });
+            }
+        }
+
+        function getModalFocusableElements(modal) {
+            if (!modal) return [];
+            return Array.from(modal.querySelectorAll(MODAL_FOCUSABLE_SELECTOR)).filter((element) => {
+                if (!(element instanceof HTMLElement)) return false;
+                if (element.getAttribute('aria-hidden') === 'true') return false;
+                return element.offsetParent !== null || element === document.activeElement;
+            });
+        }
+
+        function focusPreferredElement(modal) {
+            if (!modal) return;
+            const preferredSelectors = {
+                'login-modal': '#member-id',
+                'password-reset-modal': '#password-reset-update-step:not(.hidden) #password-reset-new-password, #password-reset-request-step:not(.hidden) #password-reset-login-id',
+                'admin-login-modal': '#admin-email'
+            };
+            const preferredSelector = preferredSelectors[modal.id];
+            const preferredElement = preferredSelector ? modal.querySelector(preferredSelector) : null;
+            const focusTarget = preferredElement || getModalFocusableElements(modal)[0] || modal;
+            if (focusTarget instanceof HTMLElement) {
+                focusTarget.focus({ preventScroll: true });
+            }
+        }
+
+        function isEditableElement(element) {
+            if (!(element instanceof HTMLElement)) return false;
+            if (element.isContentEditable) return true;
+            const tagName = element.tagName;
+            if (tagName === 'TEXTAREA') return true;
+            if (tagName !== 'INPUT') return false;
+            const inputType = (element.getAttribute('type') || 'text').toLowerCase();
+            return inputType !== 'button' && inputType !== 'checkbox' && inputType !== 'color' && inputType !== 'file' && inputType !== 'hidden' && inputType !== 'image' && inputType !== 'radio' && inputType !== 'range' && inputType !== 'reset' && inputType !== 'submit';
+        }
+
+        function handleModalFocusTrap(event) {
+            const activeModal = getActiveModal();
+            if (!activeModal) return;
+            const target = event.target;
+            if (target instanceof Node && activeModal.contains(target)) return;
+            event.stopPropagation();
+            window.requestAnimationFrame(() => {
+                focusPreferredElement(activeModal);
+            });
+        }
+
+        function handleModalKeyboard(event) {
+            const activeModal = getActiveModal();
+            if (!activeModal) return;
+
+            if (event.key === 'Escape') {
+                event.preventDefault();
+
+                if (activeModal.id === 'login-modal') {
+                    closeLogin();
+                    return;
+                }
+
+                if (activeModal.id === 'admin-login-modal') {
+                    closeAdminLoginModal();
+                    return;
+                }
+
+                if (activeModal.id === 'password-reset-modal') {
+                    closePasswordResetModal();
+                }
+                return;
+            }
+
+            if (event.key === 'Tab') {
+                const focusableElements = getModalFocusableElements(activeModal);
+                if (focusableElements.length === 0) {
+                    event.preventDefault();
+                    focusPreferredElement(activeModal);
+                    return;
+                }
+
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+                const currentElement = document.activeElement;
+
+                if (event.shiftKey && currentElement === firstElement) {
+                    event.preventDefault();
+                    lastElement.focus({ preventScroll: true });
+                    return;
+                }
+
+                if (!event.shiftKey && currentElement === lastElement) {
+                    event.preventDefault();
+                    firstElement.focus({ preventScroll: true });
+                    return;
+                }
+            }
+
+            if (event.key === 'Backspace' && !isEditableElement(event.target)) {
+                event.preventDefault();
+                focusPreferredElement(activeModal);
+            }
+        }
+
 
 
         function openAdminLoginModal() {
             const modal = document.getElementById('admin-login-modal');
             if (!modal) return;
+            rememberFocusBeforeModal();
             modal.style.display = 'block';
-            document.body.style.overflow = 'hidden';
-            const emailInput = document.getElementById('admin-email');
-            emailInput?.focus();
+            syncBodyScrollLock();
+            window.requestAnimationFrame(() => {
+                focusPreferredElement(modal);
+            });
         }
 
-        function closeAdminLoginModal(force = false) {
+        function closeAdminLoginModal(force = false, options = {}) {
+            const restoreFocus = options.restoreFocus !== false;
             if (isAdminLoginBusy && !force) return;
             const modal = document.getElementById('admin-login-modal');
             if (!modal) return;
             modal.style.display = 'none';
-            document.body.style.overflow = '';
+            syncBodyScrollLock();
             const emailInput = document.getElementById('admin-email');
             const passwordInput = document.getElementById('admin-password');
             if (emailInput) emailInput.value = '';
             if (passwordInput) passwordInput.value = '';
+            if (restoreFocus) {
+                restoreFocusAfterModal();
+            }
         }
 
         // 管理者ログインリンククリックで認証画面へ遷移
@@ -475,18 +625,28 @@
 
         function checkMemberAccess() { isLoggedIn ? showPage('member') : openLogin(); }
         function openLogin() {
-            document.getElementById('login-modal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            const memberIdInput = document.getElementById('member-id');
-            memberIdInput?.focus();
+            const modal = document.getElementById('login-modal');
+            if (!modal) return;
+            rememberFocusBeforeModal();
+            modal.classList.remove('hidden');
+            syncBodyScrollLock();
+            window.requestAnimationFrame(() => {
+                focusPreferredElement(modal);
+            });
         }
-        function closeLogin() {
-            document.getElementById('login-modal').classList.add('hidden');
-            document.body.style.overflow = '';
+        function closeLogin(options = {}) {
+            const restoreFocus = options.restoreFocus !== false;
+            const modal = document.getElementById('login-modal');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            syncBodyScrollLock();
             const memberIdInput = document.getElementById('member-id');
             const passwordInput = document.getElementById('password');
             if (memberIdInput) memberIdInput.value = '';
             if (passwordInput) passwordInput.value = '';
+            if (restoreFocus) {
+                restoreFocusAfterModal();
+            }
         }
 
         function openPasswordResetModal(mode = 'request') {
@@ -495,16 +655,14 @@
             const updateStep = document.getElementById('password-reset-update-step');
             if (!modal || !requestStep || !updateStep) return false;
 
+            rememberFocusBeforeModal();
             requestStep.classList.toggle('hidden', mode !== 'request');
             updateStep.classList.toggle('hidden', mode !== 'update');
             modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-
-            if (mode === 'update') {
-                document.getElementById('password-reset-new-password')?.focus();
-            } else {
-                document.getElementById('password-reset-login-id')?.focus();
-            }
+            syncBodyScrollLock();
+            window.requestAnimationFrame(() => {
+                focusPreferredElement(modal);
+            });
             return true;
         }
 
@@ -512,7 +670,7 @@
             event.preventDefault();
             event.stopPropagation();
 
-            closeLogin();
+            closeLogin({ restoreFocus: false });
             const opened = openPasswordResetModal('request');
             if (!opened) {
                 openLogin();
@@ -521,17 +679,21 @@
             }
         }
 
-        function closePasswordResetModal() {
+        function closePasswordResetModal(options = {}) {
+            const restoreFocus = options.restoreFocus !== false;
             const modal = document.getElementById('password-reset-modal');
             if (!modal) return;
             modal.classList.add('hidden');
-            document.body.style.overflow = '';
+            syncBodyScrollLock();
 
             const requestForm = document.getElementById('password-reset-request-form');
             const updateForm = document.getElementById('password-reset-update-form');
             if (requestForm) requestForm.reset();
             if (updateForm) updateForm.reset();
             passwordRecoveryContext = null;
+            if (restoreFocus) {
+                restoreFocusAfterModal();
+            }
         }
 
         async function callRpc(url, payload, timeoutMs = 12000) {
@@ -789,26 +951,8 @@
                 adminLoginBtn?.click();
             });
 
-            document.addEventListener('keydown', (event) => {
-                if (event.key !== 'Escape') return;
-
-                const memberModal = document.getElementById('login-modal');
-                if (memberModal && !memberModal.classList.contains('hidden')) {
-                    closeLogin();
-                    return;
-                }
-
-                const adminModal = document.getElementById('admin-login-modal');
-                if (adminModal && adminModal.style.display === 'block') {
-                    closeAdminLoginModal();
-                    return;
-                }
-
-                const resetModal = document.getElementById('password-reset-modal');
-                if (resetModal && !resetModal.classList.contains('hidden')) {
-                    closePasswordResetModal();
-                }
-            });
+            document.addEventListener('keydown', handleModalKeyboard, true);
+            document.addEventListener('focusin', handleModalFocusTrap, true);
 
             const initialPage = window.location.hash ? window.location.hash.substring(1) : 'home';
             showPage(initialPage);
