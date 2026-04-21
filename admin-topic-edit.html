@@ -208,18 +208,17 @@
 
     attachmentInput?.addEventListener('change', (event) => {
         const files = Array.from(event.target.files || []);
-        if (!files.length) {
-            selectedFiles = [];
-            renderNewAttachments();
-            return;
-        }
+        // Reset input so the same file can be re-selected or more files can be added later
+        attachmentInput.value = '';
+        if (!files.length) return;
         const invalid = files.find((file) => !isAllowedFile(file));
         if (invalid) {
             window.cidmAdminUi.showToast(`対応していないファイル形式です: ${invalid.name}`, 'error', 2600);
-            attachmentInput.value = '';
             return;
         }
-        selectedFiles = files;
+        // Deduplicate by name+size to avoid accidental duplicates
+        const deduped = files.filter((f) => !selectedFiles.some((s) => s.name === f.name && s.size === f.size));
+        selectedFiles = [...selectedFiles, ...deduped];
         renderNewAttachments();
     });
 
