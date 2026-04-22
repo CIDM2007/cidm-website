@@ -11,14 +11,7 @@ interface NewsItem {
   title: string
   details?: string
   detail_text?: string
-}
-
-interface DocumentItem {
-  title: string
-  file_url: string
-  file_type: string
-  file_size: string
-  updated_at: string
+  attachment_urls?: string[]
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -33,25 +26,15 @@ export default async function handler(req: Request): Promise<Response> {
     // Load news
     const { data: newsData, error: newsError } = await supabase
       .from('meeting_reports')
-      .select('event_date, category, title, details, detail_text')
+      .select('event_date, category, title, details, detail_text, attachment_urls')
       .eq('is_visible', true)
       .order('event_date', { ascending: false })
       .limit(3)
 
     if (newsError) throw newsError
 
-    // Load documents
-    const { data: docData, error: docError } = await supabase
-      .from('member_documents')
-      .select('title, file_url, file_type, file_size, updated_at')
-      .order('updated_at', { ascending: false })
-      .limit(4)
-
-    if (docError) throw docError
-
     const response = {
-      news: newsData || [],
-      documents: docData || []
+      news: newsData || []
     }
 
     return new Response(JSON.stringify(response), {

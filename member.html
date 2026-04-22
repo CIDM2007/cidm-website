@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="./CIDMchara.png">
     <link href="./output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="./cidm-config.js"></script>
     <script src="./nav.js" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&display=swap');
@@ -156,6 +157,29 @@
             return dateString.replace(/-/g, '.');
         }
 
+        function sanitizeText(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function sanitizeUrl(url) {
+            if (!url) return '#';
+            try {
+                const parsed = new URL(String(url), window.location.origin);
+                const protocol = parsed.protocol.toLowerCase();
+                if (protocol === 'http:' || protocol === 'https:') {
+                    return parsed.href;
+                }
+            } catch {
+                return '#';
+            }
+            return '#';
+        }
+
         function parseDateValue(value) {
             if (!value) return Number.NEGATIVE_INFINITY;
             const parsed = Date.parse(value);
@@ -195,7 +219,7 @@
                 summary: item.summary || item.details || item.outline || '',
                 details: item.detail_text || item.details_long || item.detail || item.details || '',
                 participants: normalizeParticipants(item.participants || item.attendees || item.participant_count),
-                attachments: normalizeAttachments(item.attachments || item.files || item.attachment_files)
+                attachments: normalizeAttachments(item.attachment_urls || item.attachments || item.files || item.attachment_files)
             };
         }
 
@@ -213,15 +237,15 @@
             }
 
             container.innerHTML = reports.map((report) => {
-                const title = window.cidmAdminUi.sanitizeText(report.title || '会議報告');
-                const summary = report.summary ? window.cidmAdminUi.sanitizeText(report.summary).replace(/\n/g, '<br>') : '未記載';
-                const details = report.details ? window.cidmAdminUi.sanitizeText(report.details).replace(/\n/g, '<br>') : '未記載';
-                const participants = window.cidmAdminUi.sanitizeText(report.participants || '未記載');
-                const date = window.cidmAdminUi.sanitizeText(formatDate(report.date) || '未設定');
+                const title = sanitizeText(report.title || '会議報告');
+                const summary = report.summary ? sanitizeText(report.summary).replace(/\n/g, '<br>') : '未記載';
+                const details = report.details ? sanitizeText(report.details).replace(/\n/g, '<br>') : '未記載';
+                const participants = sanitizeText(report.participants || '未記載');
+                const date = sanitizeText(formatDate(report.date) || '未設定');
                 const attachmentsHtml = report.attachments.length
                     ? report.attachments.map((attachment) => `
-                        <a href="${window.cidmAdminUi.sanitizeUrl(attachment.url || '#')}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full border border-blue-200 px-3 py-1 text-xs font-bold text-blue-700 hover:bg-blue-50 transition">
-                            <i class="fa-solid fa-paperclip mr-1.5"></i>${window.cidmAdminUi.sanitizeText(attachment.name || '添付ファイル')}
+                        <a href="${sanitizeUrl(attachment.url || '#')}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full border border-blue-200 px-3 py-1 text-xs font-bold text-blue-700 hover:bg-blue-50 transition">
+                            <i class="fa-solid fa-paperclip mr-1.5"></i>${sanitizeText(attachment.name || '添付ファイル')}
                         </a>
                     `).join('')
                     : '<span class="text-xs text-slate-500">なし</span>';
@@ -254,13 +278,19 @@
 
         async function loadMemberNews() {
             try {
-                const response = await fetch(EDGE_FUNCTION_URL);
+                const anonKey = window.CIDM_SUPABASE_ANON_KEY || '';
+                const response = await fetch(EDGE_FUNCTION_URL, {
+                    headers: {
+                        apikey: anonKey,
+                        Authorization: `Bearer ${anonKey}`
+                    }
+                });
                 if (!response.ok) throw new Error('Failed to fetch data');
                 const data = await response.json();
                 renderNews(data.news || []);
             } catch (error) {
                 console.error('会議報告の取得に失敗しました:', error);
-                renderNews(fallbackNewsItems);
+                renderNews([]);
             }
         }
 
