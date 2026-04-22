@@ -276,10 +276,19 @@
             }).join('');
         }
 
+        function renderNewsError(message) {
+            const container = document.getElementById('member-news-list');
+            if (!container) return;
+            container.innerHTML = `<p class="text-sm text-rose-600">${sanitizeText(message)}</p>`;
+        }
+
         async function loadMemberNews() {
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(() => controller.abort(), 12000);
             try {
                 const anonKey = window.CIDM_SUPABASE_ANON_KEY || '';
                 const response = await fetch(EDGE_FUNCTION_URL, {
+                    signal: controller.signal,
                     headers: {
                         apikey: anonKey,
                         Authorization: `Bearer ${anonKey}`
@@ -290,7 +299,13 @@
                 renderNews(data.news || []);
             } catch (error) {
                 console.error('会議報告の取得に失敗しました:', error);
-                renderNews([]);
+                if (error && error.name === 'AbortError') {
+                    renderNewsError('読み込みがタイムアウトしました。時間をおいて再度お試しください。');
+                    return;
+                }
+                renderNewsError('会議の報告を取得できませんでした。時間をおいて再度お試しください。');
+            } finally {
+                window.clearTimeout(timeoutId);
             }
         }
 
