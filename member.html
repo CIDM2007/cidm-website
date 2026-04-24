@@ -282,30 +282,55 @@
             container.innerHTML = `<p class="text-sm text-rose-600">${sanitizeText(message)}</p>`;
         }
 
-        async function loadMemberNews() {
+        async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
             const controller = new AbortController();
-            const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+            const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
             try {
-                const anonKey = window.CIDM_SUPABASE_ANON_KEY || '';
-                const response = await fetch(EDGE_FUNCTION_URL, {
-                    signal: controller.signal,
-                    headers: {
-                        apikey: anonKey,
-                        Authorization: `Bearer ${anonKey}`
-                    }
-                });
-                if (!response.ok) throw new Error('Failed to fetch data');
+                const response = await fetch(url, { ...options, signal: controller.signal });
+                return response;
+            } finally {
+                window.clearTimeout(timeoutId);
+            }
+        }
+
+        async function fetchMemberNewsViaRest() {
+            const supabaseUrl = window.CIDM_SUPABASE_URL || '';
+            const anonKey = window.CIDM_SUPABASE_ANON_KEY || '';
+            if (!supabaseUrl || !anonKey) {
+                throw new Error('Missing Supabase config');
+            }
+
+            const url = `${supabaseUrl}/rest/v1/meeting_reports?select=event_date,title,details,detail_text,attachment_urls,is_visible&is_visible=eq.true&order=event_date.desc&limit=3`;
+            const response = await fetchWithTimeout(url, {
+                headers: {
+                    apikey: anonKey,
+                    Authorization: `Bearer ${anonKey}`
+                }
+            }, 12000);
+
+            if (!response.ok) {
+                throw new Error('REST fallback failed');
+            }
+
+            const data = await response.json();
+            return Array.isArray(data) ? data : [];
+        }
+
+        async function loadMemberNews() {
+            try {
+                const response = await fetchWithTimeout(EDGE_FUNCTION_URL, {}, 8000);
+                if (!response.ok) throw new Error('Edge function failed');
                 const data = await response.json();
                 renderNews(data.news || []);
             } catch (error) {
                 console.error('会議報告の取得に失敗しました:', error);
-                if (error && error.name === 'AbortError') {
-                    renderNewsError('読み込みがタイムアウトしました。時間をおいて再度お試しください。');
-                    return;
+                try {
+                    const restNews = await fetchMemberNewsViaRest();
+                    renderNews(restNews);
+                } catch (fallbackError) {
+                    console.error('RESTフォールバックでも取得に失敗しました:', fallbackError);
+                    renderNews(fallbackNewsItems);
                 }
-                renderNewsError('会議の報告を取得できませんでした。時間をおいて再度お試しください。');
-            } finally {
-                window.clearTimeout(timeoutId);
             }
         }
 

@@ -10,6 +10,9 @@ verify_jwt = false
 [functions.get-top-news]
 verify_jwt = false
 
+[functions.get-member-data]
+verify_jwt = false
+
 [functions.login-admin]
 verify_jwt = false
 
