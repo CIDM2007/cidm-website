@@ -97,13 +97,14 @@
                         <th>会社名</th>
                         <th>主担当者</th>
                         <th>回答</th>
+                        <th>送信</th>
                         <th>メモ</th>
                         <th>回答日時</th>
                         <th>URL</th>
                     </tr>
                 </thead>
                 <tbody id="invite-tbody">
-                    <tr><td colspan="8" class="empty">読み込み中...</td></tr>
+                    <tr><td colspan="9" class="empty">読み込み中...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -141,6 +142,7 @@
     let currentInvites = [];
     let currentEvent = null;
     let lastFailedRecipients = [];
+    let latestMailStatusByEmail = new Map();
 
     function getEventId() {
         const p = new URLSearchParams(window.location.search);
@@ -159,6 +161,50 @@
         if (status === '欠席') return '<span class="badge badge-no">欠席</span>';
         if (status === '検討中') return '<span class="badge badge-hold">検討中</span>';
         return '<span class="badge badge-pending">未回答</span>';
+    }
+
+    function inviteMailBadge(status) {
+        if (status === 'success') return '<span class="badge badge-yes">送信済み</span>';
+        if (status === 'failed') return '<span class="badge badge-no">送信失敗</span>';
+        return '<span class="badge">未送信</span>';
+    }
+
+    function applyInvokeResultsToMailStatus(results) {
+        if (!Array.isArray(results)) return;
+        for (const r of results) {
+            const email = String(r?.email || '').toLowerCase();
+            if (!email) continue;
+            latestMailStatusByEmail.set(email, r?.success === false ? 'failed' : 'success');
+        }
+    }
+
+    function renderInviteRows() {
+        const tbody = document.getElementById('invite-tbody');
+        if (!tbody) return;
+
+        if (!Array.isArray(currentInvites) || currentInvites.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="9" class="empty">対象データがありません</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = currentInvites.map((r) => {
+            const email = String(r.staff_email || '').toLowerCase();
+            const mailStatus = latestMailStatusByEmail.get(email) || 'none';
+
+            return `
+                <tr>
+                    <td>${r.division_flag || '会員'}</td>
+                    <td>${r.member_type || ''}</td>
+                    <td>${r.company_name || ''}</td>
+                    <td>${r.staff_name || ''}</td>
+                    <td>${responseBadge(r.response_status)}</td>
+                    <td>${inviteMailBadge(mailStatus)}</td>
+                    <td><div class="memo">${r.memo || ''}</div></td>
+                    <td>${r.responded_at ? new Date(r.responded_at).toLocaleString('ja-JP') : ''}</td>
+                    <td>${currentEvent && currentEvent.delivery_mode === 'notice' ? '<span class="memo">案内のみ</span>' : `<button class="url-btn" data-token="${r.access_token}"><i class="fa-solid fa-link"></i> URLコピー</button>`}</td>
+                </tr>
+            `;
+        }).join('');
     }
 
     function setBulkSendButtonsDisabled(disabled) {
@@ -289,13 +335,13 @@
         const eventId = getEventId();
         const tbody = document.getElementById('invite-tbody');
         if (!eventId) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty">eventId が指定されていません</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="empty">eventId が指定されていません</td></tr>';
             return;
         }
 
         const { data: events, error: eventErr } = await supabaseClient.rpc('cidm_admin_list_meeting_events');
         if (eventErr) {
-            tbody.innerHTML = `<tr><td colspan="8" class="empty" style="color:#fca5a5;">イベント取得失敗: ${eventErr.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="empty" style="color:#fca5a5;">イベント取得失敗: ${eventErr.message}</td></tr>`;
             return;
         }
 
@@ -314,15 +360,17 @@
 
         const { data, error } = await supabaseClient.rpc('cidm_admin_list_meeting_invites', { p_event_id: eventId });
         if (error) {
-            tbody.innerHTML = `<tr><td colspan="8" class="empty" style="color:#fca5a5;">回答取得失敗: ${error.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="9" class="empty" style="color:#fca5a5;">回答取得失敗: ${error.message}</td></tr>`;
             currentInvites = [];
+            latestMailStatusByEmail = new Map();
             setBulkSendButtonsDisabled(true);
             return;
         }
 
         if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty">対象データがありません</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="empty">対象データがありません</td></tr>';
             currentInvites = [];
+            latestMailStatusByEmail = new Map();
             setBulkSendButtonsDisabled(true);
             await loadMailLogs(eventId);
             return;
@@ -332,19 +380,7 @@
         setBulkSendButtonsDisabled(false);
         await loadMailLogs(eventId);
         await restoreFailedRecipientsFromLogs(eventId);
-
-        tbody.innerHTML = data.map((r) => `
-            <tr>
-                <td>${r.division_flag || '会員'}</td>
-                <td>${r.member_type || ''}</td>
-                <td>${r.company_name || ''}</td>
-                <td>${r.staff_name || ''}</td>
-                <td>${responseBadge(r.response_status)}</td>
-                <td><div class="memo">${r.memo || ''}</div></td>
-                <td>${r.responded_at ? new Date(r.responded_at).toLocaleString('ja-JP') : ''}</td>
-                <td>${currentEvent && currentEvent.delivery_mode === 'notice' ? '<span class="memo">案内のみ</span>' : `<button class="url-btn" data-token="${r.access_token}"><i class="fa-solid fa-link"></i> URLコピー</button>`}</td>
-            </tr>
-        `).join('');
+        renderInviteRows();
     }
 
     async function restoreFailedRecipientsFromLogs(eventId) {
@@ -359,8 +395,10 @@
                 .order('id', { ascending: false });
 
             if (!logs || logs.length === 0) {
+                latestMailStatusByEmail = new Map();
                 lastFailedRecipients = [];
                 updateRetryButton();
+                renderInviteRows();
                 return;
             }
 
@@ -372,6 +410,7 @@
                     latestByEmail.set(email, log.send_status);
                 }
             }
+            latestMailStatusByEmail = latestByEmail;
 
             // 最新結果が失敗のメールを currentInvites から復元
             const failedEmails = new Set(
@@ -383,6 +422,7 @@
             if (failedEmails.size === 0) {
                 lastFailedRecipients = [];
                 updateRetryButton();
+                renderInviteRows();
                 return;
             }
 
@@ -396,6 +436,7 @@
                 }));
 
             updateRetryButton();
+            renderInviteRows();
         } catch (e) {
             console.warn('restoreFailedRecipientsFromLogs error:', e);
         }
@@ -446,6 +487,7 @@
             }
 
             await saveMailLogs(eventId, onlyPending ? 'pending' : 'all', data, recipients);
+            applyInvokeResultsToMailStatus(data?.results);
 
             const successCount = Number(data?.successCount || 0);
             const failedCount = Number(data?.failedCount || 0);
@@ -460,6 +502,7 @@
                 lastFailedRecipients = [];
             }
             updateRetryButton();
+            renderInviteRows();
 
             if (failedCount > 0) {
                 const firstFailure = data?.failures?.[0];
@@ -522,6 +565,7 @@
             }
 
             await saveMailLogs(eventId, 'retry', data, lastFailedRecipients);
+            applyInvokeResultsToMailStatus(data?.results);
 
             const successCount = Number(data?.successCount || 0);
             const failedCount = Number(data?.failedCount || 0);
@@ -535,6 +579,7 @@
                 lastFailedRecipients = [];
             }
             updateRetryButton();
+            renderInviteRows();
 
             if (failedCount > 0) {
                 window.cidmAdminUi.showToast(`再送信完了: 成功 ${successCount} 件 / 失敗 ${failedCount} 件`, 'error', 5200);
