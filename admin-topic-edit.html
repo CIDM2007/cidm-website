@@ -79,8 +79,8 @@
                     <input type="text" id="title" name="title" required>
                 </div>
                 <div class="form-group">
-                    <label for="event_date">日付</label>
-                    <input type="date" id="event_date" name="event_date" required>
+                    <label for="event_date">日時</label>
+                    <input type="datetime-local" id="event_date" name="event_date" required>
                 </div>
                 <div class="form-group">
                     <label for="is_visible">公開設定</label>
@@ -144,6 +144,14 @@
     let currentPhotoSlot = -1;
     const photoFileInput = document.getElementById('photo-file-input');
     const photoGrid = document.getElementById('photo-grid');
+
+    function toDatetimeLocal(isoString) {
+        if (!isoString) return '';
+        const d = new Date(isoString);
+        if (isNaN(d.getTime())) return '';
+        const pad = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
 
     function escapeHtml(v) {
         return String(v || '')
@@ -380,7 +388,7 @@
                 return;
             }
             form.title.value = data.title || '';
-            form.event_date.value = data.event_date || '';
+            form.event_date.value = toDatetimeLocal(data.event_date);
             form.is_visible.value = data.is_visible ? 'true' : 'false';
             form.details.value = data.details || '';
             form.detail_text.value = data.detail_text || '';

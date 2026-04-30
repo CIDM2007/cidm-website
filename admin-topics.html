@@ -251,7 +251,7 @@
         .actions {
             display: flex;
             gap: 0.5rem;
-            justify-content: flex-end;
+            justify-content: space-between;
             margin-top: 0.5rem;
             flex-wrap: wrap;
         }
@@ -399,6 +399,15 @@
             return Number.isInteger(normalized) ? normalized : null;
         }
 
+        function formatEventDate(v) {
+            if (!v) return '';
+            const d = new Date(v);
+            if (isNaN(d.getTime())) return String(v).replace(/-/g, '.');
+            const pad = n => String(n).padStart(2, '0');
+            const timePart = (d.getHours() || d.getMinutes()) ? ` ${pad(d.getHours())}:${pad(d.getMinutes())}` : '';
+            return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}${timePart}`;
+        }
+
         function escapeHtml(v) {
             return String(v || '')
                 .replace(/&/g, '&amp;')
@@ -465,7 +474,7 @@
                     return `
                 <tr class="title-row">
                     <td><span class="topic-title">${item.title || ''}</span></td>
-                    <td><span class="topic-date">${item.event_date ? item.event_date.replace(/-/g, '.') : ''}</span></td>
+                    <td><span class="topic-date">${formatEventDate(item.event_date)}</span></td>
                     <td><span class="badge ${item.is_visible ? 'badge-visible' : 'badge-hidden'}">${item.is_visible ? '公開' : '非公開'}</span></td>
                 </tr>
                 <tr class="detail-row">
@@ -475,8 +484,8 @@
                         ${item.detail_text ? `<div class="topic-subtitle">詳細</div><div class="topic-details" style="margin-bottom:0.7rem;">${item.detail_text.replace(/\n/g, '<br>')}</div>` : ''}
                         ${attachmentHtml}
                         <div class="actions">
-                            <a class="btn btn-edit" href="admin-topic-edit.html?id=${normalizeTopicId(item.id) ?? ''}"><i class="fa-solid fa-pen"></i> 編集</a>
                             <button class="btn btn-delete" data-topic-delete="${normalizeTopicId(item.id) ?? ''}"><i class="fa-solid fa-trash"></i> 削除</button>
+                            <a class="btn btn-edit" href="admin-topic-edit.html?id=${normalizeTopicId(item.id) ?? ''}"><i class="fa-solid fa-pen"></i> 編集</a>
                         </div>
                     </td>
                 </tr>

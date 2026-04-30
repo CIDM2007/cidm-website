@@ -154,7 +154,11 @@
 
         function formatDate(dateString) {
             if (!dateString) return '';
-            return dateString.replace(/-/g, '.');
+            const d = new Date(dateString);
+            if (isNaN(d.getTime())) return dateString.replace(/-/g, '.');
+            const pad = n => String(n).padStart(2, '0');
+            const timePart = (d.getHours() || d.getMinutes()) ? ` ${pad(d.getHours())}:${pad(d.getMinutes())}` : '';
+            return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}${timePart}`;
         }
 
         function sanitizeText(value) {
