@@ -63,6 +63,7 @@
         .memo { color:#64748b; max-width:280px; white-space:pre-wrap; }
         .url-btn { border:1px solid #93c5fd; background:#eff6ff; color:#1d4ed8; border-radius:.45rem; padding:.25rem .55rem; cursor:pointer; font-size:.75rem; }
         .url-btn:hover { background:#dbeafe; }
+        .btn-danger { background:linear-gradient(135deg,#dc2626,#f97316); color:#fff; box-shadow: 0 8px 18px rgba(220, 38, 38, 0.2); }
         .empty { text-align:center; color:#64748b; padding:1rem; }
         .sub-title { font-size:1rem; color:#1e293b; margin:1.2rem 0 .6rem; }
         .hint { color:#64748b; font-size:.78rem; margin-bottom:.6rem; }
@@ -84,6 +85,7 @@
         <div class="actions">
             <button type="button" class="btn btn-primary" id="send-all-mails"><i class="fa-solid fa-paper-plane"></i> 全員へ一括送信</button>
             <button type="button" class="btn btn-secondary" id="send-pending-mails"><i class="fa-solid fa-hourglass-half"></i> 未回答者のみ送信</button>
+            <button type="button" class="btn btn-danger" id="send-retry-mails" style="display:none;"><i class="fa-solid fa-rotate-right"></i> 失敗分を再送信 (<span id="retry-count">0</span>件)</button>
         </div>
 
         <div class="card">
@@ -138,6 +140,7 @@
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
     let currentInvites = [];
     let currentEvent = null;
+    let lastFailedRecipients = [];
 
     function getEventId() {
         const p = new URLSearchParams(window.location.search);
@@ -161,8 +164,22 @@
     function setBulkSendButtonsDisabled(disabled) {
         const allBtn = document.getElementById('send-all-mails');
         const pendingBtn = document.getElementById('send-pending-mails');
+        const retryBtn = document.getElementById('send-retry-mails');
         if (allBtn) allBtn.disabled = disabled;
         if (pendingBtn) pendingBtn.disabled = disabled;
+        if (retryBtn && retryBtn.style.display !== 'none') retryBtn.disabled = disabled;
+    }
+
+    function updateRetryButton() {
+        const retryBtn = document.getElementById('send-retry-mails');
+        const countEl = document.getElementById('retry-count');
+        if (!retryBtn || !countEl) return;
+        if (lastFailedRecipients.length > 0) {
+            countEl.textContent = lastFailedRecipients.length;
+            retryBtn.style.display = 'inline-flex';
+        } else {
+            retryBtn.style.display = 'none';
+        }
     }
 
     function parseFailureMessage(raw) {
@@ -176,7 +193,9 @@
     }
 
     function modeLabel(mode) {
-        return mode === 'pending' ? '未回答者のみ' : '全員';
+        if (mode === 'pending') return '未回答者のみ';
+        if (mode === 'retry') return '再送信';
+        return '全員';
     }
 
     function statusBadge(status) {
@@ -374,6 +393,18 @@
 
             const successCount = Number(data?.successCount || 0);
             const failedCount = Number(data?.failedCount || 0);
+
+            // 失敗した宛先を再送信用に保持
+            if (failedCount > 0 && Array.isArray(data?.results)) {
+                const failedEmails = new Set(
+                    data.results.filter((r) => r.success === false).map((r) => String(r.email || '').toLowerCase())
+                );
+                lastFailedRecipients = recipients.filter((r) => failedEmails.has(String(r.email || '').toLowerCase()));
+            } else {
+                lastFailedRecipients = [];
+            }
+            updateRetryButton();
+
             if (failedCount > 0) {
                 const firstFailure = data?.failures?.[0];
                 const detail = firstFailure ? parseFailureMessage(firstFailure.message) : '';
@@ -405,12 +436,72 @@
         }
     });
 
+    async function sendRetryMails() {
+        const eventId = getEventId();
+        if (!currentEvent || lastFailedRecipients.length === 0) {
+            window.cidmAdminUi.showToast('再送信対象がありません。', 'error', 1800);
+            return;
+        }
+
+        const confirmed = await window.cidmAdminUi.showConfirm(`失敗した ${lastFailedRecipients.length} 件へ再送信します。よろしいですか？`, { confirmText: '再送信する' });
+        if (!confirmed) return;
+
+        setBulkSendButtonsDisabled(true);
+        try {
+            const { data, error } = await supabaseClient.functions.invoke('send-meeting-invite-mail', {
+                body: {
+                    event_name: currentEvent.event_name,
+                    event_description: currentEvent.event_description,
+                    starts_at: currentEvent.starts_at,
+                    location_info: currentEvent.location_info,
+                    invite_mail_body: currentEvent.invite_mail_body || null,
+                    delivery_mode: currentEvent.delivery_mode || 'rsvp',
+                    recipients: lastFailedRecipients
+                }
+            });
+
+            if (error) {
+                window.cidmAdminUi.showToast('再送信に失敗しました: ' + error.message, 'error', 3500);
+                return;
+            }
+
+            await saveMailLogs(eventId, 'retry', data, lastFailedRecipients);
+
+            const successCount = Number(data?.successCount || 0);
+            const failedCount = Number(data?.failedCount || 0);
+
+            if (failedCount > 0 && Array.isArray(data?.results)) {
+                const failedEmails = new Set(
+                    data.results.filter((r) => r.success === false).map((r) => String(r.email || '').toLowerCase())
+                );
+                lastFailedRecipients = lastFailedRecipients.filter((r) => failedEmails.has(String(r.email || '').toLowerCase()));
+            } else {
+                lastFailedRecipients = [];
+            }
+            updateRetryButton();
+
+            if (failedCount > 0) {
+                window.cidmAdminUi.showToast(`再送信完了: 成功 ${successCount} 件 / 失敗 ${failedCount} 件`, 'error', 5200);
+            } else {
+                window.cidmAdminUi.showToast(`再送信完了: ${successCount} 件すべて送信しました。`, 'success', 2200);
+            }
+        } catch (e) {
+            window.cidmAdminUi.showToast('再送信に失敗しました: ' + (e?.message || e), 'error', 3500);
+        } finally {
+            setBulkSendButtonsDisabled(false);
+        }
+    }
+
     document.getElementById('send-all-mails')?.addEventListener('click', () => {
         sendBulkInviteMails(false);
     });
 
     document.getElementById('send-pending-mails')?.addEventListener('click', () => {
         sendBulkInviteMails(true);
+    });
+
+    document.getElementById('send-retry-mails')?.addEventListener('click', () => {
+        sendRetryMails();
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
