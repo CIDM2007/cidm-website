@@ -4,7 +4,7 @@ function getCorsHeaders(_origin: string): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
     "Access-Control-Max-Age": "86400",
   };
 }
@@ -27,7 +27,7 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
   
   if (req.method === "OPTIONS") {
-    return new Response("ok", { 
+    return new Response(null, {
       status: 204,
       headers: corsHeaders 
     });
