@@ -1,17 +1,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 
-function getCorsHeaders(origin: string): Record<string, string> {
-  const allowedOrigins = [
-    'https://cidm2007.github.io',
-    'http://127.0.0.1:5500',
-    'http://localhost:3000',
-    'http://localhost:5500',
-  ];
-  
-  const isAllowed = allowedOrigins.some(allowed => origin === allowed);
-  
+function getCorsHeaders(_origin: string): Record<string, string> {
   return {
-    "Access-Control-Allow-Origin": isAllowed ? origin : "null",
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
