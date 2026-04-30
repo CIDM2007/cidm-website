@@ -92,6 +92,19 @@
         #manual-member-list label { width:100%; display:flex; align-items:flex-start; justify-content:flex-start; gap:1em; font-size:.82rem; }
         #manual-member-list label input[type="checkbox"] { margin-top:.18rem; }
         #manual-member-list .member-text { min-width:0; line-height:1.35; white-space:normal; overflow-wrap:anywhere; }
+        .filter-list-actions { display:flex; align-items:center; gap:.55rem; margin-top:.55rem; flex-wrap:wrap; }
+        .filter-list-summary { color:#475569; font-size:.76rem; }
+        .modal-backdrop { position:fixed; inset:0; background:rgba(15,23,42,.42); display:none; align-items:center; justify-content:center; z-index:50; padding:1rem; }
+        .modal-backdrop.show { display:flex; }
+        .modal-card { width:min(760px,100%); max-height:85vh; background:#fff; border:1px solid #dbe4ef; border-radius:1rem; box-shadow:0 16px 40px rgba(15,23,42,.25); display:flex; flex-direction:column; }
+        .modal-head { padding:.85rem 1rem; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; }
+        .modal-title { font-size:.95rem; font-weight:700; color:#1e293b; }
+        .modal-body { padding:.8rem 1rem; overflow:auto; }
+        .modal-foot { padding:.75rem 1rem; border-top:1px solid #e2e8f0; display:flex; justify-content:flex-end; gap:.5rem; }
+        .member-list-modal { display:flex; flex-direction:column; gap:.42rem; }
+        .member-list-modal label { width:100%; display:flex; align-items:flex-start; gap:.7rem; font-size:.82rem; text-transform:none; letter-spacing:0; font-weight:500; margin:0; }
+        .member-list-modal label input[type="checkbox"] { width:auto; margin-top:.16rem; }
+        .member-list-modal .member-text { min-width:0; line-height:1.35; white-space:normal; overflow-wrap:anywhere; }
         .member-search { margin-bottom:.5rem; }
         .member-search input { font-size:.82rem; }
         .muted-note { color:#64748b; font-size:.76rem; margin-top:.3rem; }
@@ -183,6 +196,10 @@
                                 <label style="margin-bottom:.25rem;">CIDM役職</label>
                                 <div class="check-wrap" id="filter-cidm-role"></div>
                             </div>
+                            <div class="filter-list-actions">
+                                <button type="button" class="btn btn-secondary" id="open-filter-list"><i class="fa-solid fa-list"></i> リスト表示</button>
+                                <span class="filter-list-summary" id="filter-list-summary">条件一致の対象を一覧で確認・個別調整できます。</span>
+                            </div>
                             <div class="muted-note">いずれか1項目以上を選択してください（AND条件）。</div>
                         </div>
                     </div>
@@ -222,6 +239,28 @@
         </div>
     </div>
 
+    <div class="modal-backdrop" id="filter-member-modal" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="filter-member-modal-title">
+            <div class="modal-head">
+                <div class="modal-title" id="filter-member-modal-title">条件一致の対象者リスト</div>
+                <button type="button" class="btn btn-secondary" id="close-filter-list-top"><i class="fa-solid fa-xmark"></i> 閉じる</button>
+            </div>
+            <div class="modal-body">
+                <div class="member-search"><input id="filter-member-search" placeholder="会社名/担当者名で絞り込み"></div>
+                <div class="filter-list-actions" style="margin-top:0; margin-bottom:.5rem;">
+                    <button type="button" class="btn btn-secondary" id="filter-check-all">全て選択</button>
+                    <button type="button" class="btn btn-secondary" id="filter-uncheck-all">全て解除</button>
+                    <span class="filter-list-summary" id="filter-modal-count">0 / 0 件選択</span>
+                </div>
+                <div class="member-list-modal" id="filter-member-list"></div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-secondary" id="cancel-filter-list">キャンセル</button>
+                <button type="button" class="btn btn-primary" id="apply-filter-list"><i class="fa-solid fa-check"></i> 選択して戻る</button>
+            </div>
+        </div>
+    </div>
+
     <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -233,6 +272,11 @@
     const form = document.getElementById('event-form');
     const submitBtn = document.getElementById('event-submit');
     let memberMaster = [];
+    let filterPreviewCandidates = [];
+    let filterPreviewSelectedIds = new Set();
+    let filterPreviewAppliedIds = null;
+    let filterPreviewConditionKey = '';
+    let filterPreviewTempIds = new Set();
     const DEFAULT_INVITE_MAIL_BODY = [
         'いつも、一般社団法人車両情報活用研究所へのご理解とご協力を賜り心からお礼申し上げます。',
         'さて下記のイベントについてご案内申し上げますので、出欠を下のURLからご回答くださいますようにお願いいたします。',
@@ -278,6 +322,93 @@
         return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map((el) => el.value);
     }
 
+    function getMemberFilterSelections() {
+        return {
+            divisions: getCheckedValues('filter_division'),
+            memberTypes: getCheckedValues('filter_member_type'),
+            roles: getCheckedValues('filter_cidm_role')
+        };
+    }
+
+    function buildFilterConditionKey(filters) {
+        return [
+            [...filters.divisions].sort().join('|'),
+            [...filters.memberTypes].sort().join('|'),
+            [...filters.roles].sort().join('|')
+        ].join('||');
+    }
+
+    function getFilteredCandidates(filters) {
+        return memberMaster.filter((m) => {
+            const division = String(m.division_flag || '会員');
+            const memberType = String(m.member_type || '');
+            const role = String(m.cidm_role || '');
+            return (
+                (filters.divisions.length === 0 || filters.divisions.includes(division))
+                && (filters.memberTypes.length === 0 || filters.memberTypes.includes(memberType))
+                && (filters.roles.length === 0 || filters.roles.includes(role))
+            );
+        });
+    }
+
+    function updateFilterListSummary() {
+        const el = document.getElementById('filter-list-summary');
+        if (!el) return;
+        if (Array.isArray(filterPreviewAppliedIds)) {
+            el.textContent = `個別調整済み: ${filterPreviewAppliedIds.length} 件を選択中`;
+            return;
+        }
+        el.textContent = '条件一致の対象を一覧で確認・個別調整できます。';
+    }
+
+    function updateFilterModalCount() {
+        const el = document.getElementById('filter-modal-count');
+        if (!el) return;
+        el.textContent = `${filterPreviewTempIds.size} / ${filterPreviewCandidates.length} 件選択`;
+    }
+
+    function renderFilterMemberList(keyword = '') {
+        const wrap = document.getElementById('filter-member-list');
+        if (!wrap) return;
+
+        const q = String(keyword || '').trim().toLowerCase();
+        const items = !q
+            ? filterPreviewCandidates
+            : filterPreviewCandidates.filter((m) => `${m.company_name || ''} ${m.staff_name || ''}`.toLowerCase().includes(q));
+
+        if (items.length === 0) {
+            wrap.innerHTML = '<span style="color:#64748b;font-size:.78rem;">対象データなし</span>';
+            updateFilterModalCount();
+            return;
+        }
+
+        wrap.innerHTML = items.map((m) => {
+            const memberId = String(m.id || '');
+            const checked = filterPreviewTempIds.has(memberId) ? 'checked' : '';
+            const label = `${window.cidmAdminUi.sanitizeText(m.company_name || '')}${m.staff_name ? ' / ' + window.cidmAdminUi.sanitizeText(m.staff_name) : ''}`;
+            return `<label><input type="checkbox" data-filter-member-id="${window.cidmAdminUi.sanitizeText(memberId)}" ${checked}><span class="member-text">${label}</span></label>`;
+        }).join('');
+
+        updateFilterModalCount();
+    }
+
+    function openFilterMemberModal() {
+        const modal = document.getElementById('filter-member-modal');
+        const search = document.getElementById('filter-member-search');
+        if (!modal) return;
+        if (search) search.value = '';
+        renderFilterMemberList('');
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeFilterMemberModal() {
+        const modal = document.getElementById('filter-member-modal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        modal.setAttribute('aria-hidden', 'true');
+    }
+
     function updateTargetModeUI() {
         const mode = form.querySelector('input[name="target_mode"]:checked')?.value || 'manual';
         document.getElementById('target-manual').style.display = mode === 'manual' ? 'block' : 'none';
@@ -306,6 +437,8 @@
         }
 
         memberMaster = data || [];
+        filterPreviewAppliedIds = null;
+        updateFilterListSummary();
         renderManualMembers(memberMaster);
         renderFilterCheckboxes('filter-division', 'filter_division', uniqueNonEmpty(memberMaster.map((m) => m.division_flag || '会員')));
         renderFilterCheckboxes('filter-member-type', 'filter_member_type', uniqueNonEmpty(memberMaster.map((m) => m.member_type)));
@@ -368,9 +501,11 @@
         await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
             const targetMode = form.querySelector('input[name="target_mode"]:checked')?.value || 'manual';
             const selectedMemberIds = getCheckedValues('manual_member_id');
-            const selectedDivisions = getCheckedValues('filter_division');
-            const selectedMemberTypes = getCheckedValues('filter_member_type');
-            const selectedRoles = getCheckedValues('filter_cidm_role');
+            const filters = getMemberFilterSelections();
+            const selectedDivisions = filters.divisions;
+            const selectedMemberTypes = filters.memberTypes;
+            const selectedRoles = filters.roles;
+            const selectedFilteredMemberIds = Array.isArray(filterPreviewAppliedIds) ? filterPreviewAppliedIds : null;
 
             if (targetMode === 'manual' && selectedMemberIds.length === 0) {
                 window.cidmAdminUi.showToast('対象者を1件以上選択してください。', 'error', 2200);
@@ -378,6 +513,10 @@
             }
             if (targetMode === 'filter' && selectedDivisions.length === 0 && selectedMemberTypes.length === 0 && selectedRoles.length === 0) {
                 window.cidmAdminUi.showToast('条件指定モードでは1項目以上選択してください。', 'error', 2400);
+                return;
+            }
+            if (targetMode === 'filter' && selectedFilteredMemberIds && selectedFilteredMemberIds.length === 0) {
+                window.cidmAdminUi.showToast('条件指定の対象者が0件です。リスト表示で選択してください。', 'error', 2400);
                 return;
             }
 
@@ -389,6 +528,7 @@
                 if (selectedDivisions.length) targetNoteParts.push(`区分:${selectedDivisions.join(' / ')}`);
                 if (selectedMemberTypes.length) targetNoteParts.push(`種別:${selectedMemberTypes.join(' / ')}`);
                 if (selectedRoles.length) targetNoteParts.push(`役職:${selectedRoles.join(' / ')}`);
+                if (selectedFilteredMemberIds) targetNoteParts.push(`対象者調整:${selectedFilteredMemberIds.length}件`);
             }
 
             const payload = {
@@ -401,7 +541,9 @@
                 p_target_note: [form.target_note.value.trim(), ...targetNoteParts].filter(Boolean).join(' | ') || null,
                 p_invite_mail_body: (form.invite_mail_body.value || '').trim() || null,
                 p_target_mode: targetMode,
-                p_member_ids: targetMode === 'manual' ? selectedMemberIds : null,
+                p_member_ids: targetMode === 'manual'
+                    ? selectedMemberIds
+                    : (targetMode === 'filter' ? selectedFilteredMemberIds : null),
                 p_division_flags: targetMode === 'filter' ? selectedDivisions : null,
                 p_member_types: targetMode === 'filter' ? selectedMemberTypes : null,
                 p_cidm_roles: targetMode === 'filter' ? selectedRoles : null
@@ -428,6 +570,8 @@
             }
             updateTargetModeUI();
             renderManualMembers(memberMaster);
+            filterPreviewAppliedIds = null;
+            updateFilterListSummary();
             renderFilterCheckboxes('filter-division', 'filter_division', uniqueNonEmpty(memberMaster.map((m) => m.division_flag || '会員')));
             renderFilterCheckboxes('filter-member-type', 'filter_member_type', uniqueNonEmpty(memberMaster.map((m) => m.member_type)));
             renderFilterCheckboxes('filter-cidm-role', 'filter_cidm_role', uniqueNonEmpty(memberMaster.map((m) => m.cidm_role)));
@@ -454,6 +598,89 @@
 
     form.querySelectorAll('input[name="target_mode"]').forEach((el) => {
         el.addEventListener('change', updateTargetModeUI);
+    });
+
+    ['filter_division', 'filter_member_type', 'filter_cidm_role'].forEach((name) => {
+        document.addEventListener('change', (e) => {
+            const target = e.target;
+            if (!(target instanceof HTMLInputElement)) return;
+            if (target.name !== name) return;
+            filterPreviewAppliedIds = null;
+            updateFilterListSummary();
+        });
+    });
+
+    document.getElementById('open-filter-list')?.addEventListener('click', () => {
+        const filters = getMemberFilterSelections();
+        if (filters.divisions.length === 0 && filters.memberTypes.length === 0 && filters.roles.length === 0) {
+            window.cidmAdminUi.showToast('先に条件を1項目以上選択してください。', 'error', 2200);
+            return;
+        }
+
+        const key = buildFilterConditionKey(filters);
+        const candidates = getFilteredCandidates(filters);
+        if (candidates.length === 0) {
+            window.cidmAdminUi.showToast('条件に一致する対象者がいません。', 'error', 2200);
+            return;
+        }
+
+        filterPreviewCandidates = candidates;
+        if (key !== filterPreviewConditionKey) {
+            filterPreviewSelectedIds = new Set(candidates.map((m) => String(m.id || '')));
+            filterPreviewConditionKey = key;
+        }
+
+        filterPreviewTempIds = new Set(filterPreviewSelectedIds);
+        openFilterMemberModal();
+    });
+
+    document.getElementById('filter-member-list')?.addEventListener('change', (e) => {
+        const target = e.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        if (!target.matches('input[data-filter-member-id]')) return;
+        const memberId = String(target.getAttribute('data-filter-member-id') || '');
+        if (!memberId) return;
+        if (target.checked) {
+            filterPreviewTempIds.add(memberId);
+        } else {
+            filterPreviewTempIds.delete(memberId);
+        }
+        updateFilterModalCount();
+    });
+
+    document.getElementById('filter-member-search')?.addEventListener('input', (e) => {
+        renderFilterMemberList(String(e.target.value || ''));
+    });
+
+    document.getElementById('filter-check-all')?.addEventListener('click', () => {
+        filterPreviewTempIds = new Set(filterPreviewCandidates.map((m) => String(m.id || '')));
+        const search = document.getElementById('filter-member-search');
+        renderFilterMemberList(String(search?.value || ''));
+    });
+
+    document.getElementById('filter-uncheck-all')?.addEventListener('click', () => {
+        filterPreviewTempIds = new Set();
+        const search = document.getElementById('filter-member-search');
+        renderFilterMemberList(String(search?.value || ''));
+    });
+
+    document.getElementById('apply-filter-list')?.addEventListener('click', () => {
+        if (filterPreviewTempIds.size === 0) {
+            window.cidmAdminUi.showToast('対象者を1件以上選択してください。', 'error', 2200);
+            return;
+        }
+        filterPreviewSelectedIds = new Set(filterPreviewTempIds);
+        filterPreviewAppliedIds = [...filterPreviewSelectedIds];
+        updateFilterListSummary();
+        closeFilterMemberModal();
+    });
+
+    ['cancel-filter-list', 'close-filter-list-top'].forEach((id) => {
+        document.getElementById(id)?.addEventListener('click', closeFilterMemberModal);
+    });
+
+    document.getElementById('filter-member-modal')?.addEventListener('click', (e) => {
+        if (e.target?.id === 'filter-member-modal') closeFilterMemberModal();
     });
 
     document.getElementById('reload-events')?.addEventListener('click', loadEvents);
