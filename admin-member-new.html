@@ -94,6 +94,8 @@
                     </div>
                     <div class="form-group"><label for="cidm_role">CIDM役職</label><input type="text" id="cidm_role" name="cidm_role" placeholder="副理事長, 理事, 監事 等"></div>
                     <div class="form-group"><label for="company_name">会社名 <span style="color:#f87171">*</span></label><input type="text" id="company_name" name="company_name" required></div>
+                    <div class="form-group"><label for="department">部署</label><input type="text" id="department" name="department"></div>
+                    <div class="form-group"><label for="job_title">役職</label><input type="text" id="job_title" name="job_title"></div>
                     <div class="form-group"><label for="representative_name">責任者名 <span style="color:#f87171">*</span></label><input type="text" id="representative_name" name="representative_name" required></div>
                     <div class="form-group"><label for="zip_code">郵便番号</label><input type="text" id="zip_code" name="zip_code" placeholder="000-0000"></div>
                     <div class="form-group"><label for="address">住所</label><input type="text" id="address" name="address"></div>
@@ -225,6 +227,8 @@
                 member_type:         form.member_type.value || null,
                 cidm_role:           form.cidm_role.value.trim() || null,
                 company_name:        form.company_name.value.trim(),
+                department:          form.department.value.trim() || null,
+                job_title:           form.job_title.value.trim() || null,
                 representative_name: form.representative_name.value.trim(),
                 zip_code:            form.zip_code.value.trim(),
                 address:             form.address.value.trim(),
