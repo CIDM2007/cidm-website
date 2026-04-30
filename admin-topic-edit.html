@@ -45,6 +45,17 @@
         .attach-remove { border:1px solid #fca5a5; background:#fee2e2; color:#b91c1c; border-radius:0.45rem; padding:0.25rem 0.5rem; font-size:0.72rem; font-weight:700; cursor:pointer; }
         .attach-remove:hover { background:#fecaca; color:#991b1b; }
         .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#64748b; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #e2e8f0; }
+        .photo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0.7rem; margin-top:0.5rem; }
+        .photo-slot { border-radius:0.6rem; overflow:hidden; aspect-ratio:4/3; border:2px dashed #cbd5e1; background:#f8fbff; position:relative; transition:border-color 0.15s, background 0.15s; }
+        .photo-slot--empty { display:flex; align-items:center; justify-content:center; cursor:pointer; }
+        .photo-slot--empty:hover { border-color:#3b82f6; background:#eff6ff; }
+        .photo-add-label { display:flex; flex-direction:column; align-items:center; gap:0.3rem; color:#94a3b8; font-size:0.72rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; width:100%; height:100%; justify-content:center; pointer-events:none; }
+        .photo-add-label i { font-size:1.3rem; }
+        .photo-slot--empty:hover .photo-add-label { color:#3b82f6; }
+        .photo-slot--filled img { width:100%; height:100%; object-fit:cover; display:block; }
+        .photo-remove { position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.55); color:#fff; border:none; border-radius:50%; width:22px; height:22px; font-size:0.7rem; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background 0.15s; z-index:1; }
+        .photo-remove:hover { background:rgba(185,28,28,0.85); }
+        .photo-new-badge { position:absolute; bottom:4px; left:4px; background:#2563eb; color:#fff; font-size:0.62rem; font-weight:700; padding:1px 6px; border-radius:9999px; letter-spacing:0.05em; pointer-events:none; }
     </style>
 </head>
 <body>
@@ -87,6 +98,11 @@
                     <textarea id="detail_text" name="detail_text"></textarea>
                 </div>
                 <div class="form-group">
+                    <label>写真（最大6枚）</label>
+                    <div id="photo-grid" class="photo-grid"></div>
+                    <p class="file-help">各スロットをクリックして画像を選択。JPG・PNG・GIF・WEBP 対応。</p>
+                </div>
+                <div class="form-group">
                     <label for="attachments">添付ファイル（PDF・画像・動画）</label>
                     <div class="file-picker">
                         <input type="file" id="attachments" name="attachments" multiple accept=".pdf,image/*,video/*">
@@ -95,6 +111,7 @@
                     <div id="existing-attachments" class="attach-list"></div>
                     <div id="new-attachments" class="attach-list"></div>
                 </div>
+                <input type="file" id="photo-file-input" accept="image/*" style="display:none">
                 <div class="form-actions">
                     <button type="button" id="cancel-btn" class="btn btn-cancel">キャンセル</button>
                     <button type="submit" class="btn btn-submit">更新</button>
@@ -122,6 +139,11 @@
 
     let existingAttachmentUrls = [];
     let selectedFiles = [];
+    const PHOTO_SLOT_COUNT = 6;
+    let photoSlots = Array(PHOTO_SLOT_COUNT).fill(null);
+    let currentPhotoSlot = -1;
+    const photoFileInput = document.getElementById('photo-file-input');
+    const photoGrid = document.getElementById('photo-grid');
 
     function escapeHtml(v) {
         return String(v || '')
@@ -181,6 +203,22 @@
         `).join('');
     }
 
+    function renderPhotoSlots() {
+        if (!photoGrid) return;
+        photoGrid.innerHTML = photoSlots.map((slot, i) => {
+            if (slot && slot.type === 'existing') {
+                const safeUrl = window.cidmAdminUi.sanitizeUrl(slot.url);
+                return `<div class="photo-slot photo-slot--filled" data-slot="${i}"><img src="${safeUrl}" alt="写真${i+1}"><button type="button" class="photo-remove" data-slot="${i}"><i class="fa-solid fa-xmark"></i></button></div>`;
+            } else if (slot && slot.type === 'new') {
+                // blob: URL is generated locally — safe to use directly
+                const escapedUrl = slot.previewUrl.replace(/"/g, '&quot;');
+                return `<div class="photo-slot photo-slot--filled" data-slot="${i}"><img src="${escapedUrl}" alt="写真${i+1}"><button type="button" class="photo-remove" data-slot="${i}"><i class="fa-solid fa-xmark"></i></button><span class="photo-new-badge">新規</span></div>`;
+            } else {
+                return `<div class="photo-slot photo-slot--empty" data-slot="${i}"><div class="photo-add-label"><i class="fa-solid fa-plus"></i><span>写真${i+1}</span></div></div>`;
+            }
+        }).join('');
+    }
+
     async function uploadSelectedFiles() {
         const uploadedUrls = [];
         for (const file of selectedFiles) {
@@ -196,6 +234,24 @@
         return uploadedUrls;
     }
 
+    async function uploadPhotoSlots() {
+        const urls = [];
+        for (const slot of photoSlots) {
+            if (!slot) continue;
+            if (slot.type === 'existing') {
+                urls.push(slot.url);
+            } else if (slot.type === 'new') {
+                const safeName = slot.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const path = `topics/photos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+                const { error } = await supabaseClient.storage.from(STORAGE_BUCKET).upload(path, slot.file, { upsert: false });
+                if (error) throw new Error(`写真のアップロードに失敗しました: ${error.message}`);
+                const { data } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+                urls.push(data.publicUrl);
+            }
+        }
+        return urls;
+    }
+
     cancelBtn?.addEventListener('click', async () => {
         const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
         if (!accepted) return;
@@ -204,6 +260,37 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
         await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
+        renderPhotoSlots();
+    });
+
+    photoGrid?.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.photo-remove');
+        if (removeBtn) {
+            const idx = Number(removeBtn.dataset.slot);
+            if (photoSlots[idx]?.type === 'new') URL.revokeObjectURL(photoSlots[idx].previewUrl);
+            photoSlots[idx] = null;
+            renderPhotoSlots();
+            return;
+        }
+        const emptySlot = e.target.closest('.photo-slot--empty');
+        if (emptySlot) {
+            currentPhotoSlot = Number(emptySlot.dataset.slot);
+            photoFileInput?.click();
+        }
+    });
+
+    photoFileInput?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        photoFileInput.value = '';
+        if (!file || currentPhotoSlot < 0 || currentPhotoSlot >= PHOTO_SLOT_COUNT) return;
+        if (!file.type.startsWith('image/')) {
+            window.cidmAdminUi.showToast('画像ファイルを選択してください。', 'error', 2200);
+            return;
+        }
+        const previewUrl = URL.createObjectURL(file);
+        photoSlots[currentPhotoSlot] = { type: 'new', file, previewUrl };
+        currentPhotoSlot = -1;
+        renderPhotoSlots();
     });
 
     attachmentInput?.addEventListener('change', (event) => {
@@ -268,10 +355,11 @@
 
                 const uploadedUrls = await uploadSelectedFiles();
                 const attachment_urls = [...existingAttachmentUrls, ...uploadedUrls];
+                const photo_urls = await uploadPhotoSlots();
 
                 const { error } = await supabaseClient
                     .from('meeting_reports')
-                    .insert([{ title, category, event_date, is_visible, details, detail_text, attachment_urls }]);
+                    .insert([{ title, category, event_date, is_visible, details, detail_text, attachment_urls, photo_urls }]);
                 if (error) {
                     window.cidmAdminUi.showToast('登録に失敗しました: ' + error.message, 'error', 3000);
                 } else {
@@ -298,6 +386,10 @@
             form.detail_text.value = data.detail_text || '';
             existingAttachmentUrls = Array.isArray(data.attachment_urls) ? data.attachment_urls : [];
             renderExistingAttachments();
+            const photoUrls = Array.isArray(data.photo_urls) ? data.photo_urls : [];
+            photoSlots = Array(PHOTO_SLOT_COUNT).fill(null);
+            photoUrls.slice(0, PHOTO_SLOT_COUNT).forEach((url, i) => { photoSlots[i] = { type: 'existing', url }; });
+            renderPhotoSlots();
         })();
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -317,10 +409,11 @@
 
                 const uploadedUrls = await uploadSelectedFiles();
                 const attachment_urls = [...existingAttachmentUrls, ...uploadedUrls];
+                const photo_urls = await uploadPhotoSlots();
 
                 const { error } = await supabaseClient
                     .from('meeting_reports')
-                    .update({ title, event_date, is_visible, details, detail_text, attachment_urls })
+                    .update({ title, event_date, is_visible, details, detail_text, attachment_urls, photo_urls })
                     .eq('id', topicId);
                 if (error) {
                     window.cidmAdminUi.showToast('更新に失敗しました: ' + error.message, 'error', 3000);
