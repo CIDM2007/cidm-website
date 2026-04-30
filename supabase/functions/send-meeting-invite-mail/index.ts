@@ -97,6 +97,8 @@ serve(async (req) => {
     const failures: Array<{ email: string; message: string }> = [];
     const results: Array<{ email: string; success: boolean; message?: string }> = [];
 
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
     for (const r of recipients) {
       const email = (r?.email || "").trim();
       const url = (r?.url || "").trim();
@@ -156,11 +158,15 @@ serve(async (req) => {
         const errorText = await resendResponse.text();
         failures.push({ email, message: errorText || "unknown error" });
         results.push({ email, success: false, message: errorText || "unknown error" });
+        await sleep(600);
         continue;
       }
 
       successCount += 1;
       results.push({ email, success: true });
+
+      // Resend rate limit: 2 req/sec → wait 600ms between sends
+      await sleep(600);
     }
 
     return new Response(
