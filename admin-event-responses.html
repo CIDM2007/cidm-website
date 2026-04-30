@@ -330,6 +330,7 @@
         currentInvites = data;
         setBulkSendButtonsDisabled(false);
         await loadMailLogs(eventId);
+        await restoreFailedRecipientsFromLogs(eventId);
 
         tbody.innerHTML = data.map((r) => `
             <tr>
@@ -345,8 +346,51 @@
         `).join('');
     }
 
-    async function sendBulkInviteMails(onlyPending) {
-        const eventId = getEventId();
+    async function restoreFailedRecipientsFromLogs(eventId) {
+        if (!eventId || !Array.isArray(currentInvites) || currentInvites.length === 0) return;
+        try {
+            const { data: logs } = await supabaseClient
+                .from('meeting_invite_mail_logs')
+                .select('recipient_email,send_status,sent_at')
+                .eq('event_id', eventId)
+                .order('sent_at', { ascending: false });
+
+            if (!logs || logs.length === 0) return;
+
+            // 各メールアドレスの「最新」送信結果を集計
+            const latestByEmail = new Map();
+            for (const log of logs) {
+                const email = String(log.recipient_email || '').toLowerCase();
+                if (!latestByEmail.has(email)) {
+                    latestByEmail.set(email, log.send_status);
+                }
+            }
+
+            // 最新結果が失敗のメールを currentInvites から復元
+            const failedEmails = new Set(
+                [...latestByEmail.entries()]
+                    .filter(([, status]) => status === 'failed')
+                    .map(([email]) => email)
+            );
+
+            if (failedEmails.size === 0) return;
+
+            lastFailedRecipients = currentInvites
+                .filter((r) => r.staff_email && failedEmails.has(String(r.staff_email).toLowerCase()))
+                .map((r) => ({
+                    email: r.staff_email,
+                    staff_name: r.staff_name || '',
+                    company_name: r.company_name || '',
+                    url: buildRsvpUrl(r.access_token)
+                }));
+
+            updateRetryButton();
+        } catch (e) {
+            console.warn('restoreFailedRecipientsFromLogs error:', e);
+        }
+    }
+
+    async function sendBulkInviteMails(onlyPending) {        const eventId = getEventId();
         if (!currentEvent || !Array.isArray(currentInvites) || currentInvites.length === 0) {
             window.cidmAdminUi.showToast('送信対象データがありません。', 'error', 1800);
             return;
