@@ -278,6 +278,7 @@
         const { error } = await supabaseClient.from('meeting_invite_mail_logs').insert(rows);
         if (error) {
             console.warn('failed to save mail logs:', error);
+            window.cidmAdminUi.showToast('メール送信は成功しましたが、履歴の保存に失敗しました。', 'error', 3200);
             return;
         }
 
@@ -351,11 +352,17 @@
         try {
             const { data: logs } = await supabaseClient
                 .from('meeting_invite_mail_logs')
-                .select('recipient_email,send_status,sent_at')
+                .select('id,recipient_email,send_status,sent_at,created_at')
                 .eq('event_id', eventId)
-                .order('sent_at', { ascending: false });
+                .order('sent_at', { ascending: false })
+                .order('created_at', { ascending: false })
+                .order('id', { ascending: false });
 
-            if (!logs || logs.length === 0) return;
+            if (!logs || logs.length === 0) {
+                lastFailedRecipients = [];
+                updateRetryButton();
+                return;
+            }
 
             // 各メールアドレスの「最新」送信結果を集計
             const latestByEmail = new Map();
@@ -373,7 +380,11 @@
                     .map(([email]) => email)
             );
 
-            if (failedEmails.size === 0) return;
+            if (failedEmails.size === 0) {
+                lastFailedRecipients = [];
+                updateRetryButton();
+                return;
+            }
 
             lastFailedRecipients = currentInvites
                 .filter((r) => r.staff_email && failedEmails.has(String(r.staff_email).toLowerCase()))
@@ -390,7 +401,8 @@
         }
     }
 
-    async function sendBulkInviteMails(onlyPending) {        const eventId = getEventId();
+    async function sendBulkInviteMails(onlyPending) {
+        const eventId = getEventId();
         if (!currentEvent || !Array.isArray(currentInvites) || currentInvites.length === 0) {
             window.cidmAdminUi.showToast('送信対象データがありません。', 'error', 1800);
             return;
