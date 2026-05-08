@@ -64,25 +64,25 @@
     <div id="nav-placeholder"></div>
 
     <div id="login-modal" role="dialog" aria-modal="true" tabindex="-1" class="hidden fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm" style="z-index: 100;">
-        <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative border border-blue-50">
+        <div class="bg-white p-10 md:p-12 rounded-2xl shadow-2xl w-[min(92vw,36rem)] relative border border-blue-50">
             <button type="button" id="login-close-btn" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
-            <div class="text-center mb-8">
+            <div class="text-center mb-8 md:mb-9">
                 <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fa-solid fa-lock text-2xl text-blue-600"></i>
                 </div>
                 <h3 class="text-2xl font-bold serif text-slate-800">会員ログイン</h3>
             </div>
-            <form id="login-form" class="space-y-5">
+            <form id="login-form" class="space-y-5 md:space-y-6">
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Login ID / Email</label>
-                    <input type="text" id="member-id" required class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="member-001 または メールアドレス">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Login ID / Email</label>
+                    <input type="text" id="member-id" required class="w-full border border-slate-200 px-4 py-4 rounded-xl outline-none focus:border-blue-400 transition" placeholder="member-001 または メールアドレス">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Password</label>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Password</label>
                     <div class="relative">
-                        <input type="password" id="password" required class="w-full border border-slate-200 px-4 py-3.5 pr-20 rounded-xl outline-none focus:border-blue-400 transition" placeholder="••••••••">
+                        <input type="password" id="password" required class="w-full border border-slate-200 px-4 py-4 pr-20 rounded-xl outline-none focus:border-blue-400 transition" placeholder="••••••••">
                         <button type="button" id="member-password-toggle" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 hover:text-slate-700">表示</button>
                     </div>
                 </div>
