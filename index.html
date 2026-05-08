@@ -87,7 +87,7 @@
                     </div>
                 </div>
                 <div class="text-right -mt-1">
-                    <button id="open-password-reset-btn" type="button" class="text-xs font-bold text-blue-600 hover:text-blue-700">パスワードを忘れた方</button>
+                    <button id="open-password-reset-btn" type="button" onclick="return window.cidmOpenPasswordResetFromLogin ? window.cidmOpenPasswordResetFromLogin(event) : false;" class="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer">パスワードを忘れた方</button>
                 </div>
                 <button id="member-login-btn" type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">ログイン</button>
             </form>
@@ -678,6 +678,9 @@
                 return;
             }
         }
+
+        // Fallback for cases where addEventListener is not attached for any reason.
+        window.cidmOpenPasswordResetFromLogin = handleOpenPasswordResetFromLogin;
 
         function closePasswordResetModal(options = {}) {
             const restoreFocus = options.restoreFocus !== false;
