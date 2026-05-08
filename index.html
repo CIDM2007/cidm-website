@@ -63,7 +63,7 @@
 <body class="bg-white" data-nav-current="home">
     <div id="nav-placeholder"></div>
 
-    <div id="login-modal" role="dialog" aria-modal="true" tabindex="-1" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+    <div id="login-modal" role="dialog" aria-modal="true" tabindex="-1" class="hidden fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm" style="z-index: 100;">
         <div class="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-md relative border border-blue-50">
             <button type="button" id="login-close-btn" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-xl"></i>
@@ -94,7 +94,7 @@
         </div>
     </div>
 
-    <div id="password-reset-modal" role="dialog" aria-modal="true" tabindex="-1" class="hidden fixed inset-0 z-[101] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+    <div id="password-reset-modal" role="dialog" aria-modal="true" tabindex="-1" class="hidden fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm" style="z-index: 101;">
         <div class="bg-white p-9 rounded-2xl shadow-2xl w-full max-w-md relative border border-blue-50">
             <button type="button" id="password-reset-close-btn" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-xl"></i>
@@ -681,6 +681,7 @@
             updateStep.classList.add('hidden');
             resetModal.classList.remove('hidden');
             resetModal.style.display = 'flex';
+            resetModal.style.zIndex = '101';
             syncBodyScrollLock();
             window.requestAnimationFrame(() => {
                 focusPreferredElement(resetModal);
@@ -705,8 +706,7 @@
                 return;
             }
 
-            // Keep login modal in place behind reset modal to avoid click-through
-            // to underlying page elements on some browser/touch environments.
+            closeLogin({ restoreFocus: false });
         }
 
         // Fallback for cases where addEventListener is not attached for any reason.
