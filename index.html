@@ -95,51 +95,51 @@
     </div>
 
     <div id="password-reset-modal" role="dialog" aria-modal="true" tabindex="-1" class="hidden fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm" style="z-index: 101;">
-        <div class="bg-white p-9 rounded-2xl shadow-2xl w-full max-w-md relative border border-blue-50">
+        <div class="bg-white p-10 md:p-12 rounded-2xl shadow-2xl w-[min(92vw,36rem)] relative border border-blue-50">
             <button type="button" id="password-reset-close-btn" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
 
             <div id="password-reset-request-step">
-                <div class="text-center mb-7">
+                <div class="text-center mb-8 md:mb-9">
                     <div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
                         <i class="fa-solid fa-key text-xl text-blue-600"></i>
                     </div>
                     <h3 class="text-2xl font-bold serif text-slate-800">パスワード回復</h3>
-                    <p class="text-sm text-slate-500 mt-2">会員ログインIDと登録済みメールアドレスで本人確認します（メール送信は行いません）。</p>
+                    <p class="text-sm text-slate-500 mt-3 leading-relaxed">会員ログインIDと登録済みメールアドレスで本人確認します（メール送信は行いません）。</p>
                 </div>
-                <form id="password-reset-request-form" class="space-y-4">
+                <form id="password-reset-request-form" class="space-y-5 md:space-y-6">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Login ID / Email</label>
-                        <input type="text" id="password-reset-login-id" required class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="member-001 または メールアドレス">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Login ID / Email</label>
+                        <input type="text" id="password-reset-login-id" required class="w-full border border-slate-200 px-4 py-4 rounded-xl outline-none focus:border-blue-400 transition" placeholder="member-001 または メールアドレス">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Registered Email</label>
-                        <input type="email" id="password-reset-registered-email" required class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="登録済みメールアドレス">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Registered Email</label>
+                        <input type="email" id="password-reset-registered-email" required class="w-full border border-slate-200 px-4 py-4 rounded-xl outline-none focus:border-blue-400 transition" placeholder="登録済みメールアドレス">
                     </div>
-                    <button id="password-reset-request-btn" type="submit" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">本人確認して次へ（メール送信なし）</button>
+                    <button id="password-reset-request-btn" type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">本人確認して次へ（メール送信なし）</button>
                 </form>
-                <p class="text-xs text-slate-400 mt-3">本人確認後、この画面で新しいパスワードを設定します。</p>
+                <p class="text-xs text-slate-400 mt-4 leading-relaxed">本人確認後、この画面で新しいパスワードを設定します。</p>
             </div>
 
             <div id="password-reset-update-step" class="hidden">
-                <div class="text-center mb-7">
+                <div class="text-center mb-8 md:mb-9">
                     <div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
                         <i class="fa-solid fa-unlock-keyhole text-xl text-blue-600"></i>
                     </div>
                     <h3 class="text-2xl font-bold serif text-slate-800">新しいパスワード設定</h3>
-                    <p class="text-sm text-slate-500 mt-2">8文字以上で設定してください。</p>
+                    <p class="text-sm text-slate-500 mt-3 leading-relaxed">8文字以上で設定してください。</p>
                 </div>
-                <form id="password-reset-update-form" class="space-y-4">
+                <form id="password-reset-update-form" class="space-y-5 md:space-y-6">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">New Password</label>
-                        <input type="password" id="password-reset-new-password" required minlength="8" class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="8文字以上">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">New Password</label>
+                        <input type="password" id="password-reset-new-password" required minlength="8" class="w-full border border-slate-200 px-4 py-4 rounded-xl outline-none focus:border-blue-400 transition" placeholder="8文字以上">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Confirm Password</label>
-                        <input type="password" id="password-reset-confirm-password" required minlength="8" class="w-full border border-slate-200 px-4 py-3.5 rounded-xl outline-none focus:border-blue-400 transition" placeholder="再入力">
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Confirm Password</label>
+                        <input type="password" id="password-reset-confirm-password" required minlength="8" class="w-full border border-slate-200 px-4 py-4 rounded-xl outline-none focus:border-blue-400 transition" placeholder="再入力">
                     </div>
-                    <button id="password-reset-update-btn" type="submit" class="w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">パスワードを更新</button>
+                    <button id="password-reset-update-btn" type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">パスワードを更新</button>
                 </form>
             </div>
         </div>
