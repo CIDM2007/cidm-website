@@ -87,7 +87,7 @@
                     </div>
                 </div>
                 <div class="text-right -mt-1">
-                    <button id="open-password-reset-btn" type="button" onclick="try { if (window.cidmOpenPasswordResetFromLogin) { window.cidmOpenPasswordResetFromLogin(event); } else { var resetModal = document.getElementById('password-reset-modal'); var requestStep = document.getElementById('password-reset-request-step'); var updateStep = document.getElementById('password-reset-update-step'); if (requestStep) { requestStep.classList.remove('hidden'); } if (updateStep) { updateStep.classList.add('hidden'); } if (resetModal) { resetModal.classList.remove('hidden'); } } } catch (_) { var _resetModal = document.getElementById('password-reset-modal'); var _requestStep = document.getElementById('password-reset-request-step'); var _updateStep = document.getElementById('password-reset-update-step'); if (_requestStep) { _requestStep.classList.remove('hidden'); } if (_updateStep) { _updateStep.classList.add('hidden'); } if (_resetModal) { _resetModal.classList.remove('hidden'); } } return false;" class="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer">パスワードを忘れた方</button>
+                    <a id="open-password-reset-btn" href="index.html?memberLogin=1&amp;passwordReset=1" role="button" onclick="try { if (window.cidmOpenPasswordResetFromLogin) { window.cidmOpenPasswordResetFromLogin(event); return false; } } catch (_) {} window.location.href='index.html?memberLogin=1&passwordReset=1'; return false;" class="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer">パスワードを忘れた方</a>
                 </div>
                 <button id="member-login-btn" type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">ログイン</button>
             </form>
@@ -1008,9 +1008,20 @@
             loadNews();
 
             const params = new URLSearchParams(window.location.search);
-            if (params.get('memberLogin') === '1') {
+            const shouldOpenLogin = params.get('memberLogin') === '1';
+            const shouldOpenPasswordReset = params.get('passwordReset') === '1';
+
+            if (shouldOpenLogin) {
                 openLogin();
+            }
+
+            if (shouldOpenPasswordReset) {
+                forceOpenPasswordResetModalFromLogin();
+            }
+
+            if (shouldOpenLogin || shouldOpenPasswordReset) {
                 params.delete('memberLogin');
+                params.delete('passwordReset');
                 const nextUrl = params.toString() ? `index.html?${params.toString()}` : 'index.html';
                 window.history.replaceState({}, '', nextUrl);
             }
