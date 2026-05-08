@@ -666,6 +666,24 @@
             return true;
         }
 
+        function forceOpenPasswordResetModalFromLogin() {
+            const resetModal = document.getElementById('password-reset-modal');
+            const requestStep = document.getElementById('password-reset-request-step');
+            const updateStep = document.getElementById('password-reset-update-step');
+            if (!resetModal || !requestStep || !updateStep) {
+                return false;
+            }
+
+            requestStep.classList.remove('hidden');
+            updateStep.classList.add('hidden');
+            resetModal.classList.remove('hidden');
+            syncBodyScrollLock();
+            window.requestAnimationFrame(() => {
+                focusPreferredElement(resetModal);
+            });
+            return true;
+        }
+
         function handleOpenPasswordResetFromLogin(event) {
             if (event && typeof event.preventDefault === 'function') {
                 event.preventDefault();
@@ -677,7 +695,7 @@
                 event.stopImmediatePropagation();
             }
 
-            const opened = openPasswordResetModal('request');
+            const opened = forceOpenPasswordResetModalFromLogin();
             if (!opened) {
                 window.cidmAdminUi.showToast('パスワード回復画面を開けませんでした。再読み込み後に再度お試しください。', 'error', 3200);
                 return;
@@ -689,6 +707,7 @@
 
         // Fallback for cases where addEventListener is not attached for any reason.
         window.cidmOpenPasswordResetFromLogin = handleOpenPasswordResetFromLogin;
+        window.cidmForceOpenPasswordResetModalFromLogin = forceOpenPasswordResetModalFromLogin;
 
         function closePasswordResetModal(options = {}) {
             const restoreFocus = options.restoreFocus !== false;
@@ -914,6 +933,25 @@
             document.getElementById('login-close-btn')?.addEventListener('click', closeLogin);
             document.getElementById('login-form')?.addEventListener('submit', handleLogin);
             document.getElementById('open-password-reset-btn')?.addEventListener('click', handleOpenPasswordResetFromLogin);
+            document.addEventListener('click', (event) => {
+                const target = event.target;
+                if (!(target instanceof Element)) return;
+                const button = target.closest('#open-password-reset-btn');
+                if (!button) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+                if (typeof event.stopImmediatePropagation === 'function') {
+                    event.stopImmediatePropagation();
+                }
+
+                if (window.cidmOpenPasswordResetFromLogin) {
+                    window.cidmOpenPasswordResetFromLogin(event);
+                    return;
+                }
+
+                forceOpenPasswordResetModalFromLogin();
+            }, true);
             document.getElementById('password-reset-close-btn')?.addEventListener('click', closePasswordResetModal);
             document.getElementById('password-reset-request-form')?.addEventListener('submit', requestMemberPasswordReset);
             document.getElementById('password-reset-update-form')?.addEventListener('submit', updateMemberPassword);
