@@ -629,6 +629,7 @@
             if (!modal) return;
             rememberFocusBeforeModal();
             modal.classList.remove('hidden');
+            modal.style.display = 'flex';
             syncBodyScrollLock();
             window.requestAnimationFrame(() => {
                 focusPreferredElement(modal);
@@ -639,6 +640,7 @@
             const modal = document.getElementById('login-modal');
             if (!modal) return;
             modal.classList.add('hidden');
+            modal.style.display = '';
             syncBodyScrollLock();
             const memberIdInput = document.getElementById('member-id');
             const passwordInput = document.getElementById('password');
@@ -659,6 +661,7 @@
             requestStep.classList.toggle('hidden', mode !== 'request');
             updateStep.classList.toggle('hidden', mode !== 'update');
             modal.classList.remove('hidden');
+            modal.style.display = 'flex';
             syncBodyScrollLock();
             window.requestAnimationFrame(() => {
                 focusPreferredElement(modal);
@@ -677,6 +680,7 @@
             requestStep.classList.remove('hidden');
             updateStep.classList.add('hidden');
             resetModal.classList.remove('hidden');
+            resetModal.style.display = 'flex';
             syncBodyScrollLock();
             window.requestAnimationFrame(() => {
                 focusPreferredElement(resetModal);
@@ -714,6 +718,7 @@
             const modal = document.getElementById('password-reset-modal');
             if (!modal) return;
             modal.classList.add('hidden');
+            modal.style.display = '';
             syncBodyScrollLock();
 
             const requestForm = document.getElementById('password-reset-request-form');
