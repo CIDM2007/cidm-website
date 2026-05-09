@@ -202,7 +202,7 @@
                         <th>会員種別</th>
                         <th>会社名</th>
                         <th>主担当者</th>
-                        <th>回答</th>
+                        <th id="response-col-header">回答</th>
                         <th>送信</th>
                         <th>メモ</th>
                         <th>回答日時</th>
@@ -572,6 +572,11 @@
             document.getElementById('event-title').textContent = current.event_name + (isNotice ? ' - 送信一覧' : ' - 回答一覧');
             document.getElementById('event-meta').textContent =
                 `開催日時: ${new Date(current.starts_at).toLocaleString('ja-JP')} / 対象: ${current.target_scope} / 種別: ${current.delivery_mode === 'notice' ? '案内のみ' : '出欠確認あり'} / 招待: ${current.total_invites}件`;
+
+            const responseColHeader = document.getElementById('response-col-header');
+            if (responseColHeader) {
+                responseColHeader.textContent = isNotice ? '区分' : '回答';
+            }
 
             const mailLogTitle = document.getElementById('mail-log-title');
             const mailLogHint = document.getElementById('mail-log-hint');
