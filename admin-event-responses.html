@@ -399,9 +399,12 @@
             '',
             '',
             `イベント名: ${eventName}`,
-            `開催日時: ${startsAtText}`,
-            `開催場所/接続先: ${eventData?.location_info || ''}`,
         ];
+
+        if (mode === 'rsvp') {
+            lines.push(`開催日時: ${startsAtText}`);
+            lines.push(`開催場所/接続先: ${eventData?.location_info || ''}`);
+        }
 
         if (eventData?.event_description) {
             lines.push('', `内容: ${eventData.event_description}`);
@@ -569,9 +572,10 @@
         currentEvent = current || null;
         if (current) {
             const isNotice = current.delivery_mode === 'notice';
+            const startsAtLabel = current.starts_at ? new Date(current.starts_at).toLocaleString('ja-JP') : '未設定';
             document.getElementById('event-title').textContent = current.event_name + (isNotice ? ' - 送信一覧' : ' - 回答一覧');
             document.getElementById('event-meta').textContent =
-                `開催日時: ${new Date(current.starts_at).toLocaleString('ja-JP')} / 対象: ${current.target_scope} / 種別: ${current.delivery_mode === 'notice' ? '案内のみ' : '出欠確認あり'} / 招待: ${current.total_invites}件`;
+                `開催日時: ${startsAtLabel} / 対象: ${current.target_scope} / 種別: ${current.delivery_mode === 'notice' ? '案内のみ' : '出欠確認あり'} / 招待: ${current.total_invites}件`;
 
             const responseColHeader = document.getElementById('response-col-header');
             if (responseColHeader) {

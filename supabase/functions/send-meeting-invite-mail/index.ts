@@ -60,7 +60,9 @@ serve(async (req) => {
       recipients?: Recipient[];
     };
 
-    if (!event_name || !starts_at || !Array.isArray(recipients) || recipients.length === 0) {
+    const mode = delivery_mode === "notice" ? "notice" : "rsvp";
+
+    if (!event_name || !Array.isArray(recipients) || recipients.length === 0 || (mode === "rsvp" && !starts_at)) {
       return new Response("Missing required fields", {
         status: 400,
         headers: corsHeaders,
@@ -77,12 +79,11 @@ serve(async (req) => {
       });
     }
 
-    const startsAtText = new Date(starts_at).toLocaleString("ja-JP", {
-      timeZone: "Asia/Tokyo",
-    });
+    const startsAtText = starts_at
+      ? new Date(starts_at).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })
+      : "";
     const subject = `【CIDM】${event_name} のご案内`;
     const mailBody = (invite_mail_body || "").trim() || DEFAULT_INVITE_MAIL_BODY;
-    const mode = delivery_mode === "notice" ? "notice" : "rsvp";
 
     let successCount = 0;
     let failedCount = 0;
@@ -110,9 +111,12 @@ serve(async (req) => {
         "",
         "",
         `イベント名: ${event_name}`,
-        `開催日時: ${startsAtText}`,
-        `開催場所/接続先: ${location_info || ""}`,
       ];
+
+      if (mode === "rsvp") {
+        lines.push(`開催日時: ${startsAtText}`);
+        lines.push(`開催場所/接続先: ${location_info || ""}`);
+      }
 
       if (event_description) {
         lines.push("", `内容: ${event_description}`);

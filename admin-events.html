@@ -149,27 +149,27 @@
                 <h2>イベント作成</h2>
                 <form id="event-form">
                     <div class="form-group">
+                        <label>配信種別 *</label>
+                        <div class="target-mode">
+                            <label><input type="radio" name="delivery_mode" value="rsvp" checked> 出欠確認あり</label>
+                            <label><input type="radio" name="delivery_mode" value="notice"> 案内のみ（出欠回答なし）</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
                         <label for="event_name">イベント名 *</label>
                         <input id="event_name" name="event_name" required>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="starts-at-group">
                         <label for="starts_at">開催日時 *</label>
                         <input id="starts_at" name="starts_at" type="datetime-local" required>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="location-info-group">
                         <label for="location_info">場所/オンライン接続情報 *</label>
                         <textarea id="location_info" name="location_info" required></textarea>
                     </div>
                     <div class="form-group">
                         <label for="event_description">イベント内容</label>
                         <textarea id="event_description" name="event_description"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>配信種別 *</label>
-                        <div class="target-mode">
-                            <label><input type="radio" name="delivery_mode" value="rsvp" checked> 出欠確認あり</label>
-                            <label><input type="radio" name="delivery_mode" value="notice"> 案内のみ（出欠回答なし）</label>
-                        </div>
                     </div>
                     <div class="form-group">
                         <label>対象者 *</label>
@@ -435,9 +435,20 @@
     function updateDeliveryModeUI() {
         const mode = getDeliveryMode();
         const hint = document.getElementById('invite-mail-hint');
+        const startsAtGroup = document.getElementById('starts-at-group');
+        const locationInfoGroup = document.getElementById('location-info-group');
+        const startsAtInput = form.starts_at;
+        const locationInfoInput = form.location_info;
+
+        const isNotice = mode === 'notice';
+        if (startsAtGroup) startsAtGroup.style.display = isNotice ? 'none' : 'block';
+        if (locationInfoGroup) locationInfoGroup.style.display = isNotice ? 'none' : 'block';
+        if (startsAtInput) startsAtInput.required = !isNotice;
+        if (locationInfoInput) locationInfoInput.required = !isNotice;
+
         if (hint) {
             hint.textContent = mode === 'notice'
-                ? '宛名とイベント情報は自動追記されます。案内のみのため回答URLは付きません。'
+                ? '宛名とイベント情報は自動追記されます。案内のみのため回答URL・開催日時・場所はメール本文に含めません。'
                 : '宛名、イベント情報、回答URLは自動追記されます。ここは前文として利用されます。';
         }
 
@@ -539,6 +550,7 @@
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
+            const deliveryMode = getDeliveryMode();
             const targetMode = form.querySelector('input[name="target_mode"]:checked')?.value || 'manual';
             const selectedMemberIds = getCheckedValues('manual_member_id');
             const filters = getMemberFilterSelections();
@@ -574,9 +586,11 @@
             const payload = {
                 p_event_name: form.event_name.value.trim(),
                 p_event_description: form.event_description.value.trim() || null,
-                p_starts_at: new Date(form.starts_at.value).toISOString(),
-                p_location_info: form.location_info.value.trim(),
-                p_delivery_mode: form.querySelector('input[name="delivery_mode"]:checked')?.value || 'rsvp',
+                p_starts_at: deliveryMode === 'notice'
+                    ? null
+                    : (form.starts_at.value ? new Date(form.starts_at.value).toISOString() : null),
+                p_location_info: deliveryMode === 'notice' ? null : (form.location_info.value.trim() || null),
+                p_delivery_mode: deliveryMode,
                 p_target_scope: targetScope,
                 p_target_note: [form.target_note.value.trim(), ...targetNoteParts].filter(Boolean).join(' | ') || null,
                 p_invite_mail_body: (form.invite_mail_body.value || '').trim() || null,
@@ -589,7 +603,7 @@
                 p_cidm_roles: targetMode === 'filter' ? selectedRoles : null
             };
 
-            if (!payload.p_event_name || !payload.p_starts_at || !payload.p_location_info) {
+            if (!payload.p_event_name || (deliveryMode !== 'notice' && (!payload.p_starts_at || !payload.p_location_info))) {
                 window.cidmAdminUi.showToast('必須項目を入力してください。', 'error', 2200);
                 return;
             }
