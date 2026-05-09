@@ -64,10 +64,96 @@
         .url-btn { border:1px solid #93c5fd; background:#eff6ff; color:#1d4ed8; border-radius:.45rem; padding:.25rem .55rem; cursor:pointer; font-size:.75rem; }
         .url-btn:hover { background:#dbeafe; }
         .btn-danger { background:linear-gradient(135deg,#dc2626,#f97316); color:#fff; box-shadow: 0 8px 18px rgba(220, 38, 38, 0.2); }
+        .btn-tertiary { background:#ffffff; color:#334155; border:1px solid #cbd5e1; }
+        .btn-tertiary:hover { background:#f8fafc; }
         .empty { text-align:center; color:#64748b; padding:1rem; }
         .sub-title { font-size:1rem; color:#1e293b; margin:1.2rem 0 .6rem; }
         .hint { color:#64748b; font-size:.78rem; margin-bottom:.6rem; }
         .admin-footer { text-align:center; padding:1rem; color:#64748b; font-size:.68rem; border-top:1px solid #e2e8f0; }
+
+        .mail-preview-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .mail-preview-dialog {
+            width: min(96vw, 900px);
+            max-height: 90vh;
+            background: #fff;
+            border: 1px solid #dbe4ef;
+            border-radius: 1rem;
+            box-shadow: 0 20px 52px rgba(2, 6, 23, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .mail-preview-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .8rem;
+            padding: .95rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fbff;
+        }
+        .mail-preview-title { font-size: .98rem; font-weight: 700; color: #1e293b; }
+        .mail-preview-close {
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #475569;
+            border-radius: .55rem;
+            padding: .35rem .55rem;
+            cursor: pointer;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+        .mail-preview-body {
+            padding: 1rem;
+            overflow: auto;
+            display: grid;
+            gap: .8rem;
+        }
+        .mail-preview-meta {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: .7rem;
+            padding: .8rem;
+            color: #334155;
+            font-size: .8rem;
+            line-height: 1.55;
+        }
+        .mail-preview-block {
+            border: 1px solid #dbe4ef;
+            border-radius: .7rem;
+            overflow: hidden;
+        }
+        .mail-preview-label {
+            padding: .55rem .75rem;
+            background: #f8fbff;
+            border-bottom: 1px solid #e2e8f0;
+            color: #475569;
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+        .mail-preview-pre {
+            margin: 0;
+            padding: .8rem;
+            background: #fff;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #334155;
+            font-size: .82rem;
+            line-height: 1.65;
+            font-family: 'Noto Sans JP', sans-serif;
+        }
     </style>
 </head>
 <body>
@@ -85,6 +171,7 @@
         <div class="actions">
             <button type="button" class="btn btn-primary" id="send-all-mails"><i class="fa-solid fa-paper-plane"></i> 全員へ一括送信</button>
             <button type="button" class="btn btn-secondary" id="send-pending-mails"><i class="fa-solid fa-hourglass-half"></i> 未回答者のみ送信</button>
+            <button type="button" class="btn btn-tertiary" id="open-mail-preview"><i class="fa-solid fa-envelope-open-text"></i> 送信内容を確認</button>
             <button type="button" class="btn btn-danger" id="send-retry-mails" style="display:none;"><i class="fa-solid fa-rotate-right"></i> 失敗分を再送信 (<span id="retry-count">0</span>件)</button>
         </div>
 
@@ -131,6 +218,26 @@
         </div>
     </div>
 
+    <div id="mail-preview-modal" class="mail-preview-backdrop" aria-hidden="true">
+        <div class="mail-preview-dialog" role="dialog" aria-modal="true" aria-labelledby="mail-preview-title">
+            <div class="mail-preview-head">
+                <div class="mail-preview-title" id="mail-preview-title">案内メールの送信内容</div>
+                <button type="button" id="mail-preview-close" class="mail-preview-close"><i class="fa-solid fa-xmark"></i> 閉じる</button>
+            </div>
+            <div class="mail-preview-body">
+                <div id="mail-preview-meta" class="mail-preview-meta"></div>
+                <div class="mail-preview-block">
+                    <div class="mail-preview-label">Subject</div>
+                    <pre id="mail-preview-subject" class="mail-preview-pre"></pre>
+                </div>
+                <div class="mail-preview-block">
+                    <div class="mail-preview-label">Body (Sample)</div>
+                    <pre id="mail-preview-body" class="mail-preview-pre"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -143,6 +250,11 @@
     let currentEvent = null;
     let lastFailedRecipients = [];
     let latestMailStatusByEmail = new Map();
+    const DEFAULT_INVITE_MAIL_BODY = [
+        'いつも、一般社団法人車両情報活用研究所へのご理解とご協力を賜り心からお礼申し上げます。',
+        'さて下記のイベントについてご案内申し上げますので、出欠を下のURLからご回答くださいますようにお願いいたします。',
+        '大変お忙しい中かとは存じますが、何卒ご出席を賜りますよう、宜しくお願い致します。',
+    ].join('\n');
 
     function getEventId() {
         const p = new URLSearchParams(window.location.search);
@@ -242,6 +354,92 @@
         if (mode === 'pending') return '未回答者のみ';
         if (mode === 'retry') return '再送信';
         return '全員';
+    }
+
+    function deliveryModeLabel(mode) {
+        return mode === 'notice' ? '案内のみ（回答URLなし）' : '出欠確認あり（回答URLあり）';
+    }
+
+    function buildInviteMailPreview(eventData, recipient) {
+        const mode = eventData?.delivery_mode === 'notice' ? 'notice' : 'rsvp';
+        const eventName = eventData?.event_name || '(イベント名未設定)';
+        const startsAtText = eventData?.starts_at
+            ? new Date(eventData.starts_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+            : '';
+        const subject = `【CIDM】${eventName} のご案内`;
+        const mailBody = String(eventData?.invite_mail_body || '').trim() || DEFAULT_INVITE_MAIL_BODY;
+
+        const lines = [
+            `${recipient.company_name || ''} ${recipient.staff_name || ''} 様`,
+            '',
+            mailBody,
+            '',
+            '',
+            '',
+            `イベント名: ${eventName}`,
+            `開催日時: ${startsAtText}`,
+            `開催場所/接続先: ${eventData?.location_info || ''}`,
+        ];
+
+        if (eventData?.event_description) {
+            lines.push('', `内容: ${eventData.event_description}`);
+        }
+
+        if (mode === 'rsvp') {
+            lines.push('', '回答URL:', recipient.url || '(回答URL未生成)', '', 'このURLはご本人専用です。');
+        } else {
+            if (eventData?.event_description) {
+                lines.push('', '');
+            } else {
+                lines.push('');
+            }
+            lines.push('本メールはご案内のみです。出欠のご回答は不要です。');
+        }
+
+        return {
+            subject,
+            text: lines.join('\n'),
+            mode,
+        };
+    }
+
+    function openMailPreviewModal() {
+        if (!currentEvent) {
+            window.cidmAdminUi.showToast('イベント情報の読み込み後に再度お試しください。', 'error', 2600);
+            return;
+        }
+
+        const recipientBase = currentInvites.find((r) => r.staff_email) || currentInvites[0] || {};
+        const sampleRecipient = {
+            company_name: recipientBase.company_name || 'サンプル会社',
+            staff_name: recipientBase.staff_name || 'ご担当者',
+            url: recipientBase.access_token ? buildRsvpUrl(recipientBase.access_token) : '',
+        };
+        const preview = buildInviteMailPreview(currentEvent, sampleRecipient);
+
+        const metaEl = document.getElementById('mail-preview-meta');
+        const subjectEl = document.getElementById('mail-preview-subject');
+        const bodyEl = document.getElementById('mail-preview-body');
+        const modal = document.getElementById('mail-preview-modal');
+        if (!metaEl || !subjectEl || !bodyEl || !modal) return;
+
+        metaEl.textContent = [
+            `送信モード: ${deliveryModeLabel(preview.mode)}`,
+            `イベント: ${currentEvent.event_name || ''}`,
+            `サンプル宛先: ${sampleRecipient.company_name || ''} ${sampleRecipient.staff_name || ''} 様`,
+        ].join(' / ');
+        subjectEl.textContent = preview.subject;
+        bodyEl.textContent = preview.text;
+
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeMailPreviewModal() {
+        const modal = document.getElementById('mail-preview-modal');
+        if (!modal) return;
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
     }
 
     function statusBadge(status) {
@@ -603,6 +801,20 @@
 
     document.getElementById('send-retry-mails')?.addEventListener('click', () => {
         sendRetryMails();
+    });
+
+    document.getElementById('open-mail-preview')?.addEventListener('click', () => {
+        openMailPreviewModal();
+    });
+
+    document.getElementById('mail-preview-close')?.addEventListener('click', () => {
+        closeMailPreviewModal();
+    });
+
+    document.getElementById('mail-preview-modal')?.addEventListener('click', (event) => {
+        if (event.target && event.target.id === 'mail-preview-modal') {
+            closeMailPreviewModal();
+        }
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
