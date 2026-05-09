@@ -60,6 +60,7 @@
         .badge-no { color:#b91c1c; border-color:#fca5a5; background:#fee2e2; }
         .badge-pending { color:#0369a1; border-color:#93c5fd; background:#e0f2fe; }
         .badge-hold { color:#92400e; border-color:#fcd34d; background:#fef3c7; }
+        .badge-notice { color:#475569; border-color:#cbd5e1; background:#f8fafc; }
         .memo { color:#64748b; max-width:280px; white-space:pre-wrap; }
         .url-btn { border:1px solid #93c5fd; background:#eff6ff; color:#1d4ed8; border-radius:.45rem; padding:.25rem .55rem; cursor:pointer; font-size:.75rem; }
         .url-btn:hover { background:#dbeafe; }
@@ -214,8 +215,8 @@
             </table>
         </div>
 
-        <h2 class="sub-title">送信履歴</h2>
-        <div class="hint">最新50件を表示します。</div>
+        <h2 class="sub-title" id="mail-log-title">送信履歴</h2>
+        <div class="hint" id="mail-log-hint">最新50件を表示します。</div>
         <div class="card">
             <table class="table">
                 <thead>
@@ -287,6 +288,9 @@
     }
 
     function responseBadge(status) {
+        if (currentEvent && currentEvent.delivery_mode === 'notice') {
+            return '<span class="badge badge-notice">回答不要</span>';
+        }
         if (status === '出席') return '<span class="badge badge-yes">出席</span>';
         if (status === '欠席') return '<span class="badge badge-no">欠席</span>';
         if (status === '検討中') return '<span class="badge badge-hold">検討中</span>';
@@ -564,9 +568,21 @@
         const current = (events || []).find((e) => e.event_id === eventId);
         currentEvent = current || null;
         if (current) {
-            document.getElementById('event-title').textContent = current.event_name + ' - 回答一覧';
+            const isNotice = current.delivery_mode === 'notice';
+            document.getElementById('event-title').textContent = current.event_name + (isNotice ? ' - 送信一覧' : ' - 回答一覧');
             document.getElementById('event-meta').textContent =
                 `開催日時: ${new Date(current.starts_at).toLocaleString('ja-JP')} / 対象: ${current.target_scope} / 種別: ${current.delivery_mode === 'notice' ? '案内のみ' : '出欠確認あり'} / 招待: ${current.total_invites}件`;
+
+            const mailLogTitle = document.getElementById('mail-log-title');
+            const mailLogHint = document.getElementById('mail-log-hint');
+            if (mailLogTitle) {
+                mailLogTitle.textContent = isNotice ? '案内送信履歴' : '送信履歴';
+            }
+            if (mailLogHint) {
+                mailLogHint.textContent = isNotice
+                    ? '案内のみイベントの送信履歴（最新50件）を表示します。'
+                    : '最新50件を表示します。';
+            }
         }
 
         const pendingBtn = document.getElementById('send-pending-mails');
