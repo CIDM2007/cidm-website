@@ -84,7 +84,7 @@
         }
         .mail-preview-dialog {
             width: min(96vw, 900px);
-            max-height: 90vh;
+            height: min(90vh, calc(100vh - 2rem));
             background: #fff;
             border: 1px solid #dbe4ef;
             border-radius: 1rem;
@@ -114,8 +114,10 @@
             font-weight: 700;
         }
         .mail-preview-body {
+            flex: 1 1 auto;
             padding: 1rem;
-            overflow: auto;
+            overflow-y: auto;
+            overflow-x: hidden;
             display: grid;
             gap: .8rem;
             min-height: 0;
