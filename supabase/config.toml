@@ -18,3 +18,6 @@ verify_jwt = false
 
 [functions.login-member]
 verify_jwt = false
+
+[functions.send-membership-invoice-mail]
+verify_jwt = false
