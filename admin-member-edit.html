@@ -213,6 +213,7 @@
             <div class="form-group"><label>担当者名</label><input type="text" name="contact_name[]" value="${contact?.name || ''}"></div>
             <div class="form-group"><label>担当者携帯</label><input type="text" name="contact_phone[]" value="${contact?.phone || ''}"></div>
             <div class="form-group"><label>担当者メール</label><input type="email" name="contact_email[]" value="${contact?.email || ''}"></div>
+            <div class="form-group"><label><input type="checkbox" name="contact_receive_invite[]" ${contact?.receive_invite_mail === false ? '' : 'checked'}> 会議案内メールの送信対象に含める</label></div>
         `;
         row.querySelector('.contact-del-btn').addEventListener('click', () => {
             if (contactsList.children.length <= 1) return;
@@ -270,7 +271,7 @@
 
         const { data: contactData } = await supabaseClient
             .from('member_contacts')
-            .select('id, name, phone, email, is_primary, sort_order')
+            .select('id, name, phone, email, receive_invite_mail, is_primary, sort_order')
             .eq('member_id', memberId)
             .order('sort_order', { ascending: true });
 
@@ -282,6 +283,7 @@
                 name: data.staff_name || '',
                 phone: data.staff_mobile || '',
                 email: data.staff_email || '',
+                receive_invite_mail: true,
                 is_primary: true
             });
         }
@@ -325,6 +327,7 @@
                 name: row.querySelector('input[name="contact_name[]"]').value.trim() || null,
                 phone: row.querySelector('input[name="contact_phone[]"]').value.trim() || null,
                 email: row.querySelector('input[name="contact_email[]"]').value.trim() || null,
+                receive_invite_mail: row.querySelector('input[name="contact_receive_invite[]"]')?.checked !== false,
                 is_primary: parseInt(row.dataset.idx, 10) === primaryIdxVal,
                 sort_order: i
             })).filter(c => c.name || c.phone || c.email);

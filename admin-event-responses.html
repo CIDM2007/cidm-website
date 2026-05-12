@@ -269,6 +269,7 @@
     let currentEvent = null;
     let lastFailedRecipients = [];
     let latestMailStatusByEmail = new Map();
+    let inviteRecipientsByInviteId = new Map();
     const DEFAULT_INVITE_MAIL_BODY = [
         'いつも、一般社団法人車両情報活用研究所へのご理解とご協力を賜り心からお礼申し上げます。',
         'さて下記のイベントについてご案内申し上げますので、出欠を下のURLからご回答くださいますようにお願いいたします。',
@@ -306,10 +307,96 @@
     function applyInvokeResultsToMailStatus(results) {
         if (!Array.isArray(results)) return;
         for (const r of results) {
-            const email = String(r?.email || '').toLowerCase();
+            const email = normalizeEmail(r?.email);
             if (!email) continue;
             latestMailStatusByEmail.set(email, r?.success === false ? 'failed' : 'success');
         }
+    }
+
+    function normalizeEmail(value) {
+        return String(value || '').trim().toLowerCase();
+    }
+
+    function buildRecipientsForInvite(invite) {
+        if (!invite) return [];
+        const inviteId = String(invite.invite_id || '');
+        const fallbackEmail = String(invite.staff_email || '').trim();
+        const fromContacts = inviteRecipientsByInviteId.get(inviteId) || [];
+        if (fromContacts.length > 0) return fromContacts;
+        if (!fallbackEmail) return [];
+        return [{
+            email: fallbackEmail,
+            staff_name: invite.staff_name || '',
+            company_name: invite.company_name || '',
+            url: buildRsvpUrl(invite.access_token)
+        }];
+    }
+
+    function buildRecipientsFromInvites(invites) {
+        const rows = [];
+        const seen = new Set();
+        for (const invite of invites || []) {
+            const recipients = buildRecipientsForInvite(invite);
+            recipients.forEach((recipient) => {
+                const emailKey = normalizeEmail(recipient.email);
+                const dedupeKey = `${invite.member_id || ''}:${emailKey}`;
+                if (!emailKey || seen.has(dedupeKey)) return;
+                seen.add(dedupeKey);
+                rows.push(recipient);
+            });
+        }
+        return rows;
+    }
+
+    async function loadInviteRecipients(invites) {
+        inviteRecipientsByInviteId = new Map();
+        const memberIds = [...new Set((invites || []).map((r) => r.member_id).filter(Boolean))];
+        if (memberIds.length === 0) return;
+
+        const { data, error } = await supabaseClient
+            .from('member_contacts')
+            .select('member_id, name, email, receive_invite_mail, is_primary, sort_order')
+            .in('member_id', memberIds)
+            .order('is_primary', { ascending: false })
+            .order('sort_order', { ascending: true });
+
+        if (error || !Array.isArray(data)) {
+            console.warn('failed to load member contacts for invite mail:', error);
+            return;
+        }
+
+        const contactsByMemberId = new Map();
+        data.forEach((row) => {
+            if (row.receive_invite_mail === false) return;
+            const email = String(row.email || '').trim();
+            if (!row.member_id || !email) return;
+            const key = String(row.member_id);
+            if (!contactsByMemberId.has(key)) contactsByMemberId.set(key, []);
+            contactsByMemberId.get(key).push({
+                email,
+                staff_name: row.name || ''
+            });
+        });
+
+        (invites || []).forEach((invite) => {
+            const inviteId = String(invite.invite_id || '');
+            const memberKey = String(invite.member_id || '');
+            const members = contactsByMemberId.get(memberKey) || [];
+            const deduped = [];
+            const seen = new Set();
+            members.forEach((contact) => {
+                const emailKey = normalizeEmail(contact.email);
+                if (!emailKey || seen.has(emailKey)) return;
+                seen.add(emailKey);
+                deduped.push({
+                    email: contact.email,
+                    staff_name: contact.staff_name || invite.staff_name || '',
+                    company_name: invite.company_name || '',
+                    url: buildRsvpUrl(invite.access_token)
+                });
+            });
+            inviteRecipientsByInviteId.set(inviteId, deduped);
+        });
     }
 
     function renderInviteRows() {
@@ -322,8 +409,11 @@
         }
 
         tbody.innerHTML = currentInvites.map((r) => {
-            const email = String(r.staff_email || '').toLowerCase();
-            const mailStatus = latestMailStatusByEmail.get(email) || 'none';
+            const recipients = buildRecipientsForInvite(r);
+            const statuses = recipients.map((recipient) => latestMailStatusByEmail.get(normalizeEmail(recipient.email)) || 'none');
+            const mailStatus = statuses.includes('failed')
+                ? 'failed'
+                : (statuses.includes('success') ? 'success' : 'none');
 
             return `
                 <tr>
@@ -646,7 +736,7 @@
             // 各メールアドレスの「最新」送信結果を集計
             const latestByEmail = new Map();
             for (const log of logs) {
-                const email = String(log.recipient_email || '').toLowerCase();
+                const email = normalizeEmail(log.recipient_email);
                 if (!latestByEmail.has(email)) {
                     latestByEmail.set(email, log.send_status);
                 }
@@ -667,14 +757,8 @@
                 return;
             }
 
-            lastFailedRecipients = currentInvites
-                .filter((r) => r.staff_email && failedEmails.has(String(r.staff_email).toLowerCase()))
-                .map((r) => ({
-                    email: r.staff_email,
-                    staff_name: r.staff_name || '',
-                    company_name: r.company_name || '',
-                    url: buildRsvpUrl(r.access_token)
-                }));
+            lastFailedRecipients = buildRecipientsFromInvites(currentInvites)
+                .filter((r) => failedEmails.has(normalizeEmail(r.email)));
 
             updateRetryButton();
             renderInviteRows();
@@ -692,13 +776,7 @@
 
         const recipients = currentInvites
             .filter((r) => (onlyPending ? r.response_status === '未回答' : true))
-            .filter((r) => !!r.staff_email)
-            .map((r) => ({
-                email: r.staff_email,
-                staff_name: r.staff_name || '',
-                company_name: r.company_name || '',
-                url: buildRsvpUrl(r.access_token)
-            }));
+            .flatMap((r) => buildRecipientsForInvite(r));
 
         if (recipients.length === 0) {
             window.cidmAdminUi.showToast('送信対象のメールアドレスがありません。', 'error', 1800);
@@ -736,9 +814,9 @@
             // 失敗した宛先を再送信用に保持
             if (failedCount > 0 && Array.isArray(data?.results)) {
                 const failedEmails = new Set(
-                    data.results.filter((r) => r.success === false).map((r) => String(r.email || '').toLowerCase())
+                    data.results.filter((r) => r.success === false).map((r) => normalizeEmail(r.email))
                 );
-                lastFailedRecipients = recipients.filter((r) => failedEmails.has(String(r.email || '').toLowerCase()));
+                lastFailedRecipients = recipients.filter((r) => failedEmails.has(normalizeEmail(r.email)));
             } else {
                 lastFailedRecipients = [];
             }
@@ -813,9 +891,9 @@
 
             if (failedCount > 0 && Array.isArray(data?.results)) {
                 const failedEmails = new Set(
-                    data.results.filter((r) => r.success === false).map((r) => String(r.email || '').toLowerCase())
+                    data.results.filter((r) => r.success === false).map((r) => normalizeEmail(r.email))
                 );
-                lastFailedRecipients = lastFailedRecipients.filter((r) => failedEmails.has(String(r.email || '').toLowerCase()));
+                lastFailedRecipients = lastFailedRecipients.filter((r) => failedEmails.has(normalizeEmail(r.email)));
             } else {
                 lastFailedRecipients = [];
             }

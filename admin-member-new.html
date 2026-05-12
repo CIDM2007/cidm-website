@@ -173,6 +173,7 @@
                 <div class="form-group full"><label>担当者名</label><input type="text" name="contact_name[]" placeholder="山田 太郎"></div>
                 <div class="form-group"><label>電話番号</label><input type="text" name="contact_phone[]" placeholder="090-0000-0000"></div>
                 <div class="form-group"><label>メールアドレス</label><input type="email" name="contact_email[]"></div>
+                <div class="form-group full"><label><input type="checkbox" name="contact_receive_invite[]" checked> 会議案内メールの送信対象に含める</label></div>
             </div>
         `;
         row.querySelector('.contact-del-btn').addEventListener('click', () => {
@@ -216,6 +217,7 @@
                 name:       row.querySelector('input[name="contact_name[]"]').value.trim(),
                 phone:      row.querySelector('input[name="contact_phone[]"]').value.trim(),
                 email:      row.querySelector('input[name="contact_email[]"]').value.trim(),
+                receive_invite_mail: row.querySelector('input[name="contact_receive_invite[]"]')?.checked !== false,
                 is_primary: parseInt(row.dataset.idx) === primaryIdxVal,
                 sort_order: i
             })).filter(c => c.name || c.email);
