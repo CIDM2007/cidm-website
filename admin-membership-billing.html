@@ -711,19 +711,33 @@
 
             await ensureInvoiceFunctionReachable();
 
-            const { data, error } = await supabaseClient.functions.invoke('send-membership-invoice-mail', {
-                body: {
+            const response = await fetch(`${window.CIDM_SUPABASE_URL}/functions/v1/send-membership-invoice-mail`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: window.CIDM_SUPABASE_ANON_KEY,
+                    Authorization: `Bearer ${window.CIDM_SUPABASE_ANON_KEY}`
+                },
+                body: JSON.stringify({
                     billing_year: Number(yearInput.value),
                     billing_month: Number(monthSelect.value),
                     due_date: dueDate,
                     mail_body: '平素より一般社団法人車両情報活用研究所の活動にご理解ご協力を賜り、誠にありがとうございます。',
                     invoice_base_url: invoiceBaseUrl,
                     recipients: payloadRecipients
-                }
+                })
             });
 
-            if (error) {
-                throw new Error(String(error.message || '送信に失敗しました'));
+            const text = await response.text();
+            let data = null;
+            try {
+                data = text ? JSON.parse(text) : null;
+            } catch (_error) {
+                data = null;
+            }
+
+            if (!response.ok) {
+                throw new Error((data && data.error) || text || '送信に失敗しました');
             }
 
             const successCount = Number(data?.successCount || 0);
@@ -758,7 +772,7 @@
             window.cidmAdminUi.runWithButtonBusy(createBtn, sendInvoices, '送信中...')
                 .catch((error) => {
                     window.cidmAdminUi.showToast('請求メールの送信に失敗しました: ' + error.message, 'error', 3600);
-                    statusBox.textContent = '請求メールの送信に失敗しました。';
+                    statusBox.innerHTML = `請求メールの送信に失敗しました。<br>${window.cidmAdminUi.sanitizeText(error.message || '')}`;
                 });
         });
 
