@@ -728,8 +728,16 @@
 
             const successCount = Number(data?.successCount || 0);
             const failedCount = Number(data?.failedCount || 0);
-            statusBox.innerHTML = `送信結果: 成功 ${successCount} 件 / 失敗 ${failedCount} 件<br>請求処理を実行しました。`;
-            window.cidmAdminUi.showToast(`請求メールを送信しました（成功 ${successCount} 件）`, failedCount === 0 ? 'success' : 'info', 2600);
+            let statusMsg = `送信結果: 成功 ${successCount} 件 / 失敗 ${failedCount} 件<br>請求処理を実行しました。`;
+            if (failedCount > 0 && Array.isArray(data?.failures) && data.failures.length > 0) {
+                const failureDetails = data.failures.map((f) => `${f.email}: ${f.message}`).join('<br>');
+                statusMsg += `<br><br>失敗詳細:<br>${failureDetails}`;
+            }
+            statusBox.innerHTML = statusMsg;
+            const toastMsg = failedCount === 0
+                ? `請求メールを送信しました（成功 ${successCount} 件）`
+                : `送信完了: 成功 ${successCount} 件 / 失敗 ${failedCount} 件 詳細はステータスボックスで確認できます`;
+            window.cidmAdminUi.showToast(toastMsg, failedCount === 0 ? 'success' : 'error', 4200);
         }
 
         const now = new Date();
