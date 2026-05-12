@@ -675,6 +675,11 @@
         }
 
         async function sendInvoices() {
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
+            if (!ok) {
+                throw new Error('管理者認証が無効です。再ログインしてください。');
+            }
+
             const dueDate = String(dueDateInput.value || '').trim();
             const invoiceBaseUrl = String(invoiceBaseUrlInput.value || '').trim();
             const payloadRecipients = getSelectedRecipients();
@@ -688,33 +693,19 @@
                 throw new Error('請求対象を1件以上選択してください。');
             }
 
-            const response = await fetch(`${window.CIDM_SUPABASE_URL}/functions/v1/send-membership-invoice-mail`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    apikey: window.CIDM_SUPABASE_ANON_KEY,
-                    Authorization: `Bearer ${window.CIDM_SUPABASE_ANON_KEY}`
-                },
-                body: JSON.stringify({
+            const { data, error } = await supabaseClient.functions.invoke('send-membership-invoice-mail', {
+                body: {
                     billing_year: Number(yearInput.value),
                     billing_month: Number(monthSelect.value),
                     due_date: dueDate,
                     mail_body: '平素より一般社団法人車両情報活用研究所の活動にご理解ご協力を賜り、誠にありがとうございます。',
                     invoice_base_url: invoiceBaseUrl,
                     recipients: payloadRecipients
-                })
+                }
             });
 
-            const text = await response.text();
-            let data = null;
-            try {
-                data = text ? JSON.parse(text) : null;
-            } catch (_error) {
-                data = null;
-            }
-
-            if (!response.ok) {
-                throw new Error((data && data.error) || text || '送信に失敗しました');
+            if (error) {
+                throw new Error(String(error.message || '送信に失敗しました'));
             }
 
             const successCount = Number(data?.successCount || 0);
