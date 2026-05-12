@@ -674,6 +674,22 @@
             updateSummary(filteredRows);
         }
 
+        async function ensureInvoiceFunctionReachable() {
+            const endpoint = `${window.CIDM_SUPABASE_URL}/functions/v1/send-membership-invoice-mail`;
+            try {
+                const res = await fetch(endpoint, { method: 'GET' });
+                if (res.status === 404) {
+                    throw new Error('請求メール機能（send-membership-invoice-mail）が未デプロイです。Supabaseで関数をデプロイしてください。');
+                }
+            } catch (error) {
+                const message = String(error?.message || '');
+                if (message.includes('未デプロイ')) {
+                    throw error;
+                }
+                throw new Error('Edge Function への接続に失敗しました。ネットワーク設定または Supabase 側の状態を確認してください。');
+            }
+        }
+
         async function sendInvoices() {
             const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
             if (!ok) {
@@ -692,6 +708,8 @@
             if (payloadRecipients.length === 0) {
                 throw new Error('請求対象を1件以上選択してください。');
             }
+
+            await ensureInvoiceFunctionReachable();
 
             const { data, error } = await supabaseClient.functions.invoke('send-membership-invoice-mail', {
                 body: {
