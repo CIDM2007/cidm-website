@@ -747,7 +747,7 @@
         yearInput.value = String(fiscalYear);
         monthSelect.value = String(currentMonth);
         dueDateInput.value = `${fiscalYear + 1}-03-31`;
-        invoiceBaseUrlInput.value = `${window.location.origin}/member-invoice.html`;
+        invoiceBaseUrlInput.value = new URL('member-invoice.html', window.location.href).toString();
 
         previewBtn?.addEventListener('click', function() {
             updateStatusPreview();
