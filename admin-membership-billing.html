@@ -376,6 +376,7 @@
                         <select id="billing-group">
                             <option value="all">全会員</option>
                             <option value="regular">正会員のみ</option>
+                            <option value="regular_associate">正会員・準会員</option>
                             <option value="supporter">賛助会員のみ</option>
                         </select>
                     </div>
@@ -485,6 +486,7 @@
         };
         const memberTypeMatchers = {
             regular: ['正会員'],
+            regular_associate: ['正会員', '準会員'],
             supporter: ['賛助会員', '賛助']
         };
 
@@ -510,7 +512,7 @@
             return groupSelect.options[groupSelect.selectedIndex]?.text || '全会員';
         }
 
-        function getPrimaryContactByMemberId(contacts) {
+        function getBillingContactByMemberId(contacts) {
             const map = new Map();
             (Array.isArray(contacts) ? contacts : []).forEach((contact) => {
                 const memberId = String(contact.member_id || '');
@@ -519,12 +521,17 @@
                 const candidate = {
                     name: String(contact.name || '').trim(),
                     email: String(contact.email || '').trim(),
+                    receive_invoice_mail: contact.receive_invoice_mail !== false,
                     is_primary: Boolean(contact.is_primary),
                     sort_order: Number(contact.sort_order || 0)
                 };
 
                 const current = map.get(memberId);
-                if (!current || (candidate.is_primary && !current.is_primary) || (candidate.is_primary === current.is_primary && candidate.sort_order < current.sort_order)) {
+                const shouldReplace = !current
+                    || (candidate.receive_invoice_mail && !current.receive_invoice_mail)
+                    || (candidate.receive_invoice_mail === current.receive_invoice_mail && candidate.is_primary && !current.is_primary)
+                    || (candidate.receive_invoice_mail === current.receive_invoice_mail && candidate.is_primary === current.is_primary && candidate.sort_order < current.sort_order);
+                if (shouldReplace) {
                     map.set(memberId, candidate);
                 }
             });
@@ -623,7 +630,7 @@
 
             const [memberResult, contactResult] = await Promise.all([
                 supabaseClient.from('member').select('id, division_flag, member_type, company_name, staff_name, staff_email'),
-                supabaseClient.from('member_contacts').select('member_id, name, email, is_primary, sort_order')
+                supabaseClient.from('member_contacts').select('member_id, name, email, receive_invoice_mail, is_primary, sort_order')
             ]);
 
             if (memberResult.error) {
@@ -638,7 +645,7 @@
                 return;
             }
 
-            const primaryContactMap = getPrimaryContactByMemberId(contactResult.data || []);
+            const primaryContactMap = getBillingContactByMemberId(contactResult.data || []);
             recipientRows = (memberResult.data || [])
                 .map((member) => {
                     const primaryContact = primaryContactMap.get(String(member.id)) || {};

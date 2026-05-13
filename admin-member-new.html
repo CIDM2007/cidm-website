@@ -85,13 +85,13 @@
                             <label for="member_type">会員種別</label>
                             <select id="member_type" name="member_type">
                                 <option value="">-- 未設定 --</option>
-                                <option value="役員">役員</option>
                                 <option value="正会員">正会員</option>
                                 <option value="準会員">準会員</option>
                                 <option value="賛助">賛助会員</option>
                             </select>
                         </div>
                     </div>
+                    <div class="form-group"><label><input type="checkbox" id="is_officer" name="is_officer"> 役員</label></div>
                     <div class="form-group"><label for="cidm_role">CIDM役職</label><input type="text" id="cidm_role" name="cidm_role" placeholder="副理事長, 理事, 監事 等"></div>
                     <div class="form-group"><label for="company_name">会社名 <span style="color:#f87171">*</span></label><input type="text" id="company_name" name="company_name" required></div>
                     <div class="form-group"><label for="department">部署</label><input type="text" id="department" name="department"></div>
@@ -174,6 +174,7 @@
                 <div class="form-group"><label>電話番号</label><input type="text" name="contact_phone[]" placeholder="090-0000-0000"></div>
                 <div class="form-group"><label>メールアドレス</label><input type="email" name="contact_email[]"></div>
                 <div class="form-group full"><label><input type="checkbox" name="contact_receive_invite[]" checked> 会議案内メールの送信対象に含める</label></div>
+                <div class="form-group full"><label><input type="checkbox" name="contact_receive_invoice[]" checked> 会費請求メールの送信対象に含める</label></div>
             </div>
         `;
         row.querySelector('.contact-del-btn').addEventListener('click', () => {
@@ -218,6 +219,7 @@
                 phone:      row.querySelector('input[name="contact_phone[]"]').value.trim(),
                 email:      row.querySelector('input[name="contact_email[]"]').value.trim(),
                 receive_invite_mail: row.querySelector('input[name="contact_receive_invite[]"]')?.checked !== false,
+                receive_invoice_mail: row.querySelector('input[name="contact_receive_invoice[]"]')?.checked !== false,
                 is_primary: parseInt(row.dataset.idx) === primaryIdxVal,
                 sort_order: i
             })).filter(c => c.name || c.email);
@@ -227,6 +229,7 @@
             const data = {
                 division_flag:       form.division_flag.value || '会員',
                 member_type:         form.member_type.value || null,
+                is_officer:          form.is_officer.checked,
                 cidm_role:           form.cidm_role.value.trim() || null,
                 company_name:        form.company_name.value.trim(),
                 department:          form.department.value.trim() || null,

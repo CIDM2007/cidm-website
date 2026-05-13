@@ -175,7 +175,7 @@
                         <label>対象者 *</label>
                         <div class="target-mode">
                             <label><input type="radio" name="target_mode" value="manual" checked> 会員一覧から個別選択</label>
-                            <label><input type="radio" name="target_mode" value="filter"> 条件指定（種別/区分/CIDM役職）</label>
+                            <label><input type="radio" name="target_mode" value="filter"> 条件指定（種別/区分/役員/CIDM役職）</label>
                         </div>
 
                         <div id="target-manual" class="target-box">
@@ -190,6 +190,12 @@
                             <div class="form-group" style="margin-bottom:.6rem;">
                                 <label style="margin-bottom:.25rem;">区分</label>
                                 <div class="check-wrap" id="filter-division"></div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:.6rem;">
+                                <label style="margin-bottom:.25rem;">役員</label>
+                                <div class="check-wrap">
+                                    <label><input type="checkbox" id="filter-is-officer" name="filter_is_officer"> 役員のみ</label>
+                                </div>
                             </div>
                             <div class="form-group" style="margin-bottom:.6rem;">
                                 <label style="margin-bottom:.25rem;">会員種別</label>
@@ -342,6 +348,7 @@
     function getMemberFilterSelections() {
         return {
             divisions: getCheckedValues('filter_division'),
+            officerOnly: Boolean(document.getElementById('filter-is-officer')?.checked),
             memberTypes: getCheckedValues('filter_member_type'),
             roles: getCheckedValues('filter_cidm_role')
         };
@@ -350,6 +357,7 @@
     function buildFilterConditionKey(filters) {
         return [
             [...filters.divisions].sort().join('|'),
+            filters.officerOnly ? '1' : '0',
             [...filters.memberTypes].sort().join('|'),
             [...filters.roles].sort().join('|')
         ].join('||');
@@ -358,10 +366,12 @@
     function getFilteredCandidates(filters) {
         return memberMaster.filter((m) => {
             const division = String(m.division_flag || '会員');
+            const isOfficer = Boolean(m.is_officer);
             const memberType = String(m.member_type || '');
             const role = String(m.cidm_role || '');
             return (
                 (filters.divisions.length === 0 || filters.divisions.includes(division))
+                && (!filters.officerOnly || isOfficer)
                 && (filters.memberTypes.length === 0 || filters.memberTypes.includes(memberType))
                 && (filters.roles.length === 0 || filters.roles.includes(role))
             );
@@ -469,7 +479,7 @@
     async function loadMemberMaster() {
         const { data, error } = await supabaseClient
             .from('member')
-            .select('id, company_name, staff_name, division_flag, member_type, cidm_role')
+            .select('id, company_name, staff_name, division_flag, is_officer, member_type, cidm_role')
             .order('company_name', { ascending: true });
 
         if (error) {
@@ -477,6 +487,8 @@
             memberMaster = [];
             renderManualMembers([]);
             renderFilterCheckboxes('filter-division', 'filter_division', []);
+            const officerOnly = document.getElementById('filter-is-officer');
+            if (officerOnly) officerOnly.checked = false;
             renderFilterCheckboxes('filter-member-type', 'filter_member_type', []);
             renderFilterCheckboxes('filter-cidm-role', 'filter_cidm_role', []);
             return;
@@ -487,6 +499,8 @@
         updateFilterListSummary();
         renderManualMembers(memberMaster);
         renderFilterCheckboxes('filter-division', 'filter_division', uniqueNonEmpty(memberMaster.map((m) => m.division_flag || '会員')));
+        const officerOnly = document.getElementById('filter-is-officer');
+        if (officerOnly) officerOnly.checked = false;
         renderFilterCheckboxes('filter-member-type', 'filter_member_type', uniqueNonEmpty(memberMaster.map((m) => m.member_type)));
         renderFilterCheckboxes('filter-cidm-role', 'filter_cidm_role', uniqueNonEmpty(memberMaster.map((m) => m.cidm_role)));
     }
@@ -563,7 +577,7 @@
                 window.cidmAdminUi.showToast('対象者を1件以上選択してください。', 'error', 2200);
                 return;
             }
-            if (targetMode === 'filter' && selectedDivisions.length === 0 && selectedMemberTypes.length === 0 && selectedRoles.length === 0) {
+            if (targetMode === 'filter' && selectedDivisions.length === 0 && !filters.officerOnly && selectedMemberTypes.length === 0 && selectedRoles.length === 0) {
                 window.cidmAdminUi.showToast('条件指定モードでは1項目以上選択してください。', 'error', 2400);
                 return;
             }
@@ -578,6 +592,7 @@
                 targetNoteParts.push(`個別選択 ${selectedMemberIds.length}件`);
             } else {
                 if (selectedDivisions.length) targetNoteParts.push(`区分:${selectedDivisions.join(' / ')}`);
+                if (filters.officerOnly) targetNoteParts.push('役員:役員のみ');
                 if (selectedMemberTypes.length) targetNoteParts.push(`種別:${selectedMemberTypes.join(' / ')}`);
                 if (selectedRoles.length) targetNoteParts.push(`役職:${selectedRoles.join(' / ')}`);
                 if (selectedFilteredMemberIds) targetNoteParts.push(`対象者調整:${selectedFilteredMemberIds.length}件`);
@@ -599,6 +614,7 @@
                     ? selectedMemberIds
                     : (targetMode === 'filter' ? selectedFilteredMemberIds : null),
                 p_division_flags: targetMode === 'filter' ? selectedDivisions : null,
+                p_is_officer: targetMode === 'filter' && filters.officerOnly ? true : null,
                 p_member_types: targetMode === 'filter' ? selectedMemberTypes : null,
                 p_cidm_roles: targetMode === 'filter' ? selectedRoles : null
             };
@@ -658,7 +674,7 @@
         el.addEventListener('change', updateDeliveryModeUI);
     });
 
-    ['filter_division', 'filter_member_type', 'filter_cidm_role'].forEach((name) => {
+    ['filter_division', 'filter_member_type', 'filter_cidm_role', 'filter_is_officer'].forEach((name) => {
         document.addEventListener('change', (e) => {
             const target = e.target;
             if (!(target instanceof HTMLInputElement)) return;
@@ -666,6 +682,11 @@
             filterPreviewAppliedIds = null;
             updateFilterListSummary();
         });
+    });
+
+    document.getElementById('filter-is-officer')?.addEventListener('change', () => {
+        filterPreviewAppliedIds = null;
+        updateFilterListSummary();
     });
 
     document.getElementById('open-filter-list')?.addEventListener('click', () => {

@@ -87,12 +87,12 @@
             <div class="form-group"><label for="member_type">会員種別</label>
                 <select id="member_type" name="member_type">
                     <option value="">-- 未設定 --</option>
-                    <option value="役員">役員</option>
                     <option value="正会員">正会員</option>
                     <option value="準会員">準会員</option>
                     <option value="賛助">賛助</option>
                 </select>
             </div>
+            <div class="form-group"><label><input type="checkbox" id="is_officer" name="is_officer"> 役員</label></div>
             <div class="form-group"><label for="cidm_role">CIDM役職</label><input type="text" id="cidm_role" name="cidm_role"></div>
             <div class="form-group"><label for="company_name">会社名</label><input type="text" id="company_name" name="company_name" required></div>
             <div class="form-group"><label for="department">部署</label><input type="text" id="department" name="department"></div>
@@ -144,6 +144,7 @@
     const memberPasswordToggle = document.getElementById('member-password-toggle');
     const loginSection = document.getElementById('login-section');
     const divisionFlagSelect = document.getElementById('division_flag');
+    const officerCheckbox = document.getElementById('is_officer');
 
     function updateLoginSectionByDivision(division) {
         const isKankei = division === '関係者';
@@ -214,6 +215,7 @@
             <div class="form-group"><label>担当者携帯</label><input type="text" name="contact_phone[]" value="${contact?.phone || ''}"></div>
             <div class="form-group"><label>担当者メール</label><input type="email" name="contact_email[]" value="${contact?.email || ''}"></div>
             <div class="form-group"><label><input type="checkbox" name="contact_receive_invite[]" ${contact?.receive_invite_mail === false ? '' : 'checked'}> 会議案内メールの送信対象に含める</label></div>
+            <div class="form-group"><label><input type="checkbox" name="contact_receive_invoice[]" ${contact?.receive_invoice_mail === false ? '' : 'checked'}> 会費請求メールの送信対象に含める</label></div>
         `;
         row.querySelector('.contact-del-btn').addEventListener('click', () => {
             if (contactsList.children.length <= 1) return;
@@ -253,6 +255,7 @@
         }
 
         form.member_type.value = data.member_type || '';
+        if (officerCheckbox) officerCheckbox.checked = Boolean(data.is_officer) || data.member_type === '役員';
         form.division_flag.value = data.division_flag || '会員';
         updateLoginSectionByDivision(form.division_flag.value);
         form.cidm_role.value = data.cidm_role || '';
@@ -271,7 +274,7 @@
 
         const { data: contactData } = await supabaseClient
             .from('member_contacts')
-            .select('id, name, phone, email, receive_invite_mail, is_primary, sort_order')
+            .select('id, name, phone, email, receive_invite_mail, receive_invoice_mail, is_primary, sort_order')
             .eq('member_id', memberId)
             .order('sort_order', { ascending: true });
 
@@ -284,6 +287,7 @@
                 phone: data.staff_mobile || '',
                 email: data.staff_email || '',
                 receive_invite_mail: true,
+                receive_invoice_mail: true,
                 is_primary: true
             });
         }
@@ -328,6 +332,7 @@
                 phone: row.querySelector('input[name="contact_phone[]"]').value.trim() || null,
                 email: row.querySelector('input[name="contact_email[]"]').value.trim() || null,
                 receive_invite_mail: row.querySelector('input[name="contact_receive_invite[]"]')?.checked !== false,
+                receive_invoice_mail: row.querySelector('input[name="contact_receive_invoice[]"]')?.checked !== false,
                 is_primary: parseInt(row.dataset.idx, 10) === primaryIdxVal,
                 sort_order: i
             })).filter(c => c.name || c.phone || c.email);
@@ -342,6 +347,7 @@
             const updateData = {
                 division_flag: form.division_flag.value || '会員',
                 member_type: form.member_type.value || null,
+                is_officer: Boolean(officerCheckbox?.checked),
                 cidm_role: form.cidm_role.value.trim() || null,
                 company_name: form.company_name.value.trim(),
                 department: form.department.value.trim() || null,
