@@ -141,6 +141,12 @@
         .minutes-list-title { font-size: .9rem; font-weight: 700; color: #1e293b; }
         .minutes-list-actions { display: flex; gap: .4rem; flex-shrink: 0; }
         .minutes-list-empty { text-align: center; color: #94a3b8; padding: 1.2rem; font-size: .88rem; }
+        .minutes-attendees-box { border: 1px solid #cbd5e1; border-radius: .5rem; padding: .5rem .6rem; display: flex; flex-direction: column; gap: .5rem; }
+        .minutes-attendees-chips { display: flex; flex-wrap: wrap; gap: .35rem; min-height: 1.8rem; align-items: center; }
+        .minutes-attendee-chip { display: inline-flex; align-items: center; gap: .3rem; background: #eff6ff; border: 1px solid #93c5fd; color: #1e3a8a; border-radius: 9999px; padding: .22rem .5rem .22rem .65rem; font-size: .8rem; font-weight: 500; }
+        .minutes-attendee-remove { border: none; background: none; cursor: pointer; color: #64748b; font-size: .75rem; padding: 0 .15rem; line-height: 1; display: flex; align-items: center; }
+        .minutes-attendee-remove:hover { color: #dc2626; }
+        .minutes-attendees-input-row { display: flex; gap: .4rem; }
         /* 印刷エリア (通常時非表示) */
         #minutes-print-area { display: none; }
         @media print {
@@ -381,6 +387,24 @@
                 <div class="minutes-form-group">
                     <label class="minutes-form-label" for="minutes-detail-text">詳細内容</label>
                     <textarea class="minutes-form-textarea" id="minutes-detail-text" placeholder="議事録の詳細内容を入力してください" style="min-height:180px;"></textarea>
+                </div>
+                <div class="minutes-form-group">
+                    <label class="minutes-form-label">参加者</label>
+                    <datalist id="minutes-attendees-datalist"></datalist>
+                    <div class="minutes-attendees-box">
+                        <div id="minutes-attendees-chips" class="minutes-attendees-chips">
+                            <span style="color:#94a3b8;font-size:.8rem;">参加者を追加してください</span>
+                        </div>
+                        <div class="minutes-attendees-input-row">
+                            <input class="minutes-form-input" type="text" id="minutes-attendee-input"
+                                list="minutes-attendees-datalist"
+                                placeholder="名前を入力または一覧から選択" style="flex:1;">
+                            <button type="button" class="btn btn-secondary" id="minutes-attendee-add-btn"
+                                style="flex-shrink:0;white-space:nowrap;">
+                                <i class="fa-solid fa-plus"></i> 追加
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="minutes-form-group" style="flex-direction:row;align-items:center;gap:.5rem;">
                     <input type="checkbox" id="minutes-is-visible" style="width:1.1rem;height:1.1rem;cursor:pointer;flex-shrink:0;">
@@ -1125,6 +1149,9 @@
         document.getElementById('minutes-details').value = record?.details || '';
         document.getElementById('minutes-detail-text').value = record?.detail_text || '';
         document.getElementById('minutes-is-visible').checked = record ? (record.is_visible === true) : false;
+        minutesAttendees = Array.isArray(record?.attendees) ? [...record.attendees] : [];
+        renderAttendeesChips();
+        populateAttendeesDatalist();
     }
 
     function toDatetimeLocal(value) {
@@ -1144,7 +1171,7 @@
         container.innerHTML = '<div class="minutes-list-empty">読み込み中...</div>';
         const { data, error } = await supabaseClient
             .from('meeting_reports')
-            .select('id, title, event_date, category, details, detail_text, is_visible')
+            .select('id, title, event_date, category, details, detail_text, is_visible, attendees')
             .eq('event_id', eventId)
             .order('event_date', { ascending: false });
         if (error) { console.warn('Failed to load minutes:', error); renderMinutesList([]); return; }
@@ -1196,7 +1223,7 @@
         const detailText = String(document.getElementById('minutes-detail-text').value || '').trim() || null;
         const isVisible = document.getElementById('minutes-is-visible').checked;
 
-        const record = { event_id: eventId, title, event_date: eventDate, category, details, detail_text: detailText, is_visible: isVisible };
+        const record = { event_id: eventId, title, event_date: eventDate, category, details, detail_text: detailText, is_visible: isVisible, attendees: minutesAttendees };
 
         let error;
         if (editingMinutesId) {
@@ -1235,6 +1262,7 @@
         const category = record?.category || String(document.getElementById('minutes-category').value || '').trim();
         const details = record?.details || String(document.getElementById('minutes-details').value || '').trim();
         const detailText = record?.detail_text || String(document.getElementById('minutes-detail-text').value || '').trim();
+        const attendeesArr = Array.isArray(record?.attendees) ? record.attendees : [...minutesAttendees];
         const dateStr = eventDateRaw
             ? new Date(eventDateRaw).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
             : '日時未設定';
@@ -1258,12 +1286,61 @@
             html += `<div class="minutes-print-section-body">${minutesEscapeHtml(detailText)}</div>`;
             html += `</div>`;
         }
+        if (attendeesArr.length > 0) {
+            html += `<div class="minutes-print-section">`;
+            html += `<div class="minutes-print-section-label">参加者</div>`;
+            html += `<div class="minutes-print-section-body">${attendeesArr.map(minutesEscapeHtml).join('　')}</div>`;
+            html += `</div>`;
+        }
         const printArea = document.getElementById('minutes-print-area');
         if (!printArea) return;
         printArea.innerHTML = html;
         document.body.classList.add('minutes-printing');
         window.print();
         document.body.classList.remove('minutes-printing');
+    }
+
+    // 議事録 参加者
+    let minutesAttendees = [];
+
+    function renderAttendeesChips() {
+        const container = document.getElementById('minutes-attendees-chips');
+        if (!container) return;
+        if (minutesAttendees.length === 0) {
+            container.innerHTML = '<span style="color:#94a3b8;font-size:.8rem;">参加者を追加してください</span>';
+            return;
+        }
+        container.innerHTML = minutesAttendees.map((name, idx) =>
+            `<span class="minutes-attendee-chip">${minutesEscapeHtml(name)}<button type="button" class="minutes-attendee-remove" data-remove-idx="${idx}" title="削除"><i class="fa-solid fa-xmark"></i></button></span>`
+        ).join('');
+    }
+
+    function addAttendee() {
+        const input = document.getElementById('minutes-attendee-input');
+        if (!input) return;
+        const name = String(input.value || '').trim();
+        if (!name) return;
+        if (!minutesAttendees.includes(name)) {
+            minutesAttendees.push(name);
+            renderAttendeesChips();
+        }
+        input.value = '';
+        input.focus();
+    }
+
+    function removeAttendee(idx) {
+        minutesAttendees.splice(idx, 1);
+        renderAttendeesChips();
+    }
+
+    function populateAttendeesDatalist() {
+        const datalist = document.getElementById('minutes-attendees-datalist');
+        if (!datalist) return;
+        const names = new Set();
+        (currentInvites || []).forEach((r) => {
+            if (r.staff_name) names.add(r.staff_name);
+        });
+        datalist.innerHTML = [...names].map((n) => `<option value="${minutesEscapeHtml(n)}">`).join('');
     }
 
     // 議事録モーダル イベントリスナー
@@ -1293,6 +1370,14 @@
             const rec = currentMinutes.find((r) => String(r.id) === String(id));
             if (rec) printMinutesRecord(rec);
         }
+    });
+    document.getElementById('minutes-attendee-add-btn')?.addEventListener('click', addAttendee);
+    document.getElementById('minutes-attendee-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); addAttendee(); }
+    });
+    document.getElementById('minutes-attendees-chips')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-remove-idx]');
+        if (btn) removeAttendee(Number(btn.getAttribute('data-remove-idx')));
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
