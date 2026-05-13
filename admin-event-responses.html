@@ -72,6 +72,94 @@
         .hint { color:#64748b; font-size:.78rem; margin-bottom:.6rem; }
         .admin-footer { text-align:center; padding:1rem; color:#64748b; font-size:.68rem; border-top:1px solid #e2e8f0; }
 
+        /* ========== 議事録モーダル ========== */
+        .minutes-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .minutes-dialog {
+            width: min(96vw, 780px);
+            max-height: calc(100vh - 2rem);
+            background: #fff;
+            border: 1px solid #dbe4ef;
+            border-radius: 1rem;
+            box-shadow: 0 20px 52px rgba(2, 6, 23, 0.3);
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .minutes-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .8rem;
+            padding: .95rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fbff;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .minutes-head-title { font-size: .98rem; font-weight: 700; color: #1e293b; }
+        .minutes-close-btn {
+            border: 1px solid #cbd5e1;
+            background: #fff;
+            color: #475569;
+            border-radius: .55rem;
+            padding: .35rem .55rem;
+            cursor: pointer;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+        .minutes-body { padding: 1rem; display: flex; flex-direction: column; gap: .8rem; }
+        .minutes-form-group { display: flex; flex-direction: column; gap: .3rem; }
+        .minutes-form-label { font-size: .78rem; font-weight: 700; color: #475569; letter-spacing: .04em; }
+        .minutes-form-input, .minutes-form-textarea {
+            border: 1px solid #cbd5e1; border-radius: .5rem; padding: .5rem .7rem;
+            font-size: .86rem; font-family: inherit; width: 100%;
+        }
+        .minutes-form-input:focus, .minutes-form-textarea:focus {
+            outline: none; border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(147,197,253,.25);
+        }
+        .minutes-form-textarea { min-height: 120px; resize: vertical; line-height: 1.65; }
+        .minutes-form-actions { display: flex; gap: .5rem; flex-wrap: wrap; padding-top: .4rem; }
+        .minutes-list-item {
+            border: 1px solid #e2e8f0; border-radius: .65rem; padding: .75rem 1rem;
+            display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+            background: #fff;
+        }
+        .minutes-list-item:hover { background: #f8fbff; border-color: #93c5fd; }
+        .minutes-list-meta { font-size: .78rem; color: #64748b; margin-top: .15rem; }
+        .minutes-list-title { font-size: .9rem; font-weight: 700; color: #1e293b; }
+        .minutes-list-actions { display: flex; gap: .4rem; flex-shrink: 0; }
+        .minutes-list-empty { text-align: center; color: #94a3b8; padding: 1.2rem; font-size: .88rem; }
+        /* 印刷エリア (通常時非表示) */
+        #minutes-print-area { display: none; }
+        @media print {
+            body.minutes-printing > * { display: none !important; }
+            body.minutes-printing #minutes-print-area {
+                display: block !important;
+                font-family: 'Noto Sans JP', sans-serif;
+                color: #0f172a;
+                padding: 2rem;
+                font-size: 11pt;
+                line-height: 1.8;
+            }
+            .minutes-print-title { font-size: 18pt; font-weight: 700; margin-bottom: .4rem; }
+            .minutes-print-meta { color: #475569; font-size: 9pt; margin-bottom: 1.5rem; border-bottom: 1px solid #cbd5e1; padding-bottom: .5rem; }
+            .minutes-print-section { margin-top: 1.2rem; }
+            .minutes-print-section-label { font-weight: 700; font-size: 10pt; color: #334155; border-bottom: 1px solid #e2e8f0; padding-bottom: .2rem; margin-bottom: .4rem; }
+            .minutes-print-section-body { white-space: pre-wrap; word-break: break-word; font-size: 10.5pt; }
+        }
+
         .mail-preview-backdrop {
             position: fixed;
             inset: 0;
@@ -192,6 +280,7 @@
             <button type="button" class="btn btn-secondary" id="send-pending-mails"><i class="fa-solid fa-hourglass-half"></i> 未回答者のみ送信</button>
             <button type="button" class="btn btn-tertiary" id="open-mail-preview"><i class="fa-solid fa-envelope-open-text"></i> 送信内容を確認</button>
             <button type="button" class="btn btn-danger" id="send-retry-mails" style="display:none;"><i class="fa-solid fa-rotate-right"></i> 失敗分を再送信 (<span id="retry-count">0</span>件)</button>
+            <button type="button" class="btn btn-secondary" id="open-minutes-modal"><i class="fa-solid fa-book-open"></i> 議事録</button>
         </div>
 
         <div class="card">
@@ -256,6 +345,58 @@
             </div>
         </div>
     </div>
+
+    <!-- 議事録モーダル -->
+    <div id="minutes-modal" class="minutes-backdrop" aria-hidden="true">
+        <div class="minutes-dialog" role="dialog" aria-modal="true">
+            <div class="minutes-head">
+                <div class="minutes-head-title" id="minutes-modal-title"><i class="fa-solid fa-book-open"></i> 議事録</div>
+                <button type="button" id="minutes-close-btn" class="minutes-close-btn"><i class="fa-solid fa-xmark"></i> 閉じる</button>
+            </div>
+            <!-- 一覧パネル -->
+            <div id="minutes-list-panel" class="minutes-body">
+                <div style="display:flex;justify-content:flex-end;">
+                    <button type="button" class="btn btn-primary" id="minutes-new-btn"><i class="fa-solid fa-plus"></i> 新規作成</button>
+                </div>
+                <div id="minutes-list-content"><div class="minutes-list-empty">読み込み中...</div></div>
+            </div>
+            <!-- 入力フォームパネル -->
+            <div id="minutes-form-panel" class="minutes-body" style="display:none;">
+                <div class="minutes-form-group">
+                    <label class="minutes-form-label" for="minutes-title">タイトル <span style="color:#dc2626;">*</span></label>
+                    <input class="minutes-form-input" type="text" id="minutes-title" placeholder="例: 第○回 定例会議 議事録">
+                </div>
+                <div class="minutes-form-group">
+                    <label class="minutes-form-label" for="minutes-event-date">開催日時</label>
+                    <input class="minutes-form-input" type="datetime-local" id="minutes-event-date">
+                </div>
+                <div class="minutes-form-group">
+                    <label class="minutes-form-label" for="minutes-category">カテゴリ</label>
+                    <input class="minutes-form-input" type="text" id="minutes-category" placeholder="会議報告">
+                </div>
+                <div class="minutes-form-group">
+                    <label class="minutes-form-label" for="minutes-details">概要</label>
+                    <textarea class="minutes-form-textarea" id="minutes-details" placeholder="会議の概要を入力してください"></textarea>
+                </div>
+                <div class="minutes-form-group">
+                    <label class="minutes-form-label" for="minutes-detail-text">詳細内容</label>
+                    <textarea class="minutes-form-textarea" id="minutes-detail-text" placeholder="議事録の詳細内容を入力してください" style="min-height:180px;"></textarea>
+                </div>
+                <div class="minutes-form-group" style="flex-direction:row;align-items:center;gap:.5rem;">
+                    <input type="checkbox" id="minutes-is-visible" style="width:1.1rem;height:1.1rem;cursor:pointer;flex-shrink:0;">
+                    <label class="minutes-form-label" for="minutes-is-visible" style="cursor:pointer;">ウェブサイトに公開する</label>
+                </div>
+                <div class="minutes-form-actions">
+                    <button type="button" class="btn btn-primary" id="minutes-save-btn"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
+                    <button type="button" class="btn btn-secondary" id="minutes-print-btn"><i class="fa-solid fa-print"></i> 印刷</button>
+                    <button type="button" class="btn btn-danger" id="minutes-delete-btn" style="display:none;"><i class="fa-solid fa-trash"></i> 削除</button>
+                    <button type="button" class="btn btn-tertiary" id="minutes-back-btn"><i class="fa-solid fa-arrow-left"></i> 一覧へ戻る</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 議事録印刷エリア（印刷時のみ表示） -->
+    <div id="minutes-print-area"></div>
 
     <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
 
@@ -935,6 +1076,222 @@
     document.getElementById('mail-preview-modal')?.addEventListener('click', (event) => {
         if (event.target && event.target.id === 'mail-preview-modal') {
             closeMailPreviewModal();
+        }
+    });
+
+    // ==============================
+    // 議事録管理
+    // ==============================
+    let currentMinutes = [];
+    let editingMinutesId = null;
+
+    function openMinutesModal() {
+        const modal = document.getElementById('minutes-modal');
+        if (!modal) return;
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+        showMinutesList();
+        loadMinutes(getEventId());
+    }
+
+    function closeMinutesModal() {
+        const modal = document.getElementById('minutes-modal');
+        if (!modal) return;
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+    }
+
+    function showMinutesList() {
+        document.getElementById('minutes-list-panel').style.display = 'flex';
+        document.getElementById('minutes-form-panel').style.display = 'none';
+        document.getElementById('minutes-modal-title').innerHTML = '<i class="fa-solid fa-book-open"></i> 議事録';
+    }
+
+    function showMinutesForm(record) {
+        editingMinutesId = record ? (record.id ?? null) : null;
+        document.getElementById('minutes-list-panel').style.display = 'none';
+        document.getElementById('minutes-form-panel').style.display = 'flex';
+        document.getElementById('minutes-modal-title').innerHTML =
+            `<i class="fa-solid fa-${record ? 'pen' : 'plus'}"></i> 議事録${record ? '編集' : '新規作成'}`;
+        document.getElementById('minutes-delete-btn').style.display = record ? 'inline-flex' : 'none';
+
+        const eventDate = record?.event_date
+            ? toDatetimeLocal(record.event_date)
+            : (currentEvent?.starts_at ? toDatetimeLocal(currentEvent.starts_at) : '');
+        document.getElementById('minutes-title').value =
+            record?.title || (currentEvent?.event_name ? currentEvent.event_name + ' 議事録' : '');
+        document.getElementById('minutes-event-date').value = eventDate;
+        document.getElementById('minutes-category').value = record?.category || '会議報告';
+        document.getElementById('minutes-details').value = record?.details || '';
+        document.getElementById('minutes-detail-text').value = record?.detail_text || '';
+        document.getElementById('minutes-is-visible').checked = record ? (record.is_visible === true) : false;
+    }
+
+    function toDatetimeLocal(value) {
+        if (!value) return '';
+        try {
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return '';
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        } catch { return ''; }
+    }
+
+    async function loadMinutes(eventId) {
+        const container = document.getElementById('minutes-list-content');
+        if (!container) return;
+        if (!eventId) { renderMinutesList([]); return; }
+        container.innerHTML = '<div class="minutes-list-empty">読み込み中...</div>';
+        const { data, error } = await supabaseClient
+            .from('meeting_reports')
+            .select('id, title, event_date, category, details, detail_text, is_visible')
+            .eq('event_id', eventId)
+            .order('event_date', { ascending: false });
+        if (error) { console.warn('Failed to load minutes:', error); renderMinutesList([]); return; }
+        currentMinutes = data || [];
+        renderMinutesList(currentMinutes);
+    }
+
+    function renderMinutesList(records) {
+        const container = document.getElementById('minutes-list-content');
+        if (!container) return;
+        if (!records || records.length === 0) {
+            container.innerHTML = '<div class="minutes-list-empty">議事録はまだありません。「新規作成」から登録してください。</div>';
+            return;
+        }
+        container.innerHTML = records.map((r) => {
+            const title = window.cidmAdminUi.sanitizeText(r.title || '（タイトル未設定）');
+            const dateStr = r.event_date
+                ? new Date(r.event_date).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+                : '日時未設定';
+            const visible = r.is_visible
+                ? '<span class="badge badge-yes">公開</span>'
+                : '<span class="badge">非公開</span>';
+            return `
+                <div class="minutes-list-item">
+                    <div>
+                        <div class="minutes-list-title">${title}</div>
+                        <div class="minutes-list-meta">${dateStr} ${visible}</div>
+                    </div>
+                    <div class="minutes-list-actions">
+                        <button type="button" class="btn btn-secondary" style="font-size:.75rem;padding:.3rem .65rem;" data-minutes-edit="${r.id}"><i class="fa-solid fa-pen"></i> 編集</button>
+                        <button type="button" class="btn btn-tertiary" style="font-size:.75rem;padding:.3rem .65rem;" title="印刷" data-minutes-print="${r.id}"><i class="fa-solid fa-print"></i></button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async function saveMinutes() {
+        const eventId = getEventId();
+        const title = String(document.getElementById('minutes-title').value || '').trim();
+        if (!title) {
+            window.cidmAdminUi.showToast('タイトルを入力してください。', 'error', 2000);
+            return;
+        }
+        const eventDateRaw = document.getElementById('minutes-event-date').value;
+        const eventDate = eventDateRaw ? new Date(eventDateRaw).toISOString() : null;
+        const category = String(document.getElementById('minutes-category').value || '会議報告').trim() || '会議報告';
+        const details = String(document.getElementById('minutes-details').value || '').trim() || null;
+        const detailText = String(document.getElementById('minutes-detail-text').value || '').trim() || null;
+        const isVisible = document.getElementById('minutes-is-visible').checked;
+
+        const record = { event_id: eventId, title, event_date: eventDate, category, details, detail_text: detailText, is_visible: isVisible };
+
+        let error;
+        if (editingMinutesId) {
+            ({ error } = await supabaseClient.from('meeting_reports').update(record).eq('id', editingMinutesId));
+        } else {
+            ({ error } = await supabaseClient.from('meeting_reports').insert(record));
+        }
+
+        if (error) { window.cidmAdminUi.showToast('保存に失敗しました: ' + error.message, 'error', 3000); return; }
+        window.cidmAdminUi.showToast('議事録を保存しました。', 'success', 2000);
+        showMinutesList();
+        loadMinutes(eventId);
+    }
+
+    async function deleteMinutes() {
+        if (!editingMinutesId) return;
+        const confirmed = await window.cidmAdminUi.showConfirm('この議事録を削除しますか？この操作は元に戻せません。', { confirmText: '削除する' });
+        if (!confirmed) return;
+        const { error } = await supabaseClient.from('meeting_reports').delete().eq('id', editingMinutesId);
+        if (error) { window.cidmAdminUi.showToast('削除に失敗しました: ' + error.message, 'error', 3000); return; }
+        window.cidmAdminUi.showToast('議事録を削除しました。', 'success', 2000);
+        editingMinutesId = null;
+        showMinutesList();
+        loadMinutes(getEventId());
+    }
+
+    function minutesEscapeHtml(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function printMinutesRecord(record) {
+        const title = record?.title || String(document.getElementById('minutes-title').value || '').trim();
+        const eventDateRaw = record?.event_date || document.getElementById('minutes-event-date').value;
+        const category = record?.category || String(document.getElementById('minutes-category').value || '').trim();
+        const details = record?.details || String(document.getElementById('minutes-details').value || '').trim();
+        const detailText = record?.detail_text || String(document.getElementById('minutes-detail-text').value || '').trim();
+        const dateStr = eventDateRaw
+            ? new Date(eventDateRaw).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })
+            : '日時未設定';
+        const eventName = currentEvent?.event_name || '';
+
+        let html = `<div class="minutes-print-title">${minutesEscapeHtml(title)}</div>`;
+        html += `<div class="minutes-print-meta">`;
+        html += `開催日時: ${minutesEscapeHtml(dateStr)}`;
+        if (category) html += ` &nbsp;|&nbsp; カテゴリ: ${minutesEscapeHtml(category)}`;
+        if (eventName) html += ` &nbsp;|&nbsp; イベント: ${minutesEscapeHtml(eventName)}`;
+        html += `</div>`;
+        if (details) {
+            html += `<div class="minutes-print-section">`;
+            html += `<div class="minutes-print-section-label">概要</div>`;
+            html += `<div class="minutes-print-section-body">${minutesEscapeHtml(details)}</div>`;
+            html += `</div>`;
+        }
+        if (detailText) {
+            html += `<div class="minutes-print-section">`;
+            html += `<div class="minutes-print-section-label">詳細内容</div>`;
+            html += `<div class="minutes-print-section-body">${minutesEscapeHtml(detailText)}</div>`;
+            html += `</div>`;
+        }
+        const printArea = document.getElementById('minutes-print-area');
+        if (!printArea) return;
+        printArea.innerHTML = html;
+        document.body.classList.add('minutes-printing');
+        window.print();
+        document.body.classList.remove('minutes-printing');
+    }
+
+    // 議事録モーダル イベントリスナー
+    document.getElementById('open-minutes-modal')?.addEventListener('click', openMinutesModal);
+    document.getElementById('minutes-close-btn')?.addEventListener('click', closeMinutesModal);
+    document.getElementById('minutes-modal')?.addEventListener('click', (e) => {
+        if (e.target?.id === 'minutes-modal') closeMinutesModal();
+    });
+    document.getElementById('minutes-new-btn')?.addEventListener('click', () => showMinutesForm(null));
+    document.getElementById('minutes-save-btn')?.addEventListener('click', () => {
+        window.cidmAdminUi.runWithButtonBusy(document.getElementById('minutes-save-btn'), saveMinutes, '保存中...');
+    });
+    document.getElementById('minutes-delete-btn')?.addEventListener('click', deleteMinutes);
+    document.getElementById('minutes-back-btn')?.addEventListener('click', showMinutesList);
+    document.getElementById('minutes-print-btn')?.addEventListener('click', () => printMinutesRecord(null));
+    document.getElementById('minutes-list-content')?.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('[data-minutes-edit]');
+        if (editBtn) {
+            const id = editBtn.getAttribute('data-minutes-edit');
+            const rec = currentMinutes.find((r) => String(r.id) === String(id));
+            if (rec) showMinutesForm(rec);
+            return;
+        }
+        const printBtn = e.target.closest('[data-minutes-print]');
+        if (printBtn) {
+            const id = printBtn.getAttribute('data-minutes-print');
+            const rec = currentMinutes.find((r) => String(r.id) === String(id));
+            if (rec) printMinutesRecord(rec);
         }
     });
 
