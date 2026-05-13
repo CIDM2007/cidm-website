@@ -374,10 +374,9 @@
                     <div class="field-row">
                         <label for="billing-group">請求区分</label>
                         <select id="billing-group">
-                            <option value="all">全会員</option>
-                            <option value="regular">正会員のみ</option>
-                            <option value="regular_associate">正会員・準会員</option>
-                            <option value="supporter">賛助会員のみ</option>
+                            <option value="regular">正会員</option>
+                            <option value="associate">準会員</option>
+                            <option value="supporter">賛助会員</option>
                         </select>
                     </div>
                     <div class="field-row">
@@ -486,8 +485,13 @@
         };
         const memberTypeMatchers = {
             regular: ['正会員'],
-            regular_associate: ['正会員', '準会員'],
+            associate: ['準会員'],
             supporter: ['賛助会員', '賛助']
+        };
+        const feeCategoryByGroup = {
+            regular: '正会員',
+            associate: '準会員',
+            supporter: '賛助会員'
         };
 
         const yearInput = document.getElementById('billing-year');
@@ -507,9 +511,39 @@
 
         let recipientRows = [];
         let selectedRecipientIds = new Set();
+        let feePriceMap = new Map();
 
         function getBillingGroupLabel() {
-            return groupSelect.options[groupSelect.selectedIndex]?.text || '全会員';
+            return groupSelect.options[groupSelect.selectedIndex]?.text || '正会員';
+        }
+
+        function applyAmountBySelectedGroup() {
+            const feeCategory = feeCategoryByGroup[groupSelect.value] || '';
+            if (!feeCategory) return;
+            const amount = Number(feePriceMap.get(feeCategory) || 0);
+            amountInput.value = String(Number.isFinite(amount) ? amount : 0);
+        }
+
+        async function loadFeePrices() {
+            const { data, error } = await supabaseClient
+                .from('membership_fee_prices')
+                .select('fee_category, amount');
+
+            if (error) {
+                window.cidmAdminUi.showToast('会費金額マスタの取得に失敗しました: ' + error.message, 'error', 3600);
+                feePriceMap = new Map();
+                amountInput.value = '0';
+                return;
+            }
+
+            feePriceMap = new Map();
+            (data || []).forEach((row) => {
+                const key = String(row.fee_category || '').trim();
+                if (!key) return;
+                feePriceMap.set(key, Number(row.amount || 0));
+            });
+
+            applyAmountBySelectedGroup();
         }
 
         function getBillingContactByMemberId(contacts) {
@@ -784,6 +818,7 @@
         });
 
         groupSelect?.addEventListener('change', function() {
+            applyAmountBySelectedGroup();
             renderRecipientTable();
             updateStatusPreview();
         });
@@ -827,6 +862,7 @@
         (async function() {
             const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
             if (!ok) return;
+            await loadFeePrices();
             await loadRecipients();
             updateStatusPreview();
         })();
