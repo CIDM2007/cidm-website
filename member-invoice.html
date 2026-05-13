@@ -284,7 +284,7 @@
                                 <div class="issuer-title">請求元情報</div>
                                 <div class="issuer-line">会社名：一般社団法人車両情報活用研究所</div>
                                 <div class="issuer-line">住所：〒101-0021東京都千代田区外神田６－５－４ 偕楽ビル５Ｆ</div>
-                                <div class="issuer-line">理事超：山村 匡</div>
+                                <div class="issuer-line">理事長：山村 匡</div>
                             </div>
                         </div>
                     </div>
@@ -353,7 +353,7 @@
             statusEl.textContent = data.send_status === 'success' ? '送信済み' : '作成済み';
             statusEl.className = 'status ' + (data.send_status === 'success' ? 'success' : 'failed');
 
-            document.getElementById('recipient-title').textContent = `${data.company_name || ''}${data.staff_name ? ' / ' + data.staff_name : ''}`;
+            document.getElementById('recipient-title').textContent = `${data.company_name || ''} 御中`;
             headerMeta.textContent = `${data.invoice_no || ''} ・ ${formatMonth(data.billing_year || '', data.billing_month || '')}`;
             statusArea.style.display = 'none';
             errorArea.style.display = 'none';
