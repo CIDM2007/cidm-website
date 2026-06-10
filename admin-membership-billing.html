@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会費請求処理 | CIDM 管理</title>
+    <link rel="icon" type="image/png" href="./CIDMchara.png">
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background:
+                radial-gradient(1200px 500px at 20% -10%, #dbeafe 0%, transparent 60%),
+                radial-gradient(900px 400px at 85% -5%, #e0e7ff 0%, transparent 55%),
+                #eef2f7;
+            font-family: 'Noto Sans JP', sans-serif;
+            min-height: 100vh;
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: 72px;
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #dbe4ef;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 1px 8px rgba(15, 23, 42, 0.06);
+        }
+
+        .admin-header .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+
+        .admin-header .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        .admin-header .brand-text {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .admin-header .brand-text span {
+            display: block;
+            color: #1e293b;
+            font-size: 0.9rem;
+            letter-spacing: 0.04em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .ghost-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 9999px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .ghost-link:hover {
+            border-color: #60a5fa;
+            background: #dbeafe;
+        }
+
+        .admin-body {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1.2rem 3.2rem;
+        }
+
+        .billing-card {
+            width: 100%;
+            max-width: 980px;
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid #dbe4ef;
+            border-radius: 18px;
+            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+            padding: 1.4rem;
+        }
+
+        .page-heading {
+            margin-bottom: 1.2rem;
+        }
+
+        .page-heading .eyebrow {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #3b82f6;
+            margin-bottom: 0.45rem;
+        }
+
+        .page-heading h1 {
+            font-size: clamp(1.45rem, 2.4vw, 2rem);
+            line-height: 1.35;
+            margin-bottom: 0.45rem;
+        }
+
+        .page-heading p {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .panel-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .panel {
+            border: 1px solid #dbe4ef;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 1rem;
+        }
+
+        .panel h2 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: #1e293b;
+        }
+
+        .status-box {
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1e3a8a;
+            border-radius: 12px;
+            padding: 0.9rem 1rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .summary-text {
+            color: #64748b;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            align-items: center;
+            gap: 0.7rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .field-row label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #334155;
+        }
+
+        .field-row input,
+        .field-row select {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+            padding: 0.55rem 0.7rem;
+            font-size: 0.9rem;
+            color: #1e293b;
+        }
+
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            margin-top: 0.8rem;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 10px;
+            padding: 0.55rem 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+        .btn:active { transform: translateY(1px); }
+
+        .btn-primary {
+            background: linear-gradient(180deg, #3b82f6, #2563eb);
+            color: #ffffff;
+            box-shadow: 0 5px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+        }
+
+        .toolbar input {
+            width: min(100%, 320px);
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            background: #f8fafc;
+            padding: 0.55rem 0.7rem;
+            font-size: 0.9rem;
+            color: #1e293b;
+        }
+
+        .recipient-table tbody tr.selected td {
+            background: #eff6ff;
+        }
+
+        .recipient-table .checkbox-cell {
+            width: 42px;
+        }
+
+        .recipient-table input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #2563eb;
+        }
+
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.4rem;
+            font-size: 0.84rem;
+        }
+
+        .log-table th,
+        .log-table td {
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+            padding: 0.55rem 0.4rem;
+            color: #475569;
+        }
+
+        .log-table th {
+            font-size: 0.76rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .admin-footer {
+            text-align: center;
+            padding: 1.25rem;
+            font-size: 0.68rem;
+            color: #64748b;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 860px) {
+            .panel-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .field-row {
+                grid-template-columns: 1fr;
+                gap: 0.35rem;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .admin-header {
+                height: 64px;
+                padding: 0 1rem;
+            }
+
+            .ghost-link {
+                font-size: 0.74rem;
+                padding: 0.4rem 0.75rem;
+            }
+
+            .billing-card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <a href="admin-portal.html" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-file-invoice"></i></div>
+            <div class="brand-text">
+                CIDM
+                <span>会費請求処理</span>
+            </div>
+        </a>
+        <div class="header-actions">
+            <a class="ghost-link" href="admin-membership-fees.html"><i class="fa-solid fa-yen-sign"></i> 会費金額設定</a>
+            <a class="ghost-link" href="admin-portal.html"><i class="fa-solid fa-arrow-left"></i> ポータルへ戻る</a>
+        </div>
+    </header>
+
+    <main class="admin-body">
+        <section class="billing-card">
+            <div class="page-heading">
+                <p class="eyebrow">Membership Billing</p>
+                <h1>会費請求処理</h1>
+                <p>請求対象の抽出条件を設定し、請求データの作成と履歴確認を行います。</p>
+            </div>
+
+            <div class="panel-grid">
+                <section class="panel">
+                    <h2>請求データ作成</h2>
+                    <div class="field-row">
+                        <label for="billing-year">請求年度</label>
+                        <input id="billing-year" type="number" min="2000" max="2100" step="1">
+                    </div>
+                    <div class="field-row">
+                        <label for="billing-month">請求月</label>
+                        <select id="billing-month">
+                            <option value="4">4月</option>
+                            <option value="5">5月</option>
+                            <option value="6">6月</option>
+                            <option value="7">7月</option>
+                            <option value="8">8月</option>
+                            <option value="9">9月</option>
+                            <option value="10">10月</option>
+                            <option value="11">11月</option>
+                            <option value="12">12月</option>
+                            <option value="1">1月</option>
+                            <option value="2">2月</option>
+                            <option value="3">3月</option>
+                        </select>
+                    </div>
+                    <div class="field-row">
+                        <label for="billing-group">請求区分</label>
+                        <select id="billing-group">
+                            <option value="regular">正会員</option>
+                            <option value="associate">準会員</option>
+                            <option value="supporter">賛助会員</option>
+                        </select>
+                    </div>
+                    <div class="field-row">
+                        <label for="billing-due-date">支払期限</label>
+                        <input id="billing-due-date" type="date">
+                    </div>
+                    <div class="field-row">
+                        <label for="billing-amount">請求金額</label>
+                        <input id="billing-amount" type="number" min="0" step="1" value="0">
+                    </div>
+                    <div class="field-row">
+                        <label for="invoice-base-url">請求書URL</label>
+                        <input id="invoice-base-url" type="url" placeholder="https://example.com/member-invoice.html">
+                    </div>
+                    <div class="btn-row">
+                        <button id="preview-btn" class="btn btn-primary" type="button">対象会員をプレビュー</button>
+                        <button id="create-btn" class="btn btn-secondary" type="button">請求メールを送信</button>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2>ステータス</h2>
+                    <div class="status-box" id="status-box">
+                        まだ請求処理は実行されていません。条件を指定してプレビューを実行してください。
+                    </div>
+                </section>
+            </div>
+
+            <section class="panel" style="margin-top: 1rem;">
+                <h2>請求対象一覧</h2>
+                <div class="toolbar">
+                    <input id="recipient-search" type="search" placeholder="会社名 / 担当者名で絞り込み">
+                    <div class="btn-row" style="margin-top: 0;">
+                        <button id="select-all-btn" class="btn btn-secondary" type="button">全選択</button>
+                        <button id="clear-all-btn" class="btn btn-secondary" type="button">全解除</button>
+                        <span class="summary-text" id="recipient-summary">0件</span>
+                    </div>
+                </div>
+                <table class="log-table recipient-table">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell"></th>
+                            <th>会社名</th>
+                            <th>担当者</th>
+                            <th>メール</th>
+                            <th>会員種別</th>
+                            <th>区分</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recipient-tbody">
+                        <tr>
+                            <td colspan="6">会員データを読み込み中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="panel" style="margin-top: 1rem;">
+                <h2>処理履歴（ダミー表示）</h2>
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>実行日時</th>
+                            <th>対象</th>
+                            <th>状態</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2026-05-01 09:12</td>
+                            <td>全会員 / 2026年度</td>
+                            <td>完了（120件）</td>
+                        </tr>
+                        <tr>
+                            <td>2026-04-01 09:05</td>
+                            <td>正会員 / 2026年度</td>
+                            <td>完了（98件）</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </section>
+    </main>
+
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./cidm-config.js"></script>
+    <script src="./admin-auth.js"></script>
+    <script src="./admin-ui.js"></script>
+    <script>
+        const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+        const billingMonthLabels = {
+            '1': '1月',
+            '2': '2月',
+            '3': '3月',
+            '4': '4月',
+            '5': '5月',
+            '6': '6月',
+            '7': '7月',
+            '8': '8月',
+            '9': '9月',
+            '10': '10月',
+            '11': '11月',
+            '12': '12月'
+        };
+        const memberTypeMatchers = {
+            regular: ['正会員'],
+            associate: ['準会員'],
+            supporter: ['賛助会員', '賛助']
+        };
+        const feeCategoryByGroup = {
+            regular: '正会員',
+            associate: '準会員',
+            supporter: '賛助会員'
+        };
+
+        const yearInput = document.getElementById('billing-year');
+        const monthSelect = document.getElementById('billing-month');
+        const groupSelect = document.getElementById('billing-group');
+        const dueDateInput = document.getElementById('billing-due-date');
+        const amountInput = document.getElementById('billing-amount');
+        const invoiceBaseUrlInput = document.getElementById('invoice-base-url');
+        const statusBox = document.getElementById('status-box');
+        const recipientSearchInput = document.getElementById('recipient-search');
+        const recipientTbody = document.getElementById('recipient-tbody');
+        const recipientSummary = document.getElementById('recipient-summary');
+        const selectAllBtn = document.getElementById('select-all-btn');
+        const clearAllBtn = document.getElementById('clear-all-btn');
+        const previewBtn = document.getElementById('preview-btn');
+        const createBtn = document.getElementById('create-btn');
+
+        let recipientRows = [];
+        let selectedRecipientIds = new Set();
+        let feePriceMap = new Map();
+
+        function getBillingGroupLabel() {
+            return groupSelect.options[groupSelect.selectedIndex]?.text || '正会員';
+        }
+
+        function applyAmountBySelectedGroup() {
+            const feeCategory = feeCategoryByGroup[groupSelect.value] || '';
+            if (!feeCategory) return;
+            const amount = Number(feePriceMap.get(feeCategory) || 0);
+            amountInput.value = String(Number.isFinite(amount) ? amount : 0);
+        }
+
+        async function loadFeePrices() {
+            const { data, error } = await supabaseClient
+                .from('membership_fee_prices')
+                .select('fee_category, amount');
+
+            if (error) {
+                window.cidmAdminUi.showToast('会費金額マスタの取得に失敗しました: ' + error.message, 'error', 3600);
+                feePriceMap = new Map();
+                amountInput.value = '0';
+                return;
+            }
+
+            feePriceMap = new Map();
+            (data || []).forEach((row) => {
+                const key = String(row.fee_category || '').trim();
+                if (!key) return;
+                feePriceMap.set(key, Number(row.amount || 0));
+            });
+
+            applyAmountBySelectedGroup();
+        }
+
+        function getBillingContactByMemberId(contacts) {
+            const map = new Map();
+            (Array.isArray(contacts) ? contacts : []).forEach((contact) => {
+                const memberId = String(contact.member_id || '');
+                if (!memberId) return;
+
+                const candidate = {
+                    name: String(contact.name || '').trim(),
+                    email: String(contact.email || '').trim(),
+                    receive_invoice_mail: contact.receive_invoice_mail !== false,
+                    is_primary: Boolean(contact.is_primary),
+                    sort_order: Number(contact.sort_order || 0)
+                };
+
+                const current = map.get(memberId);
+                const shouldReplace = !current
+                    || (candidate.receive_invoice_mail && !current.receive_invoice_mail)
+                    || (candidate.receive_invoice_mail === current.receive_invoice_mail && candidate.is_primary && !current.is_primary)
+                    || (candidate.receive_invoice_mail === current.receive_invoice_mail && candidate.is_primary === current.is_primary && candidate.sort_order < current.sort_order);
+                if (shouldReplace) {
+                    map.set(memberId, candidate);
+                }
+            });
+            return map;
+        }
+
+        function matchesBillingGroup(item) {
+            if (groupSelect.value === 'all') {
+                return true;
+            }
+
+            const targets = memberTypeMatchers[groupSelect.value] || [];
+            const memberType = String(item.member_type || '');
+            return targets.some((label) => memberType.includes(label));
+        }
+
+        function getFilteredRecipients() {
+            const keyword = String(recipientSearchInput.value || '').trim().toLowerCase();
+            return recipientRows.filter((item) => {
+                if (!matchesBillingGroup(item)) {
+                    return false;
+                }
+
+                if (!keyword) {
+                    return true;
+                }
+
+                const haystack = [item.company_name, item.staff_name, item.staff_email, item.member_type, item.division_flag]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+                return haystack.includes(keyword);
+            });
+        }
+
+        function getSelectedRecipients() {
+            const amount = Number(amountInput.value || 0);
+            return getFilteredRecipients()
+                .filter((item) => selectedRecipientIds.has(item.member_id))
+                .map((item) => ({
+                    member_id: item.member_id,
+                    email: item.staff_email,
+                    staff_name: item.staff_name,
+                    company_name: item.company_name,
+                    member_type: item.member_type,
+                    amount
+                }))
+                .filter((item) => item.email && item.amount > 0);
+        }
+
+        function updateSummary(filteredRows) {
+            const selectedCount = filteredRows.filter((item) => selectedRecipientIds.has(item.member_id)).length;
+            recipientSummary.textContent = `${selectedCount} / ${filteredRows.length} 件選択`;
+        }
+
+        function renderRecipientTable() {
+            const filteredRows = getFilteredRecipients();
+            if (!filteredRows.length) {
+                recipientTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b; padding:1rem;">該当する会員がありません</td></tr>';
+                recipientSummary.textContent = '0件';
+                return;
+            }
+
+            recipientTbody.innerHTML = filteredRows.map((item) => {
+                const checked = selectedRecipientIds.has(item.member_id) ? 'checked' : '';
+                const selectedClass = selectedRecipientIds.has(item.member_id) ? 'selected' : '';
+                return `
+                    <tr class="${selectedClass}" data-member-id="${item.member_id}">
+                        <td class="checkbox-cell"><input type="checkbox" data-member-id="${item.member_id}" ${checked}></td>
+                        <td>${item.company_name || ''}</td>
+                        <td>${item.staff_name || ''}</td>
+                        <td>${item.staff_email || ''}</td>
+                        <td>${item.member_type || ''}</td>
+                        <td>${item.division_flag || ''}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            updateSummary(filteredRows);
+        }
+
+        function refreshSelectionFromCheckAll(checked) {
+            getFilteredRecipients().forEach((item) => {
+                if (checked) {
+                    selectedRecipientIds.add(item.member_id);
+                } else {
+                    selectedRecipientIds.delete(item.member_id);
+                }
+            });
+
+            renderRecipientTable();
+        }
+
+        async function loadRecipients() {
+            recipientTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b; padding:1rem;">会員データを読み込み中...</td></tr>';
+
+            const [memberResult, contactResult] = await Promise.all([
+                supabaseClient.from('member').select('id, division_flag, member_type, company_name, staff_name, staff_email'),
+                supabaseClient.from('member_contacts').select('member_id, name, email, receive_invoice_mail, is_primary, sort_order')
+            ]);
+
+            if (memberResult.error) {
+                recipientTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#b91c1c; padding:1rem;">会員データの取得に失敗しました</td></tr>';
+                window.cidmAdminUi.showToast('会員データの取得に失敗しました: ' + memberResult.error.message, 'error', 3600);
+                return;
+            }
+
+            if (contactResult.error) {
+                recipientTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#b91c1c; padding:1rem;">担当者データの取得に失敗しました</td></tr>';
+                window.cidmAdminUi.showToast('担当者データの取得に失敗しました: ' + contactResult.error.message, 'error', 3600);
+                return;
+            }
+
+            const primaryContactMap = getBillingContactByMemberId(contactResult.data || []);
+            recipientRows = (memberResult.data || [])
+                .map((member) => {
+                    const primaryContact = primaryContactMap.get(String(member.id)) || {};
+                    return {
+                        member_id: String(member.id),
+                        division_flag: String(member.division_flag || '会員'),
+                        member_type: String(member.member_type || ''),
+                        company_name: String(member.company_name || ''),
+                        staff_name: primaryContact.name || String(member.staff_name || ''),
+                        staff_email: primaryContact.email || String(member.staff_email || '')
+                    };
+                })
+                .sort((a, b) => a.company_name.localeCompare(b.company_name, 'ja'));
+
+            selectedRecipientIds = new Set(recipientRows.filter((item) => item.staff_email).map((item) => item.member_id));
+            renderRecipientTable();
+        }
+
+        function updateStatusPreview() {
+            const filteredRows = getFilteredRecipients();
+            const selectedRows = getSelectedRecipients();
+            const amount = Number(amountInput.value || 0);
+            const billingMonthLabel = billingMonthLabels[String(monthSelect.value)] || `${monthSelect.value}月`;
+
+            statusBox.innerHTML = [
+                `${yearInput.value}年度 / ${billingMonthLabel} / ${getBillingGroupLabel()}`,
+                `対象候補: ${filteredRows.length}件`,
+                `送信予定: ${selectedRows.length}件`,
+                `請求金額: ${amount > 0 ? amount.toLocaleString('ja-JP') + '円' : '未設定'}`,
+                `支払期限: ${dueDateInput.value || '未設定'}`
+            ].join('<br>');
+
+            updateSummary(filteredRows);
+        }
+
+        async function ensureInvoiceFunctionReachable() {
+            const endpoint = `${window.CIDM_SUPABASE_URL}/functions/v1/send-membership-invoice-mail`;
+            try {
+                const res = await fetch(endpoint, { method: 'GET' });
+                if (res.status === 404) {
+                    throw new Error('請求メール機能（send-membership-invoice-mail）が未デプロイです。Supabaseで関数をデプロイしてください。');
+                }
+            } catch (error) {
+                const message = String(error?.message || '');
+                if (message.includes('未デプロイ')) {
+                    throw error;
+                }
+                throw new Error('Edge Function への接続に失敗しました。ネットワーク設定または Supabase 側の状態を確認してください。');
+            }
+        }
+
+        async function sendInvoices() {
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
+            if (!ok) {
+                throw new Error('管理者認証が無効です。再ログインしてください。');
+            }
+
+            const dueDate = String(dueDateInput.value || '').trim();
+            const invoiceBaseUrl = String(invoiceBaseUrlInput.value || '').trim();
+            const payloadRecipients = getSelectedRecipients();
+            const amount = Number(amountInput.value || 0);
+
+            if (!dueDate || !invoiceBaseUrl || amount <= 0) {
+                throw new Error('支払期限、請求金額、請求書URLを入力してください。');
+            }
+
+            if (payloadRecipients.length === 0) {
+                throw new Error('請求対象を1件以上選択してください。');
+            }
+
+            await ensureInvoiceFunctionReachable();
+
+            const response = await fetch(`${window.CIDM_SUPABASE_URL}/functions/v1/send-membership-invoice-mail`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: window.CIDM_SUPABASE_ANON_KEY,
+                    Authorization: `Bearer ${window.CIDM_SUPABASE_ANON_KEY}`
+                },
+                body: JSON.stringify({
+                    billing_year: Number(yearInput.value),
+                    billing_month: Number(monthSelect.value),
+                    due_date: dueDate,
+                    mail_body: '平素より一般社団法人車両情報活用研究所の活動にご理解ご協力を賜り、誠にありがとうございます。',
+                    invoice_base_url: invoiceBaseUrl,
+                    recipients: payloadRecipients
+                })
+            });
+
+            const text = await response.text();
+            let data = null;
+            try {
+                data = text ? JSON.parse(text) : null;
+            } catch (_error) {
+                data = null;
+            }
+
+            if (!response.ok) {
+                throw new Error((data && data.error) || text || '送信に失敗しました');
+            }
+
+            const successCount = Number(data?.successCount || 0);
+            const failedCount = Number(data?.failedCount || 0);
+            let statusMsg = `送信結果: 成功 ${successCount} 件 / 失敗 ${failedCount} 件<br>請求処理を実行しました。`;
+            if (failedCount > 0 && Array.isArray(data?.failures) && data.failures.length > 0) {
+                const failureDetails = data.failures.map((f) => `${f.email}: ${f.message}`).join('<br>');
+                statusMsg += `<br><br>失敗詳細:<br>${failureDetails}`;
+            }
+            statusBox.innerHTML = statusMsg;
+            const toastMsg = failedCount === 0
+                ? `請求メールを送信しました（成功 ${successCount} 件）`
+                : `送信完了: 成功 ${successCount} 件 / 失敗 ${failedCount} 件 詳細はステータスボックスで確認できます`;
+            window.cidmAdminUi.showToast(toastMsg, failedCount === 0 ? 'success' : 'error', 4200);
+        }
+
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const fiscalYear = currentMonth >= 4 ? now.getFullYear() : now.getFullYear() - 1;
+
+        yearInput.value = String(fiscalYear);
+        monthSelect.value = String(currentMonth);
+        dueDateInput.value = `${fiscalYear + 1}-03-31`;
+        invoiceBaseUrlInput.value = new URL('member-invoice.html', window.location.href).toString();
+
+        previewBtn?.addEventListener('click', function() {
+            updateStatusPreview();
+            window.cidmAdminUi.showToast('請求対象をプレビューしました', 'success', 1400);
+        });
+
+        createBtn?.addEventListener('click', function() {
+            window.cidmAdminUi.runWithButtonBusy(createBtn, sendInvoices, '送信中...')
+                .catch((error) => {
+                    window.cidmAdminUi.showToast('請求メールの送信に失敗しました: ' + error.message, 'error', 3600);
+                    statusBox.innerHTML = `請求メールの送信に失敗しました。<br>${window.cidmAdminUi.sanitizeText(error.message || '')}`;
+                });
+        });
+
+        groupSelect?.addEventListener('change', function() {
+            applyAmountBySelectedGroup();
+            renderRecipientTable();
+            updateStatusPreview();
+        });
+
+        recipientSearchInput?.addEventListener('input', function() {
+            renderRecipientTable();
+            updateStatusPreview();
+        });
+
+        [yearInput, monthSelect, dueDateInput, amountInput, invoiceBaseUrlInput].forEach((input) => {
+            input?.addEventListener('input', updateStatusPreview);
+            input?.addEventListener('change', updateStatusPreview);
+        });
+
+        recipientTbody?.addEventListener('change', function(event) {
+            const target = event.target;
+            if (!(target instanceof HTMLInputElement) || target.type !== 'checkbox') return;
+            const memberId = String(target.dataset.memberId || '');
+            if (!memberId) return;
+
+            if (target.checked) {
+                selectedRecipientIds.add(memberId);
+            } else {
+                selectedRecipientIds.delete(memberId);
+            }
+
+            renderRecipientTable();
+            updateStatusPreview();
+        });
+
+        selectAllBtn?.addEventListener('click', function() {
+            refreshSelectionFromCheckAll(true);
+            updateStatusPreview();
+        });
+
+        clearAllBtn?.addEventListener('click', function() {
+            refreshSelectionFromCheckAll(false);
+            updateStatusPreview();
+        });
+
+        (async function() {
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
+            if (!ok) return;
+            await loadFeePrices();
+            await loadRecipients();
+            updateStatusPreview();
+        })();
+    </script>
+</body>
+</html>

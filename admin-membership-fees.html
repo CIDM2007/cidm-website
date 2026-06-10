@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会費金額設定 | CIDM 管理</title>
+    <link rel="icon" type="image/png" href="./CIDMchara.png">
+    <link href="./output.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background:
+                radial-gradient(1200px 500px at 20% -10%, #dbeafe 0%, transparent 60%),
+                radial-gradient(900px 400px at 85% -5%, #e0e7ff 0%, transparent 55%),
+                #eef2f7;
+            font-family: 'Noto Sans JP', sans-serif;
+            min-height: 100vh;
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+        }
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            height: 72px;
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #dbe4ef;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 1px 8px rgba(15, 23, 42, 0.06);
+        }
+        .brand { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+        .brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1rem;
+        }
+        .brand-text {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .brand-text span {
+            display: block;
+            color: #1e293b;
+            font-size: 0.9rem;
+            letter-spacing: 0.04em;
+        }
+        .ghost-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 9999px;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1d4ed8;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        .admin-body {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1.2rem 3.2rem;
+        }
+        .page-card {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #dbe4ef;
+            border-radius: 18px;
+            box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+            padding: 1.4rem;
+        }
+        .eyebrow {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #3b82f6;
+            margin-bottom: 0.45rem;
+        }
+        h1 { font-size: clamp(1.45rem, 2.4vw, 2rem); margin-bottom: 0.45rem; }
+        .lead { color: #64748b; font-size: 0.95rem; margin-bottom: 1rem; }
+        .panel {
+            border: 1px solid #dbe4ef;
+            background: #fff;
+            border-radius: 14px;
+            padding: 1rem;
+        }
+        .fee-table { width: 100%; border-collapse: collapse; }
+        .fee-table th {
+            text-align: left;
+            font-size: 0.76rem;
+            color: #64748b;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.7rem 0.6rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .fee-table td {
+            padding: 0.75rem 0.6rem;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 0.9rem;
+        }
+        .fee-table tr:last-child td { border-bottom: none; }
+        .fee-input {
+            width: 100%;
+            max-width: 260px;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.6rem;
+            padding: 0.6rem 0.75rem;
+            font-size: 0.9rem;
+            background: #f8fbff;
+            color: #1e293b;
+        }
+        .row-actions { margin-top: 1rem; display: flex; gap: 0.6rem; }
+        .btn {
+            border: none;
+            border-radius: 0.6rem;
+            padding: 0.58rem 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .btn-primary { background: linear-gradient(135deg, #2563eb, #0ea5e9); color: #fff; }
+        .btn-secondary { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; }
+        .status-box {
+            margin-top: 0.8rem;
+            border: 1px solid #bfdbfe;
+            background: #eff6ff;
+            color: #1e3a8a;
+            border-radius: 10px;
+            padding: 0.65rem 0.75rem;
+            font-size: 0.86rem;
+            line-height: 1.6;
+        }
+        .admin-footer {
+            text-align: center;
+            padding: 1.25rem;
+            font-size: 0.68rem;
+            color: #64748b;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <a href="admin-portal.html" class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-yen-sign"></i></div>
+            <div class="brand-text">CIDM<span>会費金額設定</span></div>
+        </a>
+        <a class="ghost-link" href="admin-membership-billing.html"><i class="fa-solid fa-arrow-left"></i> 請求画面へ戻る</a>
+    </header>
+
+    <main class="admin-body">
+        <section class="page-card">
+            <p class="eyebrow">Membership Fee Price</p>
+            <h1>会費金額設定</h1>
+            <p class="lead">会費区分ごとの金額を設定します。請求管理画面の区分選択時にこの金額が自動反映されます。</p>
+
+            <section class="panel">
+                <table class="fee-table">
+                    <thead>
+                        <tr>
+                            <th style="width:40%;">会費区分名</th>
+                            <th>金額（円）</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>正会員</td>
+                            <td><input id="fee-regular" class="fee-input" type="number" min="0" step="1" value="0"></td>
+                        </tr>
+                        <tr>
+                            <td>準会員</td>
+                            <td><input id="fee-associate" class="fee-input" type="number" min="0" step="1" value="0"></td>
+                        </tr>
+                        <tr>
+                            <td>賛助会員</td>
+                            <td><input id="fee-supporter" class="fee-input" type="number" min="0" step="1" value="0"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="row-actions">
+                    <button id="reload-btn" class="btn btn-secondary" type="button"><i class="fa-solid fa-rotate"></i> 再読込</button>
+                    <button id="save-btn" class="btn btn-primary" type="button"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
+                </div>
+
+                <div class="status-box" id="status-box">読み込み待機中...</div>
+            </section>
+        </section>
+    </main>
+
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./cidm-config.js"></script>
+    <script src="./admin-auth.js"></script>
+    <script src="./admin-ui.js"></script>
+    <script>
+        const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+        const statusBox = document.getElementById('status-box');
+        const saveBtn = document.getElementById('save-btn');
+        const reloadBtn = document.getElementById('reload-btn');
+
+        const categoryInputMap = {
+            '正会員': document.getElementById('fee-regular'),
+            '準会員': document.getElementById('fee-associate'),
+            '賛助会員': document.getElementById('fee-supporter')
+        };
+
+        function setStatus(text) {
+            statusBox.textContent = text;
+        }
+
+        function parseAmount(inputEl) {
+            const value = Number(inputEl?.value || 0);
+            if (!Number.isFinite(value) || value < 0) return 0;
+            return Math.floor(value);
+        }
+
+        async function loadFeePrices() {
+            const { data, error } = await supabaseClient
+                .from('membership_fee_prices')
+                .select('fee_category, amount');
+
+            if (error) {
+                setStatus('会費金額の読み込みに失敗しました。');
+                window.cidmAdminUi.showToast('会費金額の取得に失敗しました: ' + error.message, 'error', 3600);
+                return;
+            }
+
+            const map = new Map((data || []).map((row) => [String(row.fee_category || ''), Number(row.amount || 0)]));
+            Object.entries(categoryInputMap).forEach(([category, inputEl]) => {
+                const amount = map.has(category) ? Number(map.get(category) || 0) : 0;
+                inputEl.value = String(Number.isFinite(amount) ? amount : 0);
+            });
+
+            setStatus('会費金額を読み込みました。');
+        }
+
+        async function saveFeePrices() {
+            const rows = Object.entries(categoryInputMap).map(([fee_category, inputEl]) => ({
+                fee_category,
+                amount: parseAmount(inputEl)
+            }));
+
+            const { error } = await supabaseClient
+                .from('membership_fee_prices')
+                .upsert(rows, { onConflict: 'fee_category' });
+
+            if (error) {
+                setStatus('保存に失敗しました。');
+                window.cidmAdminUi.showToast('会費金額の保存に失敗しました: ' + error.message, 'error', 3600);
+                return;
+            }
+
+            setStatus('保存しました。請求管理画面で選択時に自動反映されます。');
+            window.cidmAdminUi.showToast('会費金額を保存しました。', 'success', 2200);
+        }
+
+        reloadBtn?.addEventListener('click', () => {
+            window.cidmAdminUi.runWithButtonBusy(reloadBtn, loadFeePrices, '読込中...')
+                .catch((error) => {
+                    window.cidmAdminUi.showToast('読込に失敗しました: ' + String(error?.message || error), 'error', 3200);
+                });
+        });
+
+        saveBtn?.addEventListener('click', () => {
+            window.cidmAdminUi.runWithButtonBusy(saveBtn, saveFeePrices, '保存中...')
+                .catch((error) => {
+                    window.cidmAdminUi.showToast('保存に失敗しました: ' + String(error?.message || error), 'error', 3200);
+                });
+        });
+
+        (async function init() {
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
+            if (!ok) return;
+            await loadFeePrices();
+        })();
+    </script>
+</body>
+</html>

@@ -90,16 +90,18 @@
                     <tr>
                         <th>区分</th>
                         <th>会員種別</th>
+                        <th>役員</th>
                         <th>会社名</th>
                         <th>CIDM役職</th>
                         <th>主担当者名</th>
                         <th>主担当携帯</th>
                         <th>主担当メール</th>
+                        <th>登録人数</th>
                         <th>備考</th>
                     </tr>
                 </thead>
                 <tbody id="members-tbody">
-                    <tr><td colspan="8" style="text-align:center; color:#475569; padding:2rem;">読み込み中...</td></tr>
+                    <tr><td colspan="9" style="text-align:center; color:#475569; padding:2rem;">読み込み中...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -126,6 +128,8 @@
                 <td>${cell}</td>
                 <td>${cell}</td>
                 <td>${cell}</td>
+                <td>${cell}</td>
+                <td>${cell}</td>
             </tr>
         `).join('');
     }
@@ -133,7 +137,7 @@
     function renderMembers(data) {
         const tbody = document.getElementById('members-tbody');
         if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888;">該当する会員データはありません</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color:#888;">該当する会員データはありません</td></tr>`;
             return;
         }
 
@@ -156,6 +160,10 @@
         };
 
         const sorted = [...data].sort((a, b) => {
+            const aOfficer = a.is_officer ? 0 : 1;
+            const bOfficer = b.is_officer ? 0 : 1;
+            if (aOfficer !== bOfficer) return aOfficer - bOfficer;
+
             const aRole = roleRank[a.cidm_role || ''] ?? 99;
             const bRole = roleRank[b.cidm_role || ''] ?? 99;
             if (aRole !== bRole) return aRole - bRole;
@@ -171,11 +179,13 @@
             <tr style="cursor:pointer;" data-member-id="${item.id}">
                 <td>${item.division_flag || '会員'}</td>
                 <td>${item.member_type || ''}</td>
+                <td>${item.is_officer ? 'はい' : '-'}</td>
                 <td><span class="company-name">${item.company_name || ''}</span></td>
                 <td>${item.cidm_role || ''}</td>
                 <td>${item.staff_name || ''}</td>
                 <td><span class="sub-text">${item.staff_mobile || ''}</span></td>
                 <td><span class="sub-text">${item.staff_email || ''}</span></td>
+                <td><span class="sub-text">${Math.max(1, Number(item.contact_count || 0))}名</span></td>
                 <td><span class="sub-text">${item.biko || ''}</span></td>
             </tr>
         `).join('');
@@ -196,18 +206,37 @@
     async function loadMembers() {
         const tbody = document.getElementById('members-tbody');
         tbody.innerHTML = renderLoadingRows();
-        const { data, error } = await supabaseClient
+        const [{ data: members, error: memberError }, { data: contacts, error: contactError }] = await Promise.all([
+            supabaseClient
             .from('member')
-            .select('id, division_flag, member_type, company_name, cidm_role, staff_name, staff_mobile, staff_email, biko');
-        if (error) {
-            tbody.innerHTML = `<tr><td colspan="8" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
+            .select('id, division_flag, member_type, is_officer, company_name, cidm_role, staff_name, staff_mobile, staff_email, biko'),
+            supabaseClient
+            .from('member_contacts')
+            .select('member_id')
+        ]);
+
+        if (memberError || contactError) {
+            tbody.innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
             return;
         }
-        if (!data || data.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
+        if (!members || members.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
             return;
         }
-        allMembers = data;
+
+        const contactCountByMemberId = new Map();
+        if (Array.isArray(contacts)) {
+            contacts.forEach((row) => {
+                const key = row.member_id;
+                if (!key) return;
+                contactCountByMemberId.set(key, (contactCountByMemberId.get(key) || 0) + 1);
+            });
+        }
+
+        allMembers = members.map((member) => ({
+            ...member,
+            contact_count: contactCountByMemberId.get(member.id) || 0
+        }));
         applyDivisionFilterAndRender();
     }
 
