@@ -58,6 +58,27 @@
         .contact-del-btn:hover { background:#fecaca; color:#991b1b; }
         .contact-add-btn { width:100%; border:1px dashed #93c5fd; background:#eff6ff; color:#1d4ed8; border-radius:0.7rem; padding:0.55rem; cursor:pointer; font-weight:700; }
         .contact-add-btn:hover { background:#dbeafe; border-color:#60a5fa; }
+        .officer-check-wrap { margin:-0.2rem 0 1.05rem; }
+        .officer-check-label {
+            display:flex;
+            align-items:flex-start;
+            gap:0.6rem;
+            text-transform:none;
+            letter-spacing:0;
+            font-size:0.95rem;
+            color:#1e293b;
+            margin-bottom:0;
+            cursor:pointer;
+        }
+        .officer-check-label input[type="checkbox"] {
+            width:1rem;
+            height:1rem;
+            margin-top:0.15rem;
+            accent-color:#2563eb;
+            flex:0 0 auto;
+        }
+        .officer-check-title { font-weight:700; }
+        .officer-check-help { display:block; margin-top:0.15rem; color:#64748b; font-size:0.78rem; line-height:1.5; }
 
         .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#64748b; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #e2e8f0; }
     </style>
@@ -92,7 +113,15 @@
                     <option value="賛助">賛助</option>
                 </select>
             </div>
-            <div class="form-group"><label><input type="checkbox" id="is_officer" name="is_officer"> 役員</label></div>
+            <div class="officer-check-wrap">
+                <label for="is_officer" class="officer-check-label">
+                    <input type="checkbox" id="is_officer" name="is_officer">
+                    <span>
+                        <span class="officer-check-title">この会員を役員として扱う</span>
+                        <span class="officer-check-help">理事長・副理事長・理事・監事などの役員に該当する場合にチェックしてください。</span>
+                    </span>
+                </label>
+            </div>
             <div class="form-group"><label for="cidm_role">CIDM役職</label><input type="text" id="cidm_role" name="cidm_role"></div>
             <div class="form-group"><label for="company_name">会社名</label><input type="text" id="company_name" name="company_name" required></div>
             <div class="form-group"><label for="department">部署</label><input type="text" id="department" name="department"></div>
