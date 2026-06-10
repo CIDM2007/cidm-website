@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>問い合わせ設定 | 管理者ポータル</title>
+    <title>サイト設定 | 管理者ポータル</title>
     <link rel="icon" type="image/png" href="./CIDMchara.png">
     <link href="./output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -37,6 +37,15 @@
         input { width:100%; border:1px solid #cbd5e1; background:#f8fbff; color:#1e293b; border-radius:0.6rem; padding:0.72rem 0.9rem; font-size:0.92rem; }
         input:focus { outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
         .help { color:#64748b; font-size:0.78rem; line-height:1.7; margin-top:0.2rem; }
+        .section-title { font-size:1rem; color:#1e293b; margin:1.35rem 0 0.7rem; font-weight:700; }
+        .checkbox-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0.55rem 1rem; margin-top:0.45rem; }
+        .checkbox-item { display:flex; align-items:center; gap:0.5rem; color:#334155; font-size:0.9rem; }
+        .checkbox-item input[type="checkbox"] { width:1rem; height:1rem; border-radius:0.3rem; padding:0; }
+        .checkbox-item.wide { grid-column:1 / -1; }
+        .divider { border:none; border-top:1px solid #e2e8f0; margin:1.2rem 0 0.6rem; }
+        @media (max-width: 640px) {
+            .checkbox-grid { grid-template-columns:1fr; }
+        }
         .actions { display:flex; justify-content:flex-end; margin-top:1.4rem; }
         .btn { border:none; border-radius:0.6rem; padding:0.58rem 1rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:0.35rem; }
         .btn-primary { background:linear-gradient(135deg,#2563eb,#0ea5e9); color:#fff; box-shadow:0 8px 18px rgba(37, 99, 235, 0.2); }
@@ -55,13 +64,27 @@
     <div class="admin-body">
         <div class="card">
             <p class="eyebrow">Site Settings</p>
-            <h1><i class="fa-solid fa-envelope"></i> 問い合わせ送信先設定</h1>
+            <h1><i class="fa-solid fa-sliders"></i> サイト設定</h1>
             <form id="contact-setting-form">
                 <div class="form-group">
                     <label for="contact_to_email">通知先メールアドレス</label>
                     <input type="email" id="contact_to_email" name="contact_to_email" required placeholder="example@cidm.or.jp">
                     <p class="help">お問い合わせフォーム送信時、このメールアドレスに通知されます。</p>
                 </div>
+
+                <hr class="divider">
+
+                <h2 class="section-title"><i class="fa-solid fa-right-to-bracket"></i> 会員ログイン許可対象</h2>
+                <p class="help">チェックした対象のみ、会員ページへログイン可能になります。</p>
+                <div class="checkbox-grid" role="group" aria-label="会員ログイン許可対象">
+                    <label class="checkbox-item"><input type="checkbox" id="allow_type_regular" name="allow_type_regular"> 正会員</label>
+                    <label class="checkbox-item"><input type="checkbox" id="allow_type_associate" name="allow_type_associate"> 準会員</label>
+                    <label class="checkbox-item"><input type="checkbox" id="allow_type_supporting" name="allow_type_supporting"> 賛助会員</label>
+                    <label class="checkbox-item"><input type="checkbox" id="allow_type_officer" name="allow_type_officer"> 役員</label>
+                    <label class="checkbox-item wide"><input type="checkbox" id="allow_unset_type" name="allow_unset_type"> 会員種別未設定（division_flag=会員）も許可</label>
+                    <label class="checkbox-item wide"><input type="checkbox" id="allow_related" name="allow_related"> 関係者（division_flag=関係者）も許可</label>
+                </div>
+
                 <div class="actions">
                     <button class="btn btn-primary" type="submit" id="save-btn"><i class="fa-solid fa-floppy-disk"></i> 保存</button>
                 </div>
@@ -80,35 +103,103 @@
     const form = document.getElementById('contact-setting-form');
     const saveBtn = document.getElementById('save-btn');
 
+    const LOGIN_SETTING_KEYS = {
+        allowedTypes: 'member_login_allowed_member_types',
+        allowRelated: 'member_login_allow_related',
+        allowUnsetType: 'member_login_allow_unset_type'
+    };
+
+    const DEFAULT_ALLOWED_TYPES = ['正会員', '準会員'];
+
+    function parseCsv(value) {
+        return String(value || '')
+            .split(',')
+            .map((item) => item.trim())
+            .filter(Boolean);
+    }
+
+    function parseBool(value, fallback = false) {
+        if (value === null || value === undefined || value === '') return fallback;
+        const normalized = String(value).trim().toLowerCase();
+        return normalized === '1' || normalized === 'true' || normalized === 'yes' || normalized === 'on';
+    }
+
+    function setAllowedTypeChecks(typeSet) {
+        form.allow_type_regular.checked = typeSet.has('正会員');
+        form.allow_type_associate.checked = typeSet.has('準会員');
+        form.allow_type_supporting.checked = typeSet.has('賛助会員') || typeSet.has('賛助');
+        form.allow_type_officer.checked = typeSet.has('役員');
+    }
+
+    function collectAllowedTypes() {
+        const allowedTypes = [];
+        if (form.allow_type_regular.checked) allowedTypes.push('正会員');
+        if (form.allow_type_associate.checked) allowedTypes.push('準会員');
+        if (form.allow_type_supporting.checked) allowedTypes.push('賛助会員');
+        if (form.allow_type_officer.checked) allowedTypes.push('役員');
+        return allowedTypes;
+    }
+
     async function loadSetting() {
         const { data, error } = await supabaseClient
             .from('app_settings')
-            .select('setting_value')
-            .eq('setting_key', 'contact_to_email')
-            .maybeSingle();
+            .select('setting_key, setting_value')
+            .in('setting_key', [
+                'contact_to_email',
+                LOGIN_SETTING_KEYS.allowedTypes,
+                LOGIN_SETTING_KEYS.allowRelated,
+                LOGIN_SETTING_KEYS.allowUnsetType
+            ]);
 
         if (error) {
             window.cidmAdminUi.showToast('設定取得に失敗しました: ' + error.message, 'error', 2800);
             return;
         }
 
-        if (data && data.setting_value) {
-            form.contact_to_email.value = data.setting_value;
+        const byKey = new Map((Array.isArray(data) ? data : []).map((row) => [row.setting_key, row.setting_value]));
+
+        const contactToEmail = String(byKey.get('contact_to_email') || '').trim();
+        if (contactToEmail) {
+            form.contact_to_email.value = contactToEmail;
         }
+
+        const allowedTypesRaw = byKey.get(LOGIN_SETTING_KEYS.allowedTypes);
+        const allowedTypes = parseCsv(allowedTypesRaw);
+        const allowedTypeSet = new Set(allowedTypes.length > 0 ? allowedTypes : DEFAULT_ALLOWED_TYPES);
+        setAllowedTypeChecks(allowedTypeSet);
+
+        form.allow_related.checked = parseBool(byKey.get(LOGIN_SETTING_KEYS.allowRelated), false);
+        form.allow_unset_type.checked = parseBool(byKey.get(LOGIN_SETTING_KEYS.allowUnsetType), false);
     }
 
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         await window.cidmAdminUi.runWithButtonBusy(saveBtn, async () => {
             const email = String(form.contact_to_email.value || '').trim();
+            const allowedTypes = collectAllowedTypes();
+            const allowRelated = !!form.allow_related.checked;
+            const allowUnsetType = !!form.allow_unset_type.checked;
+
             if (!email) {
                 window.cidmAdminUi.showToast('メールアドレスを入力してください。', 'error', 2200);
                 return;
             }
 
+            if (allowedTypes.length === 0 && !allowRelated && !allowUnsetType) {
+                window.cidmAdminUi.showToast('ログイン許可対象を1つ以上選択してください。', 'error', 2600);
+                return;
+            }
+
+            const rows = [
+                { setting_key: 'contact_to_email', setting_value: email },
+                { setting_key: LOGIN_SETTING_KEYS.allowedTypes, setting_value: allowedTypes.join(',') },
+                { setting_key: LOGIN_SETTING_KEYS.allowRelated, setting_value: allowRelated ? 'true' : 'false' },
+                { setting_key: LOGIN_SETTING_KEYS.allowUnsetType, setting_value: allowUnsetType ? 'true' : 'false' }
+            ];
+
             const { error } = await supabaseClient
                 .from('app_settings')
-                .upsert({ setting_key: 'contact_to_email', setting_value: email }, { onConflict: 'setting_key' });
+                .upsert(rows, { onConflict: 'setting_key' });
 
             if (error) {
                 window.cidmAdminUi.showToast('設定保存に失敗しました: ' + error.message, 'error', 3200);
