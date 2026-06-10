@@ -85,3 +85,42 @@ npx supabase db push --linked --yes
 - member_documents:
   - 現行実装では匿名閲覧可
   - 追加/更新/削除は管理者のみ
+
+## ログインIDをメールアドレスへ統一（20260610000200）
+
+対象 migration:
+
+- `supabase/migrations/20260610000200_enforce_member_login_email_only.sql`
+
+### 反映前チェック（重複メール確認）
+
+`login_id` はユニーク制約があるため、会員 `email` が重複していると正規化更新で失敗する可能性があります。
+
+```sql
+select lower(btrim(email)) as normalized_email, count(*) as cnt
+from public.member
+where nullif(btrim(coalesce(email, '')), '') is not null
+group by lower(btrim(email))
+having count(*) > 1
+order by cnt desc, normalized_email;
+```
+
+上記結果が0件であることを確認してから `db push` を実行してください。
+
+### 反映後チェック（動作確認）
+
+```sql
+-- 1) login_id が email と一致しているか
+select id, login_id, email
+from public.member
+where nullif(btrim(coalesce(email, '')), '') is not null
+  and lower(btrim(coalesce(login_id, ''))) <> lower(btrim(email));
+
+-- 2) login_id がメール形式違反になっていないか
+select id, login_id
+from public.member
+where nullif(btrim(coalesce(login_id, '')), '') is not null
+  and lower(btrim(login_id)) !~ '^[a-z0-9.!#$%&''*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,}$';
+```
+
+どちらも0件になることを確認してください。
