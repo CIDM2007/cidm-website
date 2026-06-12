@@ -96,12 +96,13 @@
                         <th>主担当者名</th>
                         <th>主担当携帯</th>
                         <th>主担当メール</th>
+                        <th>ログイン用メール</th>
                         <th>登録人数</th>
                         <th>備考</th>
                     </tr>
                 </thead>
                 <tbody id="members-tbody">
-                    <tr><td colspan="9" style="text-align:center; color:#475569; padding:2rem;">読み込み中...</td></tr>
+                    <tr><td colspan="11" style="text-align:center; color:#475569; padding:2rem;">読み込み中...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -120,6 +121,7 @@
         const cell = window.cidmAdminUi.getSkeletonLine('100%', '0.9rem');
         return Array.from({ length: 6 }).map(() => `
             <tr>
+                <td>${cell}</td>
                 <td>${cell}</td>
                 <td>${cell}</td>
                 <td>${cell}</td>
@@ -185,6 +187,7 @@
                 <td>${item.staff_name || ''}</td>
                 <td><span class="sub-text">${item.staff_mobile || ''}</span></td>
                 <td><span class="sub-text">${item.staff_email || ''}</span></td>
+                <td><span class="sub-text">${item.login_id || ''}</span></td>
                 <td><span class="sub-text">${Math.max(1, Number(item.contact_count || 0))}名</span></td>
                 <td><span class="sub-text">${item.biko || ''}</span></td>
             </tr>
@@ -209,18 +212,18 @@
         const [{ data: members, error: memberError }, { data: contacts, error: contactError }] = await Promise.all([
             supabaseClient
             .from('member')
-            .select('id, division_flag, member_type, is_officer, company_name, cidm_role, staff_name, staff_mobile, staff_email, biko'),
+            .select('id, division_flag, member_type, is_officer, company_name, cidm_role, staff_name, staff_mobile, staff_email, login_id, biko'),
             supabaseClient
             .from('member_contacts')
             .select('member_id')
         ]);
 
         if (memberError || contactError) {
-            tbody.innerHTML = `<tr><td colspan="9" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="11" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
             return;
         }
         if (!members || members.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
             return;
         }
 
