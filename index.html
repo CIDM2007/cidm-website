@@ -106,41 +106,16 @@
                         <i class="fa-solid fa-key text-xl text-blue-600"></i>
                     </div>
                     <h3 class="text-2xl font-bold serif text-slate-800">パスワード回復</h3>
-                    <p class="text-sm text-slate-500 mt-3 leading-relaxed">ログイン用メールアドレスと登録済みメールアドレスで本人確認します（メール送信は行いません）。</p>
+                    <p class="text-sm text-slate-500 mt-3 leading-relaxed">ログイン用メールアドレス宛にパスワード再設定URLを送信します。</p>
                 </div>
                 <form id="password-reset-request-form" class="space-y-5 md:space-y-6">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Login Email</label>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Email</label>
                         <input type="email" id="password-reset-login-id" required class="w-full border border-slate-200 px-4 py-4 rounded-xl outline-none focus:border-blue-400 transition" placeholder="login@example.com" autocomplete="off" autocapitalize="off" spellcheck="false">
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Registered Email</label>
-                        <input type="email" id="password-reset-registered-email" required class="w-full border border-slate-200 px-4 py-4 rounded-xl outline-none focus:border-blue-400 transition" placeholder="登録済みメールアドレス">
-                    </div>
-                    <button id="password-reset-request-btn" type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">本人確認して次へ（メール送信なし）</button>
+                    <button id="password-reset-request-btn" type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">再設定URLを送信</button>
                 </form>
-                <p class="text-xs text-slate-400 mt-4 leading-relaxed">本人確認後、この画面で新しいパスワードを設定します。</p>
-            </div>
-
-            <div id="password-reset-update-step" class="hidden">
-                <div class="text-center mb-8 md:mb-9">
-                    <div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="fa-solid fa-unlock-keyhole text-xl text-blue-600"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold serif text-slate-800">新しいパスワード設定</h3>
-                    <p class="text-sm text-slate-500 mt-3 leading-relaxed">8文字以上で設定してください。</p>
-                </div>
-                <form id="password-reset-update-form" class="space-y-5 md:space-y-6">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">New Password</label>
-                        <input type="password" id="password-reset-new-password" required minlength="8" class="w-full border border-slate-200 px-4 py-4 rounded-xl outline-none focus:border-blue-400 transition" placeholder="8文字以上">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Confirm Password</label>
-                        <input type="password" id="password-reset-confirm-password" required minlength="8" class="w-full border border-slate-200 px-4 py-4 rounded-xl outline-none focus:border-blue-400 transition" placeholder="再入力">
-                    </div>
-                    <button id="password-reset-update-btn" type="submit" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100">パスワードを更新</button>
-                </form>
+                <p class="text-xs text-slate-400 mt-4 leading-relaxed">メールが届かない場合は、迷惑メールフォルダも確認してください。</p>
             </div>
         </div>
     </div>
@@ -241,10 +216,9 @@
         const MEMBER_COMPANY_KEY = 'cidm-member-company';
         const LOGIN_ADMIN_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-admin';
         const LOGIN_EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-member';
+        const MEMBER_PASSWORD_RESET_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/member-password-reset';
         const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
         const LOGIN_RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/cidm_member_login`;
-        const MEMBER_PASSWORD_VERIFY_RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/cidm_member_verify_recovery_identity`;
-        const MEMBER_PASSWORD_RESET_RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/cidm_member_reset_password_self_service`;
         const LOGIN_TIMEOUT_MS = 8000;
         const LOGIN_GUARD_TIMEOUT_MS = 12000;
         const LOGIN_HARD_RESET_MS = 15000;
@@ -252,7 +226,6 @@
         const TOP_NEWS_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
         let memberLoginBusy = false;
         let memberLoginSeq = 0;
-        let passwordRecoveryContext = null;
 
         async function fetchJsonWithTimeout(url, options = {}, timeoutMs = LOGIN_TIMEOUT_MS) {
             const controller = new AbortController();
@@ -446,7 +419,7 @@
             if (!modal) return;
             const preferredSelectors = {
                 'login-modal': '#member-id',
-                'password-reset-modal': '#password-reset-update-step:not(.hidden) #password-reset-new-password, #password-reset-request-step:not(.hidden) #password-reset-login-id',
+                'password-reset-modal': '#password-reset-login-id',
                 'admin-login-modal': '#admin-email'
             };
             const preferredSelector = preferredSelectors[modal.id];
@@ -656,15 +629,13 @@
             }
         }
 
-        function openPasswordResetModal(mode = 'request') {
+        function openPasswordResetModal() {
             const modal = document.getElementById('password-reset-modal');
             const requestStep = document.getElementById('password-reset-request-step');
-            const updateStep = document.getElementById('password-reset-update-step');
-            if (!modal || !requestStep || !updateStep) return false;
+            if (!modal || !requestStep) return false;
 
             rememberFocusBeforeModal();
-            requestStep.classList.toggle('hidden', mode !== 'request');
-            updateStep.classList.toggle('hidden', mode !== 'update');
+            requestStep.classList.remove('hidden');
             modal.classList.remove('hidden');
             modal.style.display = 'flex';
             syncBodyScrollLock();
@@ -677,13 +648,11 @@
         function forceOpenPasswordResetModalFromLogin() {
             const resetModal = document.getElementById('password-reset-modal');
             const requestStep = document.getElementById('password-reset-request-step');
-            const updateStep = document.getElementById('password-reset-update-step');
-            if (!resetModal || !requestStep || !updateStep) {
+            if (!resetModal || !requestStep) {
                 return false;
             }
 
             requestStep.classList.remove('hidden');
-            updateStep.classList.add('hidden');
             resetModal.classList.remove('hidden');
             resetModal.style.display = 'flex';
             resetModal.style.zIndex = '101';
@@ -714,7 +683,6 @@
             closeLogin({ restoreFocus: false });
         }
 
-        // Fallback for cases where addEventListener is not attached for any reason.
         window.cidmOpenPasswordResetFromLogin = handleOpenPasswordResetFromLogin;
         window.cidmForceOpenPasswordResetModalFromLogin = forceOpenPasswordResetModalFromLogin;
 
@@ -727,101 +695,43 @@
             syncBodyScrollLock();
 
             const requestForm = document.getElementById('password-reset-request-form');
-            const updateForm = document.getElementById('password-reset-update-form');
             if (requestForm) requestForm.reset();
-            if (updateForm) updateForm.reset();
-            passwordRecoveryContext = null;
             if (restoreFocus) {
                 restoreFocusAfterModal();
             }
         }
 
-        async function callRpc(url, payload, timeoutMs = 12000) {
-            const { response, json } = await fetchJsonWithTimeout(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    apikey: TOP_NEWS_ANON_KEY,
-                    Authorization: `Bearer ${TOP_NEWS_ANON_KEY}`
-                },
-                body: JSON.stringify(payload)
-            }, timeoutMs);
-
-            if (!response.ok) {
-                const errorMessage = (json && (json.error || json.message)) || '処理に失敗しました。';
-                throw new Error(errorMessage);
-            }
-
-            return json;
-        }
-
         async function requestMemberPasswordReset(event) {
             event.preventDefault();
             const loginInput = document.getElementById('password-reset-login-id');
-            const emailInput = document.getElementById('password-reset-registered-email');
             const submit = document.getElementById('password-reset-request-btn');
             const loginId = loginInput?.value?.trim();
-            const registeredEmail = emailInput?.value?.trim();
 
-            if (!loginId || !registeredEmail) {
-                window.cidmAdminUi.showToast('ログイン用メールアドレスと登録済みメールアドレスを入力してください。', 'error', 2600);
+            if (!loginId) {
+                window.cidmAdminUi.showToast('ログイン用メールアドレスを入力してください。', 'error', 2600);
                 return;
             }
 
             await window.cidmAdminUi.runWithButtonBusy(submit, async () => {
-                const verified = await callRpc(MEMBER_PASSWORD_VERIFY_RPC_URL, {
-                    p_login_id: loginId,
-                    p_registered_email: registeredEmail
-                });
+                const { response, json } = await fetchJsonWithTimeout(MEMBER_PASSWORD_RESET_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'request',
+                        login_id: loginId
+                    })
+                }, 12000);
 
-                if (!verified) {
-                    window.cidmAdminUi.showToast('本人確認に失敗しました。入力内容をご確認ください。', 'error', 3200);
-                    return;
+                if (!response.ok) {
+                    throw new Error((json && (json.error || json.message)) || '再設定URLの送信に失敗しました。');
                 }
 
-                passwordRecoveryContext = {
-                    loginId,
-                    registeredEmail
-                };
-                openPasswordResetModal('update');
-                window.cidmAdminUi.showToast('本人確認が完了しました。新しいパスワードを設定してください。', 'success', 2800);
-            }, '確認中...');
-        }
-
-        async function updateMemberPassword(event) {
-            event.preventDefault();
-            const submit = document.getElementById('password-reset-update-btn');
-            const newPassword = document.getElementById('password-reset-new-password')?.value?.trim();
-            const confirmPassword = document.getElementById('password-reset-confirm-password')?.value?.trim();
-            if (!passwordRecoveryContext || !passwordRecoveryContext.loginId || !passwordRecoveryContext.registeredEmail) {
-                window.cidmAdminUi.showToast('先に本人確認を行ってください。', 'error', 3200);
-                return;
-            }
-            if (!newPassword || newPassword.length < 8) {
-                window.cidmAdminUi.showToast('新しいパスワードは8文字以上で入力してください。', 'error', 2600);
-                return;
-            }
-            if (newPassword !== confirmPassword) {
-                window.cidmAdminUi.showToast('確認用パスワードが一致しません。', 'error', 2600);
-                return;
-            }
-
-            await window.cidmAdminUi.runWithButtonBusy(submit, async () => {
-                const updated = await callRpc(MEMBER_PASSWORD_RESET_RPC_URL, {
-                    p_login_id: passwordRecoveryContext.loginId,
-                    p_registered_email: passwordRecoveryContext.registeredEmail,
-                    p_new_password: newPassword
-                });
-
-                if (!updated) {
-                    throw new Error('パスワード更新に失敗しました。');
-                }
-
-                window.cidmAdminUi.showToast('パスワードを更新しました。ログインしてください。', 'success', 3200);
-                closePasswordResetModal();
+                window.cidmAdminUi.showToast('再設定URLを送信しました。メールをご確認ください。', 'success', 3200);
+                closePasswordResetModal({ restoreFocus: false });
                 openLogin();
-            }, '更新中...');
+            }, '送信中...');
         }
+
         async function handleLogin(e) {
             e.preventDefault();
             const loginBtn = document.getElementById('member-login-btn');
@@ -865,13 +775,15 @@
                 if (seq !== memberLoginSeq) return;
                 const raw = String(error && error.message ? error.message : 'ログインに失敗しました。');
                 const normalized = raw.toLowerCase();
-                const message = normalized.includes('invalid credentials') || normalized.includes('invalid login')
-                    ? 'ログイン用メールアドレスまたはパスワードが正しくありません。'
-                    : normalized.includes('timeout') || raw.includes('タイムアウト')
-                        ? 'ログイン通信がタイムアウトしました。時間をおいて再度お試しください。'
-                        : normalized.includes('failed to fetch')
-                            ? '通信に失敗しました。ネットワーク接続を確認してください。'
-                            : raw;
+                const message = normalized.includes('temporarily locked') || raw.includes('ロック')
+                    ? 'ログイン失敗が5回続いたため、1時間ロックされています。時間をおいて再度お試しください。'
+                    : normalized.includes('invalid credentials') || normalized.includes('invalid login')
+                        ? 'ログイン用メールアドレスまたはパスワードが正しくありません。'
+                        : normalized.includes('timeout') || raw.includes('タイムアウト')
+                            ? 'ログイン通信がタイムアウトしました。時間をおいて再度お試しください。'
+                            : normalized.includes('failed to fetch')
+                                ? '通信に失敗しました。ネットワーク接続を確認してください。'
+                                : raw;
 
                 console.error('Member login failed:', error);
                 window.cidmAdminUi.showToast(message, 'error', 3600);
@@ -883,6 +795,7 @@
                 }
             }
         }
+
         function handleLogout() { isLoggedIn = false; showPage('home'); }
 
 
@@ -964,7 +877,6 @@
             }, true);
             document.getElementById('password-reset-close-btn')?.addEventListener('click', closePasswordResetModal);
             document.getElementById('password-reset-request-form')?.addEventListener('submit', requestMemberPasswordReset);
-            document.getElementById('password-reset-update-form')?.addEventListener('submit', updateMemberPassword);
             document.getElementById('login-modal')?.addEventListener('click', (event) => {
                 if (event.target.id === 'login-modal') {
                     closeLogin();
