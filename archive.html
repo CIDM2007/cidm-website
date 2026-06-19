@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="./CIDMchara.png">
     <link href="output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="./cidm-config.js"></script>
     <script src="./nav.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -74,8 +75,8 @@
     </footer>
 
     <script>
-        const ARCHIVE_NEWS_API_BASE = 'https://uhhhifbotqidqeceqyis.supabase.co/rest/v1/meeting_reports';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
+        const ARCHIVE_NEWS_API_BASE = `${window.CIDM_SUPABASE_URL}/rest/v1/meeting_reports`;
+        const SUPABASE_ANON_KEY = window.CIDM_SUPABASE_ANON_KEY;
         const ITEMS_PER_PAGE = 10;
 
         function escapeHtml(value) {
@@ -102,14 +103,12 @@
                 const [dataResponse, countResponse] = await Promise.all([
                     fetch(url, {
                         headers: {
-                            apikey: SUPABASE_ANON_KEY,
-                            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+                            apikey: SUPABASE_ANON_KEY
                         }
                     }),
                     fetch(`${ARCHIVE_NEWS_API_BASE}?select=id&is_visible=eq.true`, {
                         headers: {
                             apikey: SUPABASE_ANON_KEY,
-                            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
                             Prefer: 'count=exact',
                             Range: '0-0'
                         }

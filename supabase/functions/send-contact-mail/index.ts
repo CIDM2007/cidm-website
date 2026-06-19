@@ -54,7 +54,7 @@ serve(async (req) => {
     const from = Deno.env.get("RESEND_FROM_EMAIL");
     const toFromEnv = Deno.env.get("RESEND_TO_EMAIL");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!resendApiKey || !from) {
       return new Response("Missing environment variables", {
@@ -73,7 +73,6 @@ serve(async (req) => {
             method: "GET",
             headers: {
               apikey: supabaseServiceRoleKey,
-              Authorization: `Bearer ${supabaseServiceRoleKey}`,
             },
           },
         );
@@ -89,7 +88,6 @@ serve(async (req) => {
           method: "POST",
           headers: {
             apikey: supabaseServiceRoleKey,
-            Authorization: `Bearer ${supabaseServiceRoleKey}`,
             "Content-Type": "application/json",
             Prefer: "return=representation",
           },
@@ -164,7 +162,6 @@ serve(async (req) => {
           method: "PATCH",
           headers: {
             apikey: supabaseServiceRoleKey,
-            Authorization: `Bearer ${supabaseServiceRoleKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ send_status: "failed", send_error: errorText || "unknown error" }),
@@ -182,7 +179,6 @@ serve(async (req) => {
         method: "PATCH",
         headers: {
           apikey: supabaseServiceRoleKey,
-          Authorization: `Bearer ${supabaseServiceRoleKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ send_status: "sent", sent_at: new Date().toISOString(), send_error: null }),

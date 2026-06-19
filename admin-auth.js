@@ -41,12 +41,12 @@
 
     function createSupabaseClient() {
         // Initialize Supabase client from global config
-        // Both CIDM_SUPABASE_URL and CIDM_SUPABASE_ANON_KEY must be set in the calling HTML page
+        // Both CIDM_SUPABASE_URL and a public Supabase key must be set in the calling HTML page
         const SUPABASE_URL = window.CIDM_SUPABASE_URL;
-        const SUPABASE_ANON_KEY = window.CIDM_SUPABASE_ANON_KEY;
+        const SUPABASE_ANON_KEY = window.CIDM_SUPABASE_PUBLISHABLE_KEY || window.CIDM_SUPABASE_ANON_KEY;
         
         if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-            console.error('Supabase configuration is missing. Each admin page must set window.CIDM_SUPABASE_URL and window.CIDM_SUPABASE_ANON_KEY before admin-auth.js is loaded.');
+            console.error('Supabase configuration is missing. Each admin page must set window.CIDM_SUPABASE_URL and window.CIDM_SUPABASE_PUBLISHABLE_KEY before admin-auth.js is loaded.');
             return null;
         }
         

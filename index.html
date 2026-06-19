@@ -7,6 +7,7 @@
     <link rel="icon" type="image/png" href="./CIDMchara.png">
     <link href="./output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="./cidm-config.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
         
@@ -215,40 +216,14 @@
         const MEMBER_NAME_KEY = 'cidm-member-name';
         const MEMBER_COMPANY_KEY = 'cidm-member-company';
         const LOGIN_ADMIN_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-admin';
-        const LOGIN_EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/login-member';
-        const MEMBER_PASSWORD_RESET_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/member-password-reset';
-        const SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co';
-        const LOGIN_RPC_URL = `${SUPABASE_URL}/rest/v1/rpc/cidm_member_login`;
-        const LOGIN_TIMEOUT_MS = 8000;
+        const SUPABASE_URL = window.CIDM_SUPABASE_URL;
         const LOGIN_GUARD_TIMEOUT_MS = 12000;
         const LOGIN_HARD_RESET_MS = 15000;
         const TOP_NEWS_API_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/rest/v1/meeting_reports?select=event_date,category,title,details&is_visible=eq.true&order=event_date.desc&limit=5';
-        const TOP_NEWS_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q';
+        const TOP_NEWS_ANON_KEY = window.CIDM_SUPABASE_ANON_KEY;
+        const memberSupabase = window.supabase.createClient(SUPABASE_URL, TOP_NEWS_ANON_KEY);
         let memberLoginBusy = false;
         let memberLoginSeq = 0;
-
-        async function fetchJsonWithTimeout(url, options = {}, timeoutMs = LOGIN_TIMEOUT_MS) {
-            const controller = new AbortController();
-            const timerId = window.setTimeout(() => controller.abort(), timeoutMs);
-
-            try {
-                const response = await fetch(url, {
-                    ...options,
-                    signal: controller.signal
-                });
-
-                const text = await response.text();
-                const json = text ? JSON.parse(text) : {};
-                return { response, json };
-            } catch (error) {
-                if (error && error.name === 'AbortError') {
-                    throw new Error('通信がタイムアウトしました。時間をおいて再度お試しください。');
-                }
-                throw error;
-            } finally {
-                window.clearTimeout(timerId);
-            }
-        }
 
         async function withTimeout(task, timeoutMs, timeoutMessage) {
             let timerId = null;
@@ -268,64 +243,36 @@
             }
         }
 
-        function isTransportErrorMessage(message) {
-            const normalized = String(message || '').toLowerCase();
-            return normalized.includes('timeout')
-                || normalized.includes('タイムアウト')
-                || normalized.includes('failed to fetch')
-                || normalized.includes('networkerror')
-                || normalized.includes('network request failed');
-        }
 
-        async function loginMemberViaRpc(loginId, password) {
-            const { response, json } = await fetchJsonWithTimeout(LOGIN_RPC_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    apikey: TOP_NEWS_ANON_KEY,
-                    Authorization: `Bearer ${TOP_NEWS_ANON_KEY}`
-                },
-                body: JSON.stringify({
-                    p_login_id: loginId,
-                    p_password: password
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error((json && (json.error || json.message)) || 'Login failed');
-            }
-
-            const member = Array.isArray(json) ? json[0] : null;
-            if (!member) {
-                throw new Error('Invalid credentials');
-            }
-
+        function buildMemberContext(user, fallbackLoginId = '') {
+            const userMetadata = user && user.user_metadata ? user.user_metadata : {};
+            const email = String((user && user.email) || fallbackLoginId || '').trim();
             return {
-                login_id: member.login_id,
-                staff_name: member.staff_name,
-                company_name: member.company_name
+                login_id: email,
+                staff_name: String(userMetadata.full_name || userMetadata.name || userMetadata.staff_name || userMetadata.display_name || email || '').trim(),
+                company_name: String(userMetadata.company_name || userMetadata.company || '').trim()
             };
         }
 
-        async function loginMemberWithFallback(loginId, password) {
-            try {
-                const { response, json } = await fetchJsonWithTimeout(LOGIN_EDGE_FUNCTION_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login_id: loginId, password })
-                }, 5000);
+        async function loginMemberWithSupabaseAuth(loginId, password) {
+            const { data, error } = await memberSupabase.auth.signInWithPassword({
+                email: loginId,
+                password
+            });
 
-                if (!response.ok) {
-                    throw new Error((json && json.error) || 'Login failed');
-                }
-                return json || {};
-            } catch (edgeError) {
-                const edgeMessage = String(edgeError && edgeError.message ? edgeError.message : edgeError);
-                if (!isTransportErrorMessage(edgeMessage)) {
-                    throw edgeError;
-                }
-                return await loginMemberViaRpc(loginId, password);
+            if (error) {
+                throw new Error(error.message || 'Login failed');
             }
+
+            if (!data || !data.user || !data.session) {
+                throw new Error('認証セッションの取得に失敗しました。');
+            }
+
+            return data;
+        }
+
+        function getMemberPasswordResetRedirectUrl() {
+            return new URL('member-password-reset.html', window.location.href).href;
         }
 
         function setMemberLoginButtonBusy(button, busy) {
@@ -713,17 +660,12 @@
             }
 
             await window.cidmAdminUi.runWithButtonBusy(submit, async () => {
-                const { response, json } = await fetchJsonWithTimeout(MEMBER_PASSWORD_RESET_FUNCTION_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'request',
-                        login_id: loginId
-                    })
-                }, 12000);
+                const { data, error } = await memberSupabase.auth.resetPasswordForEmail(loginId, {
+                    redirectTo: getMemberPasswordResetRedirectUrl()
+                });
 
-                if (!response.ok) {
-                    throw new Error((json && (json.error || json.message)) || '再設定URLの送信に失敗しました。');
+                if (error) {
+                    throw new Error(error.message || '再設定URLの送信に失敗しました。');
                 }
 
                 window.cidmAdminUi.showToast('再設定URLを送信しました。メールをご確認ください。', 'success', 3200);
@@ -758,18 +700,19 @@
 
             try {
                 const member = await withTimeout(
-                    () => loginMemberWithFallback(loginId, password),
+                    () => loginMemberWithSupabaseAuth(loginId, password),
                     LOGIN_GUARD_TIMEOUT_MS,
                     'ログイン処理がタイムアウトしました。再度お試しください。'
                 );
 
                 if (seq !== memberLoginSeq) return;
 
+                const memberContext = buildMemberContext(member.user, loginId);
                 isLoggedIn = true;
                 sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
-                sessionStorage.setItem(MEMBER_ID_KEY, member.login_id || loginId);
-                sessionStorage.setItem(MEMBER_NAME_KEY, member.staff_name || '');
-                sessionStorage.setItem(MEMBER_COMPANY_KEY, member.company_name || '');
+                sessionStorage.setItem(MEMBER_ID_KEY, memberContext.login_id || loginId);
+                sessionStorage.setItem(MEMBER_NAME_KEY, memberContext.staff_name || '');
+                sessionStorage.setItem(MEMBER_COMPANY_KEY, memberContext.company_name || '');
                 window.location.href = 'member.html';
             } catch (error) {
                 if (seq !== memberLoginSeq) return;
@@ -808,8 +751,7 @@
             try {
                 const response = await fetch(TOP_NEWS_API_URL, {
                     headers: {
-                        apikey: TOP_NEWS_ANON_KEY,
-                        Authorization: `Bearer ${TOP_NEWS_ANON_KEY}`
+                        apikey: TOP_NEWS_ANON_KEY
                     }
                 });
                 if (!response.ok) {

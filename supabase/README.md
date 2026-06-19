@@ -60,6 +60,48 @@ npx supabase db push --linked --dry-run --yes
 npx supabase db push --linked --yes
 ```
 
+## 会員Authユーザーの一括作成（member -> auth.users）
+
+`member.auth_user_id` が未リンクの会員を対象に、`login_id` メールで `auth.users` を作成し、
+作成後に `member.auth_user_id` を再リンクするスクリプトを追加しています。
+
+- `supabase/provision-member-auth-users.ps1`
+
+### Dry Run（対象確認のみ）
+
+```powershell
+./supabase/provision-member-auth-users.ps1 -Limit 5 -DryRun
+```
+
+### 実行（5件のパイロット）
+
+```powershell
+$env:SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co'
+$env:SUPABASE_SERVICE_ROLE_KEY = '<legacy-service-role-jwt>'
+./supabase/provision-member-auth-users.ps1 -Limit 5
+```
+
+### 全件実行
+
+```powershell
+$env:SUPABASE_URL = 'https://uhhhifbotqidqeceqyis.supabase.co'
+$env:SUPABASE_SERVICE_ROLE_KEY = '<legacy-service-role-jwt>'
+./supabase/provision-member-auth-users.ps1 -All
+```
+
+注意:
+
+- `SUPABASE_SERVICE_ROLE_KEY` は機密情報です。共有やコミットはしないでください。
+- このスクリプトは `/auth/v1/admin/users` を直接呼ぶため、`sb_secret_...` ではなく JWT 形式の legacy `service_role` キーが必要です。
+- スクリプトはランダムパスワードでユーザーを作成し、`email_confirm=true` で登録します。
+- 作成後に `member.auth_user_id` をメール一致で更新します。
+
+## legacy JWT キー無効化に向けた設定方針
+
+- フロントエンド: `cidm-config.js` の `window.CIDM_SUPABASE_PUBLISHABLE_KEY` に `sb_publishable_...` を設定
+- 互換用に `window.CIDM_SUPABASE_ANON_KEY` は `CIDM_SUPABASE_PUBLISHABLE_KEY` の別名として残している
+- Edge Functions: `SUPABASE_SECRET_KEY` を優先して読むよう調整済み。未移行環境では `SUPABASE_SERVICE_ROLE_KEY` にフォールバック
+
 ## 現在のブロッカー
 
 このワークスペースで `npx supabase link --project-ref uhhhifbotqidqeceqyis` を実行したところ、

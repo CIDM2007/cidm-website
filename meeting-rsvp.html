@@ -6,6 +6,7 @@
     <title>会議出欠回答 | CIDM</title>
     <link rel="icon" type="image/png" href="./CIDMchara.png">
     <link href="./output.css" rel="stylesheet">
+    <script src="./cidm-config.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,8 +65,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
     const supabaseClient = window.supabase.createClient(
-        'https://uhhhifbotqidqeceqyis.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVoaGhpZmJvdHFpZHFlY2VxeWlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1ODc4NTQsImV4cCI6MjA5MTE2Mzg1NH0.D_mXbECP3g4ODa2r-OQG92eHiKYWqCjdFAxga91ZC8Q'
+        window.CIDM_SUPABASE_URL,
+        window.CIDM_SUPABASE_ANON_KEY
     );
 
     const form = document.getElementById('rsvp-form');

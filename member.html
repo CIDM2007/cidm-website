@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="./cidm-config.js"></script>
     <script src="./nav.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500;700&display=swap');
 
@@ -105,6 +106,7 @@
         const MEMBER_NAME_KEY = 'cidm-member-name';
         const MEMBER_COMPANY_KEY = 'cidm-member-company';
         const EDGE_FUNCTION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/get-member-data';
+        const memberSupabase = window.supabase.createClient(window.CIDM_SUPABASE_URL, window.CIDM_SUPABASE_ANON_KEY);
 
         const fallbackNewsItems = [
             {
@@ -138,11 +140,26 @@
             }
         ];
 
-        const memberId = sessionStorage.getItem(MEMBER_ID_KEY) || '';
-        const memberName = sessionStorage.getItem(MEMBER_NAME_KEY) || '';
-        const memberCompany = sessionStorage.getItem(MEMBER_COMPANY_KEY) || '';
-        const greeting = document.getElementById('member-greeting');
-        if (greeting) {
+        let memberId = sessionStorage.getItem(MEMBER_ID_KEY) || '';
+        let memberName = sessionStorage.getItem(MEMBER_NAME_KEY) || '';
+        let memberCompany = sessionStorage.getItem(MEMBER_COMPANY_KEY) || '';
+
+        function syncMemberSessionStorage(context = {}) {
+            memberId = String(context.memberId || '').trim();
+            memberName = String(context.memberName || '').trim();
+            memberCompany = String(context.memberCompany || '').trim();
+
+            if (memberId) {
+                sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
+                sessionStorage.setItem(MEMBER_ID_KEY, memberId);
+                sessionStorage.setItem(MEMBER_NAME_KEY, memberName);
+                sessionStorage.setItem(MEMBER_COMPANY_KEY, memberCompany);
+            }
+        }
+
+        function renderGreeting() {
+            const greeting = document.getElementById('member-greeting');
+            if (!greeting) return;
             if (memberName) {
                 greeting.textContent = `${memberCompany || memberId} / ${memberName} 様、ようこそ。`;
             } else if (memberId) {
@@ -151,6 +168,39 @@
                 greeting.textContent = '会員向け情報を表示しています。';
             }
         }
+
+        function buildMemberContextFromUser(user) {
+            const userMetadata = user && user.user_metadata ? user.user_metadata : {};
+            const email = String((user && user.email) || '').trim();
+            return {
+                memberId: email,
+                memberName: String(userMetadata.full_name || userMetadata.name || userMetadata.staff_name || userMetadata.display_name || email || '').trim(),
+                memberCompany: String(userMetadata.company_name || userMetadata.company || '').trim()
+            };
+        }
+
+        async function resolveMemberContext() {
+            try {
+                const { data: { user } } = await memberSupabase.auth.getUser();
+                if (user) {
+                    return buildMemberContextFromUser(user);
+                }
+            } catch (error) {
+                console.warn('Supabase Auth session check failed:', error);
+            }
+
+            if (sessionStorage.getItem(MEMBER_AUTH_KEY) === '1' || memberId) {
+                return {
+                    memberId,
+                    memberName,
+                    memberCompany
+                };
+            }
+
+            return null;
+        }
+
+        renderGreeting();
 
         function formatDate(dateString) {
             if (!dateString) return '';
@@ -324,8 +374,7 @@
             const url = `${supabaseUrl}/rest/v1/meeting_reports?select=event_date,title,details,detail_text,attachment_urls,photo_urls,is_visible&is_visible=eq.true&order=event_date.desc&limit=3`;
             const response = await fetchWithTimeout(url, {
                 headers: {
-                    apikey: anonKey,
-                    Authorization: `Bearer ${anonKey}`
+                    apikey: anonKey
                 }
             }, 12000);
 
@@ -359,18 +408,32 @@
             handleLogout();
         });
 
-        function handleLogout() {
+        async function handleLogout() {
+            try {
+                await memberSupabase.auth.signOut({ scope: 'local' });
+            } catch (error) {
+                console.warn('Supabase logout failed:', error);
+            }
+
             sessionStorage.removeItem(MEMBER_AUTH_KEY);
             sessionStorage.removeItem(MEMBER_ID_KEY);
             sessionStorage.removeItem(MEMBER_NAME_KEY);
             sessionStorage.removeItem(MEMBER_COMPANY_KEY);
             alert('ログアウトしました。');
-            // AUTH_BYPASS_START — 認証スキップ中
             window.location.href = 'index.html';
-            // AUTH_BYPASS_END
         }
 
-        loadMemberNews();
+        document.addEventListener('DOMContentLoaded', async () => {
+            const memberContext = await resolveMemberContext();
+            if (!memberContext) {
+                window.location.href = 'index.html?memberLogin=1';
+                return;
+            }
+
+            syncMemberSessionStorage(memberContext);
+            renderGreeting();
+            loadMemberNews();
+        });
     </script>
 </body>
 </html>
