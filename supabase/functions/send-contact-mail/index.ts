@@ -54,7 +54,7 @@ serve(async (req) => {
     const from = Deno.env.get("RESEND_FROM_EMAIL");
     const toFromEnv = Deno.env.get("RESEND_TO_EMAIL");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const supabaseServiceRoleKey = Deno.env.get("CIDM_SUPABASE_SECRET_KEY") || Deno.env.get("SUPABASE_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!resendApiKey || !from) {
       return new Response("Missing environment variables", {
