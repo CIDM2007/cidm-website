@@ -299,22 +299,22 @@
             const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
             if (!ok) return;
 
-            const { data, error } = await supabaseClient.from('member').select('id, login_id, email, staff_email, company_name, representative_name').eq('id', memberId).single();
+            const { data, error } = await supabaseClient.from('member').select('id, email, company_name, representative_name').eq('id', memberId).single();
             if (error || !data) {
                 window.cidmAdminUi.showToast('会員情報の取得に失敗しました。', 'error', 2800);
                 return;
             }
 
-            const loginId = String(data.login_id || data.email || data.staff_email || '').trim();
-            if (!loginId) {
-                window.cidmAdminUi.showToast('ログイン用メールアドレスが未設定です。', 'error', 2800);
+            const email = String(data.email || '').trim();
+            if (!email) {
+                window.cidmAdminUi.showToast('メールアドレスが未設定です。', 'error', 2800);
                 return;
             }
 
             const temporaryPassword = randomPassword(12);
             const { error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
                 p_member_id: memberId,
-                p_login_id: loginId,
+                p_login_id: email,
                 p_password: temporaryPassword
             });
             if (loginError) {
@@ -329,8 +329,8 @@
 
             try {
                 await window.cidmAdminMail.sendMemberLoginMail({
-                    email: loginId,
-                    login_id: loginId,
+                    email: email,
+                    login_id: email,
                     password: temporaryPassword,
                     member_name: data.representative_name,
                     company_name: data.company_name,

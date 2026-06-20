@@ -198,7 +198,6 @@
     if (memberId && backToMemberLink) {
         backToMemberLink.href = `admin-members.html?id=${memberId}`;
     }
-    let originalLoginId = '';
     let loginRpcAvailable = true;
     let contactIndex = 0;
 
@@ -300,8 +299,6 @@
         form.fax_number.value = data.fax_number || '';
         form.email.value = data.email || '';
         form.biko.value = data.biko || '';
-        form.login_id.value = data.login_id || '';
-        originalLoginId = data.login_id || '';
 
         const { data: contactData } = await supabaseClient
             .from('member_contacts')
@@ -331,16 +328,11 @@
             p_member_id: memberId
         });
         if (!loginSettingsError && Array.isArray(loginSettings) && loginSettings[0]) {
-            form.login_id.value = loginSettings[0].login_id || '';
-            originalLoginId = loginSettings[0].login_id || '';
             renderPasswordStatus(loginSettings[0]);
         } else {
             if (loginSettingsError && String(loginSettingsError.message || '').includes('admin access required')) {
                 loginRpcAvailable = false;
                 passwordStatus.textContent = '認証バイパス中のためログイン情報は更新できません。';
-                form.login_id.required = false;
-                form.login_id.readOnly = true;
-                form.login_id.title = '認証バイパス中のため編集できません';
                 memberPasswordInput.disabled = true;
                 memberPasswordToggle.disabled = true;
                 memberPasswordToggle.style.opacity = '0.55';
@@ -374,6 +366,8 @@
             }
 
             const primaryContact = contacts.find(c => c.is_primary) || contacts[0];
+            const email = form.email.value.trim();
+            const memberPassword = form.member_password.value.trim();
 
             const updateData = {
                 division_flag: form.division_flag.value || '会員',
@@ -388,22 +382,15 @@
                 address: form.address.value.trim(),
                 phone_number: form.phone_number.value.trim(),
                 fax_number: form.fax_number.value.trim() || null,
-                email: form.email.value.trim(),
+                email: email,
                 staff_name: primaryContact.name,
                 staff_mobile: primaryContact.phone,
                 staff_email: primaryContact.email,
                 biko: form.biko.value.trim()
             };
 
-            const loginId = form.login_id.value.trim();
-            const memberPassword = form.member_password.value.trim();
-
-            if (!updateData.company_name || !updateData.representative_name || !updateData.email || (loginRpcAvailable && !loginId)) {
+            if (!updateData.company_name || !updateData.representative_name || !email) {
                 window.cidmAdminUi.showToast('必須項目を入力してください。', 'error', 2200);
-                return;
-            }
-            if (loginRpcAvailable && !form.login_id.checkValidity()) {
-                window.cidmAdminUi.showToast('ログイン用メールアドレスを正しく入力してください。', 'error', 2600);
                 return;
             }
             if (memberPassword && memberPassword.length < 8) {
@@ -418,14 +405,14 @@
             }
 
             let updatedLoginSettings = null;
-            const shouldUpdateLogin = loginRpcAvailable && (loginId !== originalLoginId || !!memberPassword);
-            if (!loginRpcAvailable && (loginId !== originalLoginId || !!memberPassword)) {
+            const shouldUpdateLogin = loginRpcAvailable && !!memberPassword;
+            if (!loginRpcAvailable && !!memberPassword) {
                 window.cidmAdminUi.showToast('認証バイパス中のためログイン情報の更新はスキップしました。', 'info', 2800);
             }
             if (shouldUpdateLogin) {
                 const { data: loginData, error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
                     p_member_id: memberId,
-                    p_login_id: loginId,
+                    p_login_id: email,
                     p_password: memberPassword || null
                 });
                 if (loginError) {
@@ -433,7 +420,6 @@
                     return;
                 }
                 updatedLoginSettings = loginData;
-                originalLoginId = loginId;
             }
 
             let canSyncContacts = true;
@@ -469,8 +455,8 @@
                 try {
                     if (window.cidmAdminMail?.sendMemberLoginMail) {
                         await window.cidmAdminMail.sendMemberLoginMail({
-                            email: loginId,
-                            login_id: loginId,
+                            email: email,
+                            login_id: email,
                             password: memberPassword,
                             member_name: form.representative_name.value.trim(),
                             company_name: form.company_name.value.trim(),

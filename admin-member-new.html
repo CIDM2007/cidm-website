@@ -132,18 +132,17 @@
                         <div class="form-group"><label for="phone_number">電話番号</label><input type="text" id="phone_number" name="phone_number" placeholder="03-0000-0000"></div>
                         <div class="form-group"><label for="fax_number">FAX番号</label><input type="text" id="fax_number" name="fax_number" placeholder="03-0000-0000"></div>
                     </div>
-                    <div class="form-group"><label for="email">Email（会社代表） <span style="color:#f87171">*</span></label><input type="email" id="email" name="email" required></div>
+                    <div class="form-group"><label for="email">Email（会社代表・ログイン用） <span style="color:#f87171">*</span></label><input type="email" id="email" name="email" required></div>
                 </div>
                 <div class="form-section">
                     <p class="section-label"><i class="fa-solid fa-key"></i> ログイン情報</p>
-                    <div class="form-group"><label for="login_id">ログイン用メールアドレス <span style="color:#f87171">*</span></label><input type="email" id="login_id" name="login_id" required placeholder="login@example.com" value="" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
                     <div class="form-group">
                         <label for="initial_password">初期パスワード <span style="color:#f87171">*</span></label>
                         <div style="position:relative;">
                             <input type="password" id="initial_password" name="initial_password" required minlength="8" placeholder="8文字以上" style="padding-right:4.5rem;" value="" autocomplete="new-password" autocapitalize="off" spellcheck="false">
                             <button type="button" id="initial-password-toggle" style="position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); border:none; background:transparent; color:#64748b; font-size:0.78rem; font-weight:700; cursor:pointer;">表示</button>
                         </div>
-                        <p class="help" style="margin-top:0.35rem; color:#64748b; font-size:0.78rem;">登録完了後、この初期情報をメールで送信します。</p>
+                        <p class="help" style="margin-top:0.35rem; color:#64748b; font-size:0.78rem;">登録完了後、Email とこのパスワードをメールで送信します。</p>
                     </div>
                 </div>
                 <div class="form-section">
@@ -276,15 +275,11 @@
                 staff_email:         primaryContact.email || null,
                 biko:                form.biko.value.trim()
             };
-            const loginId = form.login_id.value.trim();
+            const email = data.email;
             const initialPassword = form.initial_password.value.trim();
 
-            if (!data.company_name || !data.representative_name || !data.email || !loginId || !initialPassword) {
+            if (!data.company_name || !data.representative_name || !email || !initialPassword) {
                 window.cidmAdminUi.showToast('必須項目を入力してください。', 'error', 2200);
-                return;
-            }
-            if (!form.login_id.checkValidity()) {
-                window.cidmAdminUi.showToast('ログイン用メールアドレスを正しく入力してください。', 'error', 2600);
                 return;
             }
             if (initialPassword.length < 8) {
@@ -301,7 +296,7 @@
             // ログイン情報設定
             const { error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
                 p_member_id: insertedMember.id,
-                p_login_id: loginId,
+                p_login_id: email,
                 p_password: initialPassword
             });
             if (loginError) {
@@ -329,8 +324,8 @@
             try {
                 if (window.cidmAdminMail?.sendMemberLoginMail) {
                     await window.cidmAdminMail.sendMemberLoginMail({
-                        email: loginId,
-                        login_id: loginId,
+                        email: email,
+                        login_id: email,
                         password: initialPassword,
                         member_name: data.representative_name,
                         company_name: data.company_name,
