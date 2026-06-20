@@ -1,56 +1,131 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from "jsr:@supabase/supabase-js@2"
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('CIDM_SUPABASE_SECRET_KEY') || Deno.env.get('SUPABASE_SECRET_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+}
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    },
+  })
+}
 
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' }
+function firstFilled(source: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = source[key]
+    if (typeof value === "string" && value.trim()) {
+      return value.trim()
+    }
+  }
+  return ""
+}
+
+async function notifyApplicationMail(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  payload: Record<string, unknown>,
+  registrationResult: Record<string, unknown>,
+) {
+  const response = await fetch(`${supabaseUrl}/functions/v1/send-application-mail`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${serviceRoleKey}`,
+      apikey: serviceRoleKey,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...payload,
+      application_status: registrationResult.application_status,
+      member_id: registrationResult.member_id,
+      registration_mode: registrationResult.mode,
+    }),
+  })
+
+  if (!response.ok) {
+    const responseText = await response.text()
+    throw new Error(`send-application-mail failed: ${response.status} ${responseText}`)
+  }
+}
+
+Deno.serve(async (request) => {
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders,
     })
+  }
+
+  if (request.method !== "POST") {
+    return jsonResponse({ error: "Method not allowed" }, 405)
   }
 
   try {
-    const applicationData = await req.json()
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
+    const serviceRoleKey =
+      Deno.env.get("CIDM_SUPABASE_SECRET_KEY") ??
+      Deno.env.get("SUPABASE_SECRET_KEY") ??
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+      ""
 
-    // Insert into applications table
-    const { error: insertError } = await supabase.from('applications').insert([applicationData])
-
-    if (insertError) {
-      return new Response(JSON.stringify({ error: insertError.message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      })
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error("Supabase service credentials are not configured")
     }
 
-    // Send mail
-    const mailResponse = await fetch('https://uhhhifbotqidqeceqyis.functions.supabase.co/send-application-mail', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(applicationData)
+    const payload = await request.json()
+    const companyName = firstFilled(payload, ["company_name", "company", "companyName", "name"])
+    const contactName = firstFilled(payload, ["contact_name", "staff_name", "applicant_name"])
+    const contactEmail = firstFilled(payload, ["contact_email", "email", "staff_email", "applicant_email"])
+
+    if (!companyName) {
+      return jsonResponse({ error: "company_name is required" }, 400)
+    }
+
+    if (!contactName) {
+      return jsonResponse({ error: "contact_name is required" }, 400)
+    }
+
+    if (!contactEmail) {
+      return jsonResponse({ error: "contact_email is required" }, 400)
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false },
     })
 
-    if (!mailResponse.ok) {
-      console.error('Mail send failed')
+    const { data, error } = await supabase.rpc("cidm_submit_application", {
+      p_payload: payload,
+    })
+
+    if (error) {
+      throw error
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      }
+    const registrationResult = (Array.isArray(data) ? data[0] : data) ?? {}
+    let mailWarning: string | null = null
+
+    try {
+      await notifyApplicationMail(supabaseUrl, serviceRoleKey, payload, registrationResult)
+    } catch (mailError) {
+      mailWarning = mailError instanceof Error ? mailError.message : String(mailError)
+      console.error(mailWarning)
+    }
+
+    return jsonResponse({
+      ok: true,
+      member_id: registrationResult.member_id ?? null,
+      application_status: registrationResult.application_status ?? "未審査",
+      mode: registrationResult.mode ?? "created",
+      mail_warning: mailWarning,
     })
   } catch (error) {
-    console.error('Error submitting application:', error)
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    })
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(message)
+    return jsonResponse({ error: message }, 500)
   }
-}
+})
