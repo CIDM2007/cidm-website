@@ -75,9 +75,20 @@
                 </div>
                 <h3 class="text-2xl font-bold serif text-slate-800">会員ログイン</h3>
             </div>
+            
+            <!-- ログインタイプ選択タブ -->
+            <div class="flex gap-2 mb-6 border-b border-slate-200">
+                <button type="button" id="tab-member" class="login-type-tab active px-4 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 -mb-1 cursor-pointer transition" data-type="member">
+                    <i class="fa-solid fa-building mr-2"></i>会社代表
+                </button>
+                <button type="button" id="tab-staff" class="login-type-tab px-4 py-3 text-sm font-bold text-slate-500 border-b-2 border-transparent -mb-1 cursor-pointer transition hover:text-slate-700" data-type="staff">
+                    <i class="fa-solid fa-user mr-2"></i>担当者
+                </button>
+            </div>
+            
             <form id="login-form" class="space-y-5 md:space-y-6">
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1">Login Email</label>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2.5 ml-1" id="login-label">Login Email</label>
                     <input type="email" id="member-id" required class="w-full border border-slate-200 px-4 py-4 rounded-xl outline-none focus:border-blue-400 transition" placeholder="login@example.com" autocomplete="off" autocapitalize="off" spellcheck="false">
                 </div>
                 <div>
@@ -674,6 +685,8 @@
             }, '送信中...');
         }
 
+        let currentLoginType = 'member'; // 'member' or 'staff'
+
         async function handleLogin(e) {
             e.preventDefault();
             const loginBtn = document.getElementById('member-login-btn');
@@ -699,20 +712,57 @@
             }, LOGIN_HARD_RESET_MS);
 
             try {
-                const member = await withTimeout(
-                    () => loginMemberWithSupabaseAuth(loginId, password),
-                    LOGIN_GUARD_TIMEOUT_MS,
-                    'ログイン処理がタイムアウトしました。再度お試しください。'
-                );
+                let member;
+                
+                if (currentLoginType === 'staff') {
+                    // 担当者ログイン: cidm_staff_login RPC を使用
+                    const { data, error } = await memberSupabase.rpc('cidm_staff_login', {
+                        p_login_id: loginId,
+                        p_password: password
+                    });
+
+                    if (error || !data || data.length === 0) {
+                        throw new Error('Invalid credentials');
+                    }
+
+                    // スタッフログイン結果を会員フォーマットに変換
+                    member = {
+                        user: { id: data[0].staff_id },
+                        data: {
+                            id: data[0].member_id,
+                            login_id: data[0].login_id,
+                            staff_name: data[0].staff_name,
+                            company_name: data[0].company_name,
+                            member_type: data[0].member_type
+                        }
+                    };
+                } else {
+                    // 会社代表ログイン: cidm_member_login RPC を使用（既存）
+                    member = await withTimeout(
+                        () => loginMemberWithSupabaseAuth(loginId, password),
+                        LOGIN_GUARD_TIMEOUT_MS,
+                        'ログイン処理がタイムアウトしました。再度お試しください。'
+                    );
+                }
 
                 if (seq !== memberLoginSeq) return;
 
                 const memberContext = buildMemberContext(member.user, loginId);
+                // スタッフログインの場合、補足情報を追加
+                if (currentLoginType === 'staff' && member.data) {
+                    memberContext.login_type = 'staff';
+                    memberContext.member_type = member.data.member_type;
+                }
+
                 isLoggedIn = true;
                 sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
                 sessionStorage.setItem(MEMBER_ID_KEY, memberContext.login_id || loginId);
                 sessionStorage.setItem(MEMBER_NAME_KEY, memberContext.staff_name || '');
                 sessionStorage.setItem(MEMBER_COMPANY_KEY, memberContext.company_name || '');
+                if (currentLoginType === 'staff') {
+                    sessionStorage.setItem('MEMBER_LOGIN_TYPE', 'staff');
+                    sessionStorage.setItem('MEMBER_TYPE', member.data.member_type || '');
+                }
                 window.location.href = 'member.html';
             } catch (error) {
                 if (seq !== memberLoginSeq) return;
@@ -795,6 +845,33 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // ログインタイプタブのハンドラー
+            document.querySelectorAll('.login-type-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    currentLoginType = tab.dataset.type;
+                    
+                    // タブの表示を切り替え
+                    document.querySelectorAll('.login-type-tab').forEach(t => {
+                        t.classList.remove('active', 'text-blue-600', 'border-blue-600');
+                        t.classList.add('text-slate-500', 'border-transparent', 'hover:text-slate-700');
+                    });
+                    tab.classList.remove('text-slate-500', 'border-transparent', 'hover:text-slate-700');
+                    tab.classList.add('active', 'text-blue-600', 'border-blue-600');
+
+                    // ラベルとプレースホルダーを更新
+                    const label = document.getElementById('login-label');
+                    const input = document.getElementById('member-id');
+                    if (currentLoginType === 'staff') {
+                        label.textContent = 'Login Email（担当者）';
+                        input.placeholder = 'staff@example.com';
+                    } else {
+                        label.textContent = 'Login Email';
+                        input.placeholder = 'login@example.com';
+                    }
+                    input.focus();
+                });
+            });
+
             document.getElementById('login-close-btn')?.addEventListener('click', closeLogin);
             document.getElementById('login-form')?.addEventListener('submit', handleLogin);
             document.getElementById('open-password-reset-btn')?.addEventListener('click', handleOpenPasswordResetFromLogin);

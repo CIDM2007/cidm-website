@@ -431,9 +431,48 @@
             }
 
             syncMemberSessionStorage(memberContext);
+            
+            // 権限制御: member_type に応じてコンテンツを制限
+            const memberType = sessionStorage.getItem('MEMBER_TYPE') || memberContext.member_type || '';
+            applyAccessControl(memberType);
+            
             renderGreeting();
             loadMemberNews();
         });
+
+        function applyAccessControl(memberType) {
+            // member_type が '正会員' でない場合、特定の要素を非表示にする
+            const restrictedElements = document.querySelectorAll('[data-restricted-to="正会員"]');
+            
+            if (memberType !== '正会員') {
+                restrictedElements.forEach(el => {
+                    el.style.display = 'none';
+                });
+                
+                // 権限制限の通知を表示
+                const memberGreeting = document.getElementById('member-greeting');
+                if (memberGreeting) {
+                    const restrictionNotice = document.createElement('div');
+                    restrictionNotice.style.marginTop = '1rem';
+                    restrictionNotice.style.padding = '0.75rem 1rem';
+                    restrictionNotice.style.borderRadius = '0.5rem';
+                    restrictionNotice.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+                    restrictionNotice.style.fontSize = '0.875rem';
+                    restrictionNotice.innerHTML = `
+                        <i class="fa-solid fa-info-circle mr-2"></i>
+                        <span>会員種別が「${memberType}」のため、一部の機能がご利用いただけません。</span>
+                    `;
+                    memberGreeting.appendChild(restrictionNotice);
+                }
+            } else {
+                // 正会員の場合、data-member-type-indicator を更新
+                const indicator = document.getElementById('member-type-indicator');
+                if (indicator) {
+                    indicator.textContent = '（正会員 - フルアクセス）';
+                    indicator.style.color = '#16a34a';
+                }
+            }
+        }
     </script>
 </body>
 </html>

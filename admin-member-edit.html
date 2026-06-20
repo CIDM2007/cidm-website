@@ -151,6 +151,10 @@
                 <div id="contacts-list"></div>
                 <button type="button" id="add-contact-btn" class="contact-add-btn">+ 担当者を追加</button>
             </div>
+            <div id="staff-login-section" style="display:none;">
+                <p style="font-size:0.78rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:#3b82f6; margin-bottom:1rem;"><i class="fa-solid fa-key"></i> 担当者ログイン設定</p>
+                <div id="staff-login-list" style="space-y:0.75rem;"></div>
+            </div>
             <div class="form-group"><label for="biko">備考</label><textarea id="biko" name="biko"></textarea></div>
             <div class="form-actions">
                 <button type="button" id="cancel-btn" class="btn btn-cancel">キャンセル</button>
@@ -164,6 +168,7 @@
     <script src="./admin-auth.js"></script>
     <script src="./admin-ui.js"></script>
     <script src="./admin-login-mail.js"></script>
+    <script src="./admin-staff-login.js"></script>
     <script>
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
 
@@ -232,6 +237,9 @@
         const row = document.createElement('div');
         row.className = 'contact-row';
         row.dataset.idx = idx;
+        if (contact?.id) {
+            row.dataset.contactId = contact.id;
+        }
         const num = contactsList.children.length + 1;
         row.innerHTML = `
             <div class="contact-head">
@@ -323,6 +331,9 @@
         if (!form.querySelector('input[name=primary_contact]:checked') && contactsList.children.length > 0) {
             contactsList.children[0].querySelector('input[name=primary_contact]').checked = true;
         }
+
+        // 担当者ログイン設定を表示
+        await renderStaffLoginSettings();
 
         const { data: loginSettings, error: loginSettingsError } = await supabaseClient.rpc('cidm_get_member_login_settings', {
             p_member_id: memberId
@@ -474,6 +485,182 @@
             setTimeout(() => { window.location.href = `admin-members.html?id=${memberId}`; }, 500);
         }, '更新中...');
     });
+
+    // ============================================================
+    // 担当者ログイン設定機能
+    // ============================================================
+    async function renderStaffLoginSettings() {
+        const section = document.getElementById('staff-login-section');
+        const listContainer = document.getElementById('staff-login-list');
+        if (!section || !listContainer) return;
+
+        // contactsListから各contactのデータを取得
+        const contactRows = contactsList.querySelectorAll('.contact-row');
+        if (contactRows.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+
+        section.style.display = 'block';
+        listContainer.innerHTML = '';
+
+        for (const row of contactRows) {
+            const contactNameEl = row.querySelector('.contact-label');
+            const contactNameInput = row.querySelector('input[name="contact_name[]"]');
+            const contactPhoneInput = row.querySelector('input[name="contact_phone[]"]');
+            const contactEmailInput = row.querySelector('input[name="contact_email[]"]');
+            
+            const contactName = contactNameInput?.value?.trim() || contactNameEl?.textContent?.trim() || '';
+            const contactEmail = contactEmailInput?.value?.trim() || '';
+            
+            if (!contactEmail) continue; // メールアドレスがない場合はスキップ
+
+            // このcontactのIDを取得（実は、新規追加時はIDが無いので注意が必要）
+            // 既存の contact.id が有る場合は data属性に保存されているはず
+            let contactId = row.dataset.contactId;
+            
+            // contactIdが無い場合は、フォーム送信時にDB側で作成されるため、新規行の場合は処理をスキップ
+            if (!contactId || contactId === 'undefined') {
+                continue;
+            }
+
+            const staffLoginDiv = document.createElement('div');
+            staffLoginDiv.style.marginBottom = '1rem';
+            staffLoginDiv.style.padding = '1rem';
+            staffLoginDiv.style.border = '1px solid #e2e8f0';
+            staffLoginDiv.style.borderRadius = '0.5rem';
+            staffLoginDiv.style.backgroundColor = '#f8fafc';
+
+            // 担当者のログイン設定を取得
+            const { data: staffSettings, error: staffError } = await supabaseClient.rpc(
+                'cidm_get_staff_login_settings',
+                { p_contact_id: contactId }
+            );
+
+            const settings = staffError || !staffSettings || staffSettings.length === 0 ? null : staffSettings[0];
+            const hasPassword = settings?.has_password || false;
+            const loginId = settings?.login_id || contactEmail;
+            const updatedAt = settings?.updated_at ? new Date(settings.updated_at).toLocaleString('ja-JP') : '';
+
+            staffLoginDiv.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
+                    <div style="flex:1;">
+                        <div style="font-weight:700;margin-bottom:0.3rem;">${window.cidmAdminUi.sanitizeText(contactName)}</div>
+                        <div style="font-size:0.85rem;color:#64748b;">${window.cidmAdminUi.sanitizeText(contactEmail)}</div>
+                    </div>
+                    <div style="text-align:right;font-size:0.78rem;">
+                        <div style="color:${hasPassword ? '#16a34a' : '#ef4444'};font-weight:600;">
+                            ${hasPassword ? '<i class="fa-solid fa-check"></i> 設定済み' : '未設定'}
+                        </div>
+                        ${updatedAt ? `<div style="color:#94a3b8;margin-top:0.2rem;font-size:0.75rem;">最終: ${updatedAt}</div>` : ''}
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                    <button type="button" class="staff-update-btn btn btn-submit" style="flex:1;min-width:150px;font-size:0.78rem;padding:0.5rem 0.75rem;background:#3b82f6;" data-contact-id="${contactId}" data-contact-email="${window.cidmAdminUi.sanitizeText(contactEmail)}" data-contact-name="${window.cidmAdminUi.sanitizeText(contactName)}">
+                        <i class="fa-solid fa-key"></i> パスワード設定
+                    </button>
+                    ${hasPassword ? `<button type="button" class="staff-resend-btn btn btn-submit" style="flex:1;min-width:150px;font-size:0.78rem;padding:0.5rem 0.75rem;background:#8b5cf6;" data-contact-id="${contactId}" data-contact-email="${window.cidmAdminUi.sanitizeText(contactEmail)}" data-contact-name="${window.cidmAdminUi.sanitizeText(contactName)}">
+                        <i class="fa-solid fa-paper-plane"></i> メール再送
+                    </button>` : ''}
+                </div>
+            `;
+
+            listContainer.appendChild(staffLoginDiv);
+        }
+
+        // ボタンのイベントリスナーを追加
+        document.querySelectorAll('.staff-update-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const contactId = btn.dataset.contactId;
+                const contactEmail = btn.dataset.contactEmail;
+                const contactName = btn.dataset.contactName;
+
+                // パスワード入力ダイアログ
+                const newPassword = prompt('新しいパスワードを入力してください（8文字以上）:');
+                if (!newPassword) return;
+                
+                if (newPassword.length < 8) {
+                    window.cidmAdminUi.showToast('パスワードは8文字以上で設定してください。', 'error', 2200);
+                    return;
+                }
+
+                await window.cidmAdminUi.runWithButtonBusy(btn, async () => {
+                    const { error } = await supabaseClient.rpc('cidm_admin_set_staff_login', {
+                        p_contact_id: contactId,
+                        p_login_id: contactEmail,
+                        p_password: newPassword
+                    });
+
+                    if (error) {
+                        throw new Error(error.message || 'パスワード設定に失敗しました');
+                    }
+
+                    // メール送信
+                    const mailResult = await window.cidmAdminStaffLogin.sendStaffLoginMail({
+                        staff_email: contactEmail,
+                        staff_name: contactName,
+                        company_name: form.company_name.value.trim(),
+                        login_id: contactEmail,
+                        password: newPassword,
+                        login_url: new URL('index.html', window.location.href).href
+                    });
+
+                    if (!mailResult.ok) {
+                        window.cidmAdminUi.showToast('パスワードは設定しましたが、メール送信に失敗しました: ' + (mailResult.error || 'unknown'), 'error', 3200);
+                        return;
+                    }
+
+                    window.cidmAdminUi.showToast('パスワードを設定し、メールを送信しました。', 'success', 2200);
+                    await renderStaffLoginSettings();
+                }, '設定中...');
+            });
+        });
+
+        document.querySelectorAll('.staff-resend-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const contactId = btn.dataset.contactId;
+                const contactEmail = btn.dataset.contactEmail;
+                const contactName = btn.dataset.contactName;
+
+                await window.cidmAdminUi.runWithButtonBusy(btn, async () => {
+                    const tempPassword = window.cidmAdminStaffLogin.generateTemporaryPassword(12);
+
+                    // パスワードを更新
+                    const { error: pwError } = await supabaseClient.rpc('cidm_admin_set_staff_login', {
+                        p_contact_id: contactId,
+                        p_login_id: contactEmail,
+                        p_password: tempPassword
+                    });
+
+                    if (pwError) {
+                        throw new Error(pwError.message || 'パスワード更新に失敗しました');
+                    }
+
+                    // メール送信
+                    const mailResult = await window.cidmAdminStaffLogin.sendStaffLoginMail({
+                        staff_email: contactEmail,
+                        staff_name: contactName,
+                        company_name: form.company_name.value.trim(),
+                        login_id: contactEmail,
+                        password: tempPassword,
+                        login_url: new URL('index.html', window.location.href).href
+                    });
+
+                    if (!mailResult.ok) {
+                        throw new Error(mailResult.error || 'メール送信に失敗しました');
+                    }
+
+                    window.cidmAdminUi.showToast('一時パスワードをメールで送信しました。', 'success', 2200);
+                    await renderStaffLoginSettings();
+                }, '送信中...');
+            });
+        });
+    }
+    
     </script>
 
     <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
