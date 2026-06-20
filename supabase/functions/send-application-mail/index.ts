@@ -41,6 +41,15 @@ serve(async (req) => {
       staff_title,
       staff_tel,
       staff_email,
+      phone_number,
+      fax_number,
+      department,
+      staff_mobile,
+      staff_phone_direct,
+      is_cidm_contact,
+      receive_invite_mail,
+      receive_invoice_mail,
+      contact_biko,
     } = payload;
 
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
@@ -63,10 +72,19 @@ serve(async (req) => {
       `所在地: ${address ?? ""}`,
       `Webサイト: ${website ?? ""}`,
       `責任者名: ${exec_name ?? ""}`,
+      `会社電話番号: ${phone_number ?? ""}`,
+      `会社FAX番号: ${fax_number ?? ""}`,
+      `部署: ${department ?? ""}`,
       `担当者名: ${staff_name ?? ""}`,
       `担当者役職: ${staff_title ?? ""}`,
       `担当者電話: ${staff_tel ?? ""}`,
+      `担当者携帯: ${staff_mobile ?? ""}`,
+      `担当者直通電話: ${staff_phone_direct ?? ""}`,
       `担当者メール: ${staff_email ?? ""}`,
+      `CIDM担当者: ${is_cidm_contact ? "はい" : "いいえ"}`,
+      `会議案内メール送付先: ${receive_invite_mail ? "はい" : "いいえ"}`,
+      `会費請求メール送付先: ${receive_invoice_mail ? "はい" : "いいえ"}`,
+      `備考: ${contact_biko ?? ""}`,
     ].join("\n");
 
     const resendResponse = await fetch("https://api.resend.com/emails", {

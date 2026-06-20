@@ -62,12 +62,12 @@
                                 <input type="text" name="phone_number" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="03-1234-5678">
                             </div>
                             <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">FAX番号</label>
+                                <input type="text" name="fax_number" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="03-1234-5679">
+                            </div>
+                            <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-2">会社URL</label>
                                 <input type="url" name="website_url" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="https://example.com">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-bold text-slate-700 mb-2">メールアドレス <span class="text-red-500">*</span></label>
-                                <input type="email" name="email" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="info@example.com">
                             </div>
                         </div>
                     </div>
@@ -78,6 +78,14 @@
                         </h3>
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">部署</label>
+                                <input type="text" name="department" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">担当者役職</label>
+                                <input type="text" name="staff_person_title" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
+                            </div>
+                            <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-2">担当者氏名 <span class="text-red-500">*</span></label>
                                 <input type="text" name="staff_name" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
                             </div>
@@ -86,16 +94,34 @@
                                 <input type="text" name="company_name_kana" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-slate-700 mb-2">担当者役職</label>
-                                <input type="text" name="staff_person_title" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
-                            </div>
-                            <div>
                                 <label class="block text-sm font-bold text-slate-700 mb-2">担当者携帯</label>
                                 <input type="text" name="staff_mobile" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm">
                             </div>
+                            <div>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">担当者電話番号</label>
+                                <input type="text" name="staff_phone_direct" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="03-1234-5678">
+                            </div>
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-bold text-slate-700 mb-2">担当者E-Mail <span class="text-red-500">*</span></label>
+                                <label class="block text-sm font-bold text-slate-700 mb-2">担当者E-Mail（ログイン用） <span class="text-red-500">*</span></label>
                                 <input type="email" name="staff_email" required class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm" placeholder="tanto@example.com">
+                            </div>
+                            <div class="md:col-span-2 grid md:grid-cols-3 gap-4">
+                                <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                                    <input type="checkbox" name="is_cidm_contact" class="rounded border-slate-300 text-blue-600">
+                                    CIDM担当者
+                                </label>
+                                <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                                    <input type="checkbox" name="receive_invite_mail" checked class="rounded border-slate-300 text-blue-600">
+                                    会議案内メール送付先
+                                </label>
+                                <label class="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                                    <input type="checkbox" name="receive_invoice_mail" checked class="rounded border-slate-300 text-blue-600">
+                                    会費請求メール送付先
+                                </label>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-bold text-slate-700 mb-2">備考</label>
+                                <textarea name="contact_biko" class="w-full border border-slate-200 px-5 py-3.5 rounded-xl outline-none focus:border-blue-400 transition shadow-sm min-h-[120px]" placeholder="特記事項があればご記入ください"></textarea>
                             </div>
                         </div>
                     </div>
@@ -168,8 +194,20 @@
             exec_name: rawData.representative_name,
             staff_name: rawData.staff_name,
             staff_title: rawData.staff_person_title || null,
-            staff_tel: rawData.staff_mobile || rawData.phone_number,
-            staff_email: rawData.staff_email
+            staff_tel: rawData.staff_mobile || rawData.staff_phone_direct || rawData.phone_number,
+            staff_email: rawData.staff_email,
+            company_name: rawData.company_name,
+            representative_name: rawData.representative_name,
+            phone_number: rawData.phone_number,
+            fax_number: rawData.fax_number || null,
+            department: rawData.department || null,
+            job_title: rawData.staff_person_title || null,
+            staff_mobile: rawData.staff_mobile || null,
+            staff_phone_direct: rawData.staff_phone_direct || null,
+            is_cidm_contact: rawData.is_cidm_contact === 'on',
+            receive_invite_mail: rawData.receive_invite_mail === 'on',
+            receive_invoice_mail: rawData.receive_invoice_mail === 'on',
+            contact_biko: rawData.contact_biko || null
         };
 
         submitButton.disabled = true;
