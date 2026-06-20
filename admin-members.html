@@ -123,6 +123,31 @@
         .btn-delete:hover { background: #fecaca; color: #991b1b; }
         .msg { text-align:center; color:#64748b; padding:1.1rem; }
         .msg.error { color:#b91c1c; }
+        .status-panel {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:1rem;
+            margin-bottom:1rem;
+            padding:1rem 1.1rem;
+            border-radius:0.9rem;
+            border:1px solid #dbe4ef;
+            background:#f8fbff;
+            flex-wrap:wrap;
+        }
+        .status-meta { display:flex; flex-direction:column; gap:0.35rem; }
+        .status-title { font-size:0.72rem; color:#64748b; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; }
+        .status-badge { display:inline-flex; align-items:center; justify-content:center; border-radius:9999px; padding:0.28rem 0.72rem; font-size:0.76rem; font-weight:700; width:max-content; }
+        .status-pending { background:#fef3c7; color:#92400e; }
+        .status-approved { background:#dcfce7; color:#166534; }
+        .status-returned { background:#e0f2fe; color:#0c4a6e; }
+        .status-rejected { background:#fee2e2; color:#991b1b; }
+        .status-subtext { color:#475569; font-size:0.82rem; line-height:1.6; }
+        .status-actions { display:flex; align-items:center; gap:0.55rem; flex-wrap:wrap; }
+        .btn-secondary { background:#e0f2fe; color:#0c4a6e; border:1px solid #7dd3fc; }
+        .btn-secondary:hover { background:#bae6fd; }
+        .btn-reject { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+        .btn-reject:hover { background:#fecaca; }
         .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#64748b; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #e2e8f0; }
     </style>
 </head>
@@ -154,6 +179,36 @@
     <script src="./admin-ui.js"></script>
     <script>
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function formatDate(value) {
+        if (!value) return '-';
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleString('ja-JP');
+    }
+
+    function getStatusMeta(status) {
+        switch (status) {
+            case '未審査':
+                return { className: 'status-badge status-pending', label: '未審査' };
+            case '差戻し':
+                return { className: 'status-badge status-returned', label: '差戻し' };
+            case '却下':
+                return { className: 'status-badge status-rejected', label: '却下' };
+            case '承認済':
+            default:
+                return { className: 'status-badge status-approved', label: status || '承認済' };
+        }
+    }
 
     function newTemporaryPassword(length = 12) {
         const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -220,8 +275,24 @@
             return;
         }
         const item = data;
+        const statusMeta = getStatusMeta(item.application_status || '承認済');
+        const reviewNote = item.application_review_note ? `<div class="status-subtext">審査メモ: ${escapeHtml(item.application_review_note)}</div>` : '';
         list.innerHTML = `
             <div class="member-card">
+                <div class="status-panel">
+                    <div class="status-meta">
+                        <span class="status-title">申込審査</span>
+                        <span class="${statusMeta.className}">${statusMeta.label}</span>
+                        <div class="status-subtext">申込日時: ${formatDate(item.application_submitted_at)}</div>
+                        <div class="status-subtext">審査日時: ${formatDate(item.application_reviewed_at)}</div>
+                        ${reviewNote}
+                    </div>
+                    <div class="status-actions">
+                        <button class="btn btn-mail" data-status-update="承認済" data-member-id="${item.id}"><i class="fa-solid fa-check"></i> 承認する</button>
+                        <button class="btn btn-secondary" data-status-update="差戻し" data-member-id="${item.id}"><i class="fa-solid fa-rotate-left"></i> 差戻し</button>
+                        <button class="btn btn-reject" data-status-update="却下" data-member-id="${item.id}"><i class="fa-solid fa-ban"></i> 却下</button>
+                    </div>
+                </div>
                 <div class="member-main-row">
                     <div><span class="member-label">区分</span><span class="member-value">${item.division_flag || '会員'}</span></div>
                     <div><span class="member-label">会員種別</span><span class="member-value">${item.member_type || '-'}</span></div>
@@ -255,11 +326,60 @@
 
     document.getElementById('members-list')?.addEventListener('click', (event) => {
         const button = event.target.closest('button[data-member-delete]');
-        if (!button) return;
-        const id = button.getAttribute('data-member-delete');
-        if (!id) return;
-        deleteMember(id, button);
+        if (button) {
+            const id = button.getAttribute('data-member-delete');
+            if (!id) return;
+            deleteMember(id, button);
+            return;
+        }
+
+        const statusButton = event.target.closest('button[data-status-update]');
+        if (!statusButton) return;
+        const id = statusButton.getAttribute('data-member-id');
+        const status = statusButton.getAttribute('data-status-update');
+        if (!id || !status) return;
+        updateApplicationStatus(id, status, statusButton);
     });
+
+    async function updateApplicationStatus(id, status, triggerButton) {
+        const labels = {
+            '承認済': '承認',
+            '差戻し': '差戻し',
+            '却下': '却下'
+        };
+        await window.cidmAdminUi.runWithButtonBusy(triggerButton, async () => {
+            const accepted = await window.cidmAdminUi.showConfirm(`この会員を「${labels[status] || status}」にしますか？`, {
+                confirmText: labels[status] || '更新する'
+            });
+            if (!accepted) return;
+
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
+            if (!ok) return;
+
+            const payload = {
+                application_status: status,
+                application_reviewed_at: new Date().toISOString(),
+                application_review_note: status === '承認済'
+                    ? '管理画面で承認'
+                    : status === '差戻し'
+                        ? '管理画面で差戻し'
+                        : '管理画面で却下'
+            };
+            if (status === '未審査') {
+                payload.application_reviewed_at = null;
+                payload.application_review_note = null;
+            }
+
+            const { error } = await supabaseClient.from('member').update(payload).eq('id', id);
+            if (error) {
+                window.cidmAdminUi.showToast('審査状態の更新に失敗しました: ' + error.message, 'error', 3200);
+                return;
+            }
+
+            window.cidmAdminUi.showToast('審査状態を更新しました。', 'success', 1200);
+            loadMember();
+        }, '更新中...');
+    }
 
     async function deleteMember(id, triggerButton) {
         await window.cidmAdminUi.runWithButtonBusy(triggerButton, async () => {

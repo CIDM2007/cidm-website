@@ -64,6 +64,11 @@
         .invite-status.sent { color:#16a34a; }
         .invite-status.error { color:#dc2626; }
         .info-note { font-size:.78rem; color:#64748b; margin-bottom:1rem; line-height:1.7; }
+        .review-banner { margin-bottom:1.2rem; border-radius:.85rem; border:1px solid #dbe4ef; background:#f8fbff; padding:.95rem 1rem; display:none; }
+        .review-banner.pending { display:block; border-color:#fcd34d; background:#fffbeb; color:#92400e; }
+        .review-banner.returned { display:block; border-color:#7dd3fc; background:#f0f9ff; color:#0c4a6e; }
+        .review-banner.rejected { display:block; border-color:#fca5a5; background:#fef2f2; color:#991b1b; }
+        .review-banner.approved { display:block; border-color:#86efac; background:#f0fdf4; color:#166534; }
     </style>
 </head>
 <body>
@@ -81,6 +86,7 @@
                 <p class="eyebrow">Member Management</p>
                 <h1 id="form-title"><i class="fa-solid fa-user-plus"></i> 会員新規登録</h1>
             </div>
+            <div id="review-banner" class="review-banner"></div>
             <form id="member-form" autocomplete="off">
                 <div class="form-section">
                     <p class="section-label"><i class="fa-solid fa-building"></i> 会社情報</p>
@@ -150,9 +156,44 @@
     const formTitle = document.getElementById('form-title');
     const contactsList = document.getElementById('contacts-list');
     const addContactBtn = document.getElementById('add-contact-btn');
+    const reviewBanner = document.getElementById('review-banner');
     const memberId = new URLSearchParams(window.location.search).get('id');
     const isEditMode = !!memberId;
     let contactIndex = 0;
+    let currentApplicationStatus = '承認済';
+
+    function syncInviteAvailability() {
+        const approved = currentApplicationStatus === '承認済';
+        contactsList.querySelectorAll('.contact-row').forEach((row) => {
+            const inviteBtn = row.querySelector('[data-invite-btn]');
+            const emailInput = row.querySelector('input[name="contact_email[]"]');
+            if (!inviteBtn || !emailInput) return;
+            inviteBtn.disabled = !approved || !(row.dataset.contactId && emailInput.value.trim());
+            inviteBtn.title = approved ? '' : '未審査または差戻し中の会員には招待メールを送信できません';
+        });
+    }
+
+    function updateReviewBanner(status, note) {
+        currentApplicationStatus = status || '承認済';
+        const classes = ['pending', 'returned', 'rejected', 'approved'];
+        reviewBanner.classList.remove(...classes);
+        if (currentApplicationStatus === '未審査') {
+            reviewBanner.classList.add('pending');
+            reviewBanner.textContent = 'この会員は現在「未審査」です。承認前は招待メールを送信できません。';
+        } else if (currentApplicationStatus === '差戻し') {
+            reviewBanner.classList.add('returned');
+            reviewBanner.textContent = `この会員は「差戻し」です。内容確認後に再審査してください。${note ? ' メモ: ' + note : ''}`;
+        } else if (currentApplicationStatus === '却下') {
+            reviewBanner.classList.add('rejected');
+            reviewBanner.textContent = `この会員は「却下」です。${note ? ' メモ: ' + note : ''}`;
+        } else if (isEditMode) {
+            reviewBanner.classList.add('approved');
+            reviewBanner.textContent = `この会員は「承認済」です。${note ? ' メモ: ' + note : ''}`;
+        } else {
+            reviewBanner.textContent = '';
+        }
+        syncInviteAvailability();
+    }
 
     function setPageMode() {
         document.title = isEditMode ? '会員編集 | 管理者ポータル' : '会員新規登録 | 管理者ポータル';
@@ -178,7 +219,7 @@
         const emailInput = row.querySelector('input[name="contact_email[]"]');
 
         function refreshState() {
-            inviteBtn.disabled = !(row.dataset.contactId && emailInput.value.trim());
+            inviteBtn.disabled = currentApplicationStatus !== '承認済' || !(row.dataset.contactId && emailInput.value.trim());
         }
 
         emailInput.addEventListener('input', refreshState);
@@ -299,6 +340,7 @@
         form.address.value = data.address || '';
         form.phone_number.value = data.phone_number || '';
         form.fax_number.value = data.fax_number || '';
+        updateReviewBanner(data.application_status || '承認済', data.application_review_note || '');
 
         const { data: contacts } = await supabaseClient
             .from('member_contacts')
@@ -319,6 +361,7 @@
         if (!form.querySelector('input[name="cidm_contact"]:checked') && contactsList.children.length > 0) {
             contactsList.children[0].querySelector('input[name="cidm_contact"]').checked = true;
         }
+        syncInviteAvailability();
     }
 
     addContactBtn.addEventListener('click', () => addContactRow({}));
@@ -336,6 +379,7 @@
         if (isEditMode) {
             await loadEditData();
         } else {
+            updateReviewBanner('承認済', '');
             addContactRow({ is_primary: true, is_cidm_contact: true });
         }
     });
@@ -380,6 +424,10 @@
             }
 
             if (!isEditMode) {
+                memberData.application_status = '承認済';
+                memberData.application_reviewed_at = new Date().toISOString();
+                memberData.application_review_note = '管理画面から手動登録';
+                memberData.application_source = '管理画面';
                 const { data: inserted, error: insertError } = await supabaseClient.from('member').insert([memberData]).select('id').single();
                 if (insertError || !inserted) {
                     window.cidmAdminUi.showToast('登録に失敗しました: ' + (insertError?.message || 'unknown error'), 'error', 3000);

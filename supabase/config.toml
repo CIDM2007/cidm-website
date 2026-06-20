@@ -16,7 +16,7 @@ verify_jwt = false
 [functions.login-admin]
 verify_jwt = false
 
-[functions.login-member]
+[functions.submit-application]
 verify_jwt = false
 
 [functions.member-password-reset]

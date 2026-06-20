@@ -1,5 +1,3 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-
 function getCorsHeaders(_origin: string): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": "*",
@@ -9,7 +7,7 @@ function getCorsHeaders(_origin: string): Record<string, string> {
   };
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const origin = req.headers.get("origin") || "";
   const corsHeaders = getCorsHeaders(origin);
   
