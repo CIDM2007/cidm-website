@@ -152,7 +152,6 @@
     <script src="./cidm-config.js"></script>
     <script src="./admin-auth.js"></script>
     <script src="./admin-ui.js"></script>
-    <script src="./admin-login-mail.js"></script>
     <script>
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
 
@@ -231,8 +230,7 @@
                     <div><span class="member-label">CIDM役職</span><span class="member-value">${item.cidm_role || '-'}</span></div>
                 </div>
                 <div class="member-sub-row">
-                    <div><span class="member-label">責任者名</span><span class="member-value">${item.representative_name || ''}</span></div>
-                    <div><span class="member-label">Email</span><span class="member-value">${item.email || ''}</span></div>
+                    <div><span class="member-label">代表者名</span><span class="member-value">${item.representative_name || ''}</span></div>
                 </div>
                 <div class="member-sub-row">
                     <div><span class="member-label">郵便番号</span><span class="member-value">${item.zip_code || ''}</span></div>
@@ -247,7 +245,7 @@
                 </div>
                 <div class="member-biko"><span class="member-label">備考</span>${item.biko || ''}</div>
                 <div class="actions">
-                    <button class="btn btn-mail" data-member-send-login="${item.id}"><i class="fa-solid fa-envelope"></i> 初期案内メール送信</button>
+                    <span style="font-size:.8rem;color:#64748b;">担当者への招待メール送信は編集画面から行います。</span>
                     <button class="btn btn-delete" data-member-delete="${item.id}"><i class="fa-solid fa-trash"></i> 削除</button>
                     <a class="btn btn-edit" href="admin-member-new.html?id=${item.id}"><i class="fa-solid fa-pen"></i> 編集</a>
                 </div>
@@ -256,92 +254,12 @@
     }
 
     document.getElementById('members-list')?.addEventListener('click', (event) => {
-        const mailButton = event.target.closest('button[data-member-send-login]');
-        if (mailButton) {
-            const id = mailButton.getAttribute('data-member-send-login');
-            if (id) {
-                sendLoginMail(id, mailButton);
-            }
-            return;
-        }
-
         const button = event.target.closest('button[data-member-delete]');
         if (!button) return;
         const id = button.getAttribute('data-member-delete');
         if (!id) return;
         deleteMember(id, button);
     });
-
-    function randomPassword(length = 12) {
-        const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-        const lower = 'abcdefghijkmnopqrstuvwxyz';
-        const digits = '23456789';
-        const symbols = '!@#$%*+-_?';
-        const pool = (upper + lower + digits + symbols).split('');
-        const required = [
-            upper[Math.floor(Math.random() * upper.length)],
-            lower[Math.floor(Math.random() * lower.length)],
-            digits[Math.floor(Math.random() * digits.length)],
-            symbols[Math.floor(Math.random() * symbols.length)]
-        ];
-        const chars = [...required];
-        while (chars.length < length) {
-            chars.push(pool[Math.floor(Math.random() * pool.length)]);
-        }
-        return chars.sort(() => Math.random() - 0.5).join('');
-    }
-
-    async function sendLoginMail(memberId, triggerButton) {
-        await window.cidmAdminUi.runWithButtonBusy(triggerButton, async () => {
-            const accepted = await window.cidmAdminUi.showConfirm('この会員の初期ログイン情報を再送しますか？\n既存のログインパスワードは新しい一時パスワードに更新されます。', { confirmText: '送信する' });
-            if (!accepted) return;
-
-            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
-            if (!ok) return;
-
-            const { data, error } = await supabaseClient.from('member').select('id, email, company_name, representative_name').eq('id', memberId).single();
-            if (error || !data) {
-                window.cidmAdminUi.showToast('会員情報の取得に失敗しました。', 'error', 2800);
-                return;
-            }
-
-            const email = String(data.email || '').trim();
-            if (!email) {
-                window.cidmAdminUi.showToast('メールアドレスが未設定です。', 'error', 2800);
-                return;
-            }
-
-            const temporaryPassword = randomPassword(12);
-            const { error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
-                p_member_id: memberId,
-                p_login_id: email,
-                p_password: temporaryPassword
-            });
-            if (loginError) {
-                window.cidmAdminUi.showToast('ログイン情報の更新に失敗しました: ' + loginError.message, 'error', 3600);
-                return;
-            }
-
-            if (!window.cidmAdminMail?.sendMemberLoginMail) {
-                window.cidmAdminUi.showToast('メール送信処理が利用できません。', 'error', 2800);
-                return;
-            }
-
-            try {
-                await window.cidmAdminMail.sendMemberLoginMail({
-                    email: email,
-                    login_id: email,
-                    password: temporaryPassword,
-                    member_name: data.representative_name,
-                    company_name: data.company_name,
-                    login_url: new URL('index.html', window.location.href).href
-                });
-                window.cidmAdminUi.showToast('初期案内メールを送信しました。', 'success', 1600);
-            } catch (mailError) {
-                window.cidmAdminUi.showToast('ログイン情報の更新は完了しましたが、メール送信に失敗しました: ' + (mailError?.message || 'unknown error'), 'error', 4200);
-            }
-        }, '送信中...');
-    }
 
     async function deleteMember(id, triggerButton) {
         await window.cidmAdminUi.runWithButtonBusy(triggerButton, async () => {

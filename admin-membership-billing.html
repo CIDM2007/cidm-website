@@ -664,7 +664,7 @@
             recipientTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#64748b; padding:1rem;">会員データを読み込み中...</td></tr>';
 
             const [memberResult, contactResult] = await Promise.all([
-                supabaseClient.from('member').select('id, division_flag, member_type, company_name, staff_name, staff_email'),
+                supabaseClient.from('member').select('id, division_flag, member_type, company_name'),
                 supabaseClient.from('member_contacts').select('member_id, name, email, receive_invoice_mail, is_primary, sort_order')
             ]);
 
@@ -683,14 +683,14 @@
             const primaryContactMap = getBillingContactByMemberId(contactResult.data || []);
             recipientRows = (memberResult.data || [])
                 .map((member) => {
-                    const primaryContact = primaryContactMap.get(String(member.id)) || {};
+                    const primaryContact = primaryContactMap.get(String(member.id)) || null;
                     return {
                         member_id: String(member.id),
                         division_flag: String(member.division_flag || '会員'),
                         member_type: String(member.member_type || ''),
                         company_name: String(member.company_name || ''),
-                        staff_name: primaryContact.name || String(member.staff_name || ''),
-                        staff_email: primaryContact.email || String(member.staff_email || '')
+                        staff_name: primaryContact?.name || '',
+                        staff_email: primaryContact?.email || ''
                     };
                 })
                 .sort((a, b) => a.company_name.localeCompare(b.company_name, 'ja'));

@@ -11,80 +11,59 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: radial-gradient(1200px 500px at 20% -10%, #dbeafe 0%, transparent 60%), radial-gradient(900px 400px at 85% -5%, #e0e7ff 0%, transparent 55%), #eef2f7; font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; display: flex; flex-direction: column; color: #1e293b; }
-        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 1.5rem; height:72px; background:rgba(255, 255, 255, 0.78); backdrop-filter:blur(8px); border-bottom:1px solid #dbe4ef; position:sticky; top:0; z-index:10; box-shadow:0 1px 8px rgba(15, 23, 42, 0.06); }
-        .brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; }
+        .admin-header { display:flex; align-items:center; justify-content:space-between; padding:0 1.5rem; height:72px; background:rgba(255,255,255,.78); backdrop-filter:blur(8px); border-bottom:1px solid #dbe4ef; position:sticky; top:0; z-index:10; box-shadow:0 1px 8px rgba(15,23,42,.06); }
+        .brand { display:flex; align-items:center; gap:.75rem; text-decoration:none; }
         .brand-icon { width:38px; height:38px; background:linear-gradient(135deg,#2563eb,#0ea5e9); border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1rem; }
-        .brand-text { font-size:0.78rem; font-weight:700; color:#64748b; letter-spacing:0.1em; text-transform:uppercase; }
-        .brand-text span { display:block; color:#1e293b; font-size:0.9rem; letter-spacing:0.04em; }
-        .header-back { display:inline-flex; align-items:center; gap:0.4rem; color:#475569; text-decoration:none; font-size:0.76rem; font-weight:700; letter-spacing:0.06em; border:1px solid #bfdbfe; background:#eff6ff; border-radius:9999px; padding:0.35rem 0.95rem; transition:color 0.15s, border-color 0.15s, background 0.15s; }
+        .brand-text { font-size:.78rem; font-weight:700; color:#64748b; letter-spacing:.1em; text-transform:uppercase; }
+        .brand-text span { display:block; color:#1e293b; font-size:.9rem; letter-spacing:.04em; }
+        .header-back { display:inline-flex; align-items:center; gap:.4rem; color:#475569; text-decoration:none; font-size:.76rem; font-weight:700; letter-spacing:.06em; border:1px solid #bfdbfe; background:#eff6ff; border-radius:9999px; padding:.35rem .95rem; transition:color .15s,border-color .15s,background .15s; }
         .header-back:hover { color:#1d4ed8; border-color:#93c5fd; background:#dbeafe; }
-        .admin-body { flex:1; padding:2.25rem 1.2rem 4rem; max-width:680px; margin:0 auto; width:100%; }
-        .form-card { background:#ffffff; border:1px solid #dbe4ef; border-radius:1rem; padding:2rem 2.2rem; box-shadow:0 1px 6px rgba(15, 23, 42, 0.08); }
+        .admin-body { flex:1; padding:2.25rem 1.2rem 4rem; max-width:760px; margin:0 auto; width:100%; }
+        .form-card { background:#fff; border:1px solid #dbe4ef; border-radius:1rem; padding:2rem 2.2rem; box-shadow:0 1px 6px rgba(15,23,42,.08); }
         .form-heading { margin-bottom:1.8rem; padding-bottom:1.4rem; border-bottom:1px solid #e2e8f0; }
-        .form-heading .eyebrow { font-size:0.7rem; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#3b82f6; margin-bottom:0.35rem; }
-        .form-heading h1 { font-size:1.5rem; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:0.5rem; }
+        .form-heading .eyebrow { font-size:.7rem; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#3b82f6; margin-bottom:.35rem; }
+        .form-heading h1 { font-size:1.5rem; font-weight:700; color:#1e293b; display:flex; align-items:center; gap:.5rem; }
         .form-section { margin-bottom:1.8rem; padding-bottom:1.8rem; border-bottom:1px solid #e2e8f0; }
         .form-section:last-of-type { border-bottom:none; margin-bottom:0; }
-        .section-label { font-size:0.7rem; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:#3b82f6; margin-bottom:1rem; }
-        .form-group { margin-bottom:1.2rem; }
-        label { display:block; font-size:0.78rem; font-weight:700; color:#64748b; letter-spacing:0.07em; text-transform:uppercase; margin-bottom:0.45rem; }
-        input, textarea { width:100%; padding:0.72rem 0.9rem; border-radius:0.6rem; border:1px solid #cbd5e1; background:#f8fbff; color:#1e293b; font-size:0.92rem; font-family:inherit; transition:border-color 0.15s, box-shadow 0.15s; outline:none; }
-        input:focus, textarea:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
+        .section-label { font-size:.7rem; font-weight:700; letter-spacing:.15em; text-transform:uppercase; color:#3b82f6; margin-bottom:1rem; }
+        .form-group { margin-bottom:1.15rem; }
+        label { display:block; font-size:.78rem; font-weight:700; color:#64748b; letter-spacing:.07em; text-transform:uppercase; margin-bottom:.45rem; }
+        input, textarea, select { width:100%; padding:.72rem .9rem; border-radius:.6rem; border:1px solid #cbd5e1; background:#f8fbff; color:#1e293b; font-size:.92rem; font-family:inherit; transition:border-color .15s, box-shadow .15s; outline:none; }
+        input:focus, textarea:focus, select:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
         textarea { min-height:80px; resize:vertical; }
-        .form-actions { display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.8rem; padding-top:1.4rem; border-top:1px solid #e2e8f0; }
-        .btn { padding:0.6rem 1.4rem; border-radius:0.6rem; font-size:0.84rem; font-weight:700; cursor:pointer; transition:opacity 0.15s, transform 0.12s; display:inline-flex; align-items:center; gap:0.35rem; border:none; }
+        .form-actions { display:flex; justify-content:flex-end; gap:.75rem; margin-top:1.8rem; padding-top:1.4rem; border-top:1px solid #e2e8f0; }
+        .btn { padding:.6rem 1.4rem; border-radius:.6rem; font-size:.84rem; font-weight:700; cursor:pointer; transition:opacity .15s, transform .12s; display:inline-flex; align-items:center; gap:.35rem; border:none; }
         .btn:hover { transform:translateY(-1px); }
-        .btn-submit { background:linear-gradient(135deg,#2563eb,#0ea5e9); color:#fff; box-shadow:0 8px 18px rgba(37, 99, 235, 0.2); }
-        .btn-submit:hover { opacity:0.88; }
+        .btn-submit { background:linear-gradient(135deg,#2563eb,#0ea5e9); color:#fff; box-shadow:0 8px 18px rgba(37,99,235,.2); }
+        .btn-submit:hover { opacity:.88; }
         .btn-cancel { background:#eff6ff; color:#475569; border:1px solid #bfdbfe; }
         .btn-cancel:hover { background:#dbeafe; color:#1d4ed8; border-color:#93c5fd; }
-        .admin-footer { text-align:center; padding:1.25rem; font-size:0.68rem; color:#64748b; letter-spacing:0.08em; text-transform:uppercase; border-top:1px solid #e2e8f0; }
-        select { width:100%; padding:0.72rem 0.9rem; border-radius:0.6rem; border:1px solid #cbd5e1; background:#f8fbff; color:#1e293b; font-size:0.92rem; font-family:inherit; transition:border-color 0.15s; outline:none; appearance:none; }
-        select:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,0.15); }
-        .contact-row { background:#f8fbff; border:1px solid #dbe4ef; border-radius:0.6rem; padding:1rem 1rem 0.4rem; margin-bottom:0.75rem; }
-        .contact-row-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; }
-        .contact-row-num { font-size:0.68rem; font-weight:700; color:#3b82f6; letter-spacing:0.12em; text-transform:uppercase; }
+        .admin-footer { text-align:center; padding:1.25rem; font-size:.68rem; color:#64748b; letter-spacing:.08em; text-transform:uppercase; border-top:1px solid #e2e8f0; }
+        .contact-row { background:#f8fbff; border:1px solid #dbe4ef; border-radius:.75rem; padding:1rem 1rem .5rem; margin-bottom:.85rem; }
+        .contact-row-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.85rem; }
+        .contact-row-num { font-size:.68rem; font-weight:700; color:#3b82f6; letter-spacing:.12em; text-transform:uppercase; }
         .contact-fields { display:grid; grid-template-columns:1fr 1fr; gap:0 1rem; }
-        .contact-fields .form-group { margin-bottom:0.9rem; }
-        .contact-fields .form-group.full { grid-column:1/-1; }
-        .contact-del-btn { background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; border-radius:0.4rem; padding:0.22rem 0.65rem; font-size:0.72rem; font-weight:700; cursor:pointer; transition:background 0.15s, color 0.15s; }
-        .contact-del-btn:hover { background:#fecaca; color:#991b1b; border-color:#ef4444; }
-        .contact-primary-label { display:inline-flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:#64748b; cursor:pointer; }
+        .contact-fields .form-group { margin-bottom:.9rem; }
+        .contact-fields .form-group.full { grid-column:1 / -1; }
+        .contact-del-btn { background:#fee2e2; border:1px solid #fca5a5; color:#b91c1c; border-radius:.4rem; padding:.22rem .65rem; font-size:.72rem; font-weight:700; cursor:pointer; }
+        .contact-primary-label, .cidm-contact-label { display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; color:#64748b; cursor:pointer; }
         .contact-primary-label input[type=radio] { accent-color:#3b82f6; }
-        .contact-add-btn { display:flex; align-items:center; justify-content:center; gap:0.4rem; width:100%; background:#eff6ff; border:1px dashed #93c5fd; color:#1d4ed8; padding:0.55rem 1rem; border-radius:0.6rem; font-size:0.8rem; font-weight:700; cursor:pointer; transition:background 0.15s, border-color 0.15s; margin-top:0.2rem; }
+        .cidm-contact-label input[type=radio] { accent-color:#0ea5e9; }
+        .contact-add-btn { display:flex; align-items:center; justify-content:center; gap:.4rem; width:100%; background:#eff6ff; border:1px dashed #93c5fd; color:#1d4ed8; padding:.55rem 1rem; border-radius:.6rem; font-size:.8rem; font-weight:700; cursor:pointer; transition:background .15s,border-color .15s; }
         .contact-add-btn:hover { background:#dbeafe; border-color:#60a5fa; }
-        .officer-check-wrap { margin:-0.2rem 0 1.1rem; }
-        .officer-check-label {
-            display:flex;
-            align-items:flex-start;
-            gap:0.6rem;
-            text-transform:none;
-            letter-spacing:0;
-            font-size:0.95rem;
-            color:#1e293b;
-            margin-bottom:0;
-            cursor:pointer;
-        }
-        .officer-check-label input[type="checkbox"] {
-            width:1rem;
-            height:1rem;
-            margin-top:0.15rem;
-            accent-color:#2563eb;
-            flex:0 0 auto;
-        }
+        .officer-check-wrap { margin:-.2rem 0 1.05rem; }
+        .officer-check-label { display:flex; align-items:flex-start; gap:.6rem; text-transform:none; letter-spacing:0; font-size:.95rem; color:#1e293b; margin-bottom:0; cursor:pointer; }
+        .officer-check-label input[type=checkbox] { width:1rem; height:1rem; margin-top:.15rem; accent-color:#2563eb; flex:0 0 auto; }
         .officer-check-title { font-weight:700; }
-        .officer-check-help { display:block; margin-top:0.15rem; color:#64748b; font-size:0.78rem; line-height:1.5; }
-        /* 担当者カード内の招待ボタンエリア */
-        .contact-invite-bar { display:flex; align-items:center; gap:0.6rem; margin-top:0.5rem; padding-top:0.6rem; border-top:1px dashed #e2e8f0; flex-wrap:wrap; }
-        .btn-invite { display:inline-flex; align-items:center; gap:0.35rem; background:#eff6ff; border:1px solid #93c5fd; color:#1d4ed8; border-radius:0.5rem; padding:0.3rem 0.8rem; font-size:0.76rem; font-weight:700; cursor:pointer; transition:background 0.15s; }
+        .officer-check-help { display:block; margin-top:.15rem; color:#64748b; font-size:.78rem; line-height:1.5; }
+        .contact-invite-bar { display:flex; align-items:center; gap:.6rem; margin-top:.5rem; padding-top:.6rem; border-top:1px dashed #e2e8f0; flex-wrap:wrap; }
+        .btn-invite { display:inline-flex; align-items:center; gap:.35rem; background:#eff6ff; border:1px solid #93c5fd; color:#1d4ed8; border-radius:.5rem; padding:.3rem .8rem; font-size:.76rem; font-weight:700; cursor:pointer; }
         .btn-invite:hover { background:#dbeafe; }
-        .btn-invite:disabled { opacity:0.5; cursor:not-allowed; }
-        .invite-status { font-size:0.74rem; color:#64748b; }
+        .btn-invite:disabled { opacity:.5; cursor:not-allowed; }
+        .invite-status { font-size:.74rem; color:#64748b; }
         .invite-status.sent { color:#16a34a; }
         .invite-status.error { color:#dc2626; }
-        /* CIDM担当者ラジオ */
-        .cidm-contact-label { display:inline-flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:#64748b; cursor:pointer; }
-        .cidm-contact-label input[type=radio] { accent-color:#0ea5e9; }
+        .info-note { font-size:.78rem; color:#64748b; margin-bottom:1rem; line-height:1.7; }
     </style>
 </head>
 <body>
@@ -100,17 +79,16 @@
         <div class="form-card">
             <div class="form-heading">
                 <p class="eyebrow">Member Management</p>
-                <h1 id="form-title"><i id="form-title-icon" class="fa-solid fa-user-plus"></i> 会員新規登録</h1>
+                <h1 id="form-title"><i class="fa-solid fa-user-plus"></i> 会員新規登録</h1>
             </div>
             <form id="member-form" autocomplete="off">
-                <!-- ========== 会社情報 ========== -->
                 <div class="form-section">
                     <p class="section-label"><i class="fa-solid fa-building"></i> 会社情報</p>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1rem;">
                         <div class="form-group">
                             <label for="division_flag">区分</label>
                             <select id="division_flag" name="division_flag">
-                                <option value="会員" selected>会員</option>
+                                <option value="会員">会員</option>
                                 <option value="関係者">関係者</option>
                             </select>
                         </div>
@@ -144,13 +122,9 @@
                     </div>
                 </div>
 
-                <!-- ========== 担当者情報 ========== -->
                 <div class="form-section">
                     <p class="section-label"><i class="fa-solid fa-users"></i> 担当者情報</p>
-                    <p style="font-size:0.78rem; color:#64748b; margin-bottom:1rem; line-height:1.6;">
-                        担当者のメールアドレスがログインIDになります。<br>
-                        保存後に「招待メールを送信」ボタンを押すと、担当者本人がパスワードを設定できます。
-                    </p>
+                    <p class="info-note">担当者のメールアドレスがログインIDになります。保存後に「招待メールを送信」を押すと、担当者本人がパスワードを設定できます。</p>
                     <div id="contacts-list"></div>
                     <button type="button" id="add-contact-btn" class="contact-add-btn"><i class="fa-solid fa-plus"></i> 担当者を追加</button>
                 </div>
@@ -162,761 +136,282 @@
             </form>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./cidm-config.js"></script>
     <script src="./admin-auth.js"></script>
     <script src="./admin-ui.js"></script>
     <script>
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
-
     const form = document.getElementById('member-form');
     const cancelBtn = document.getElementById('cancel-btn');
     const submitBtn = form.querySelector('.btn-submit');
     const headerBackLink = document.getElementById('header-back-link');
     const formTitle = document.getElementById('form-title');
-
     const contactsList = document.getElementById('contacts-list');
     const addContactBtn = document.getElementById('add-contact-btn');
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const memberId = urlParams.get('id');
+    const memberId = new URLSearchParams(window.location.search).get('id');
     const isEditMode = !!memberId;
-
     let contactIndex = 0;
-    let savedMemberId = memberId || null; // 新規登録後に確定する
 
-    // ----------------------------------------------------------------
-    // ページモード設定
-    // ----------------------------------------------------------------
-    function updatePageByMode() {
+    function setPageMode() {
         document.title = isEditMode ? '会員編集 | 管理者ポータル' : '会員新規登録 | 管理者ポータル';
-        if (formTitle) {
-            formTitle.innerHTML = isEditMode
-                ? '<i class="fa-solid fa-user-pen"></i> 会員編集'
-                : '<i class="fa-solid fa-user-plus"></i> 会員新規登録';
-        }
-        if (submitBtn) submitBtn.textContent = isEditMode ? '更新' : '登録';
-        if (headerBackLink) {
-            headerBackLink.href = isEditMode ? `admin-members.html?id=${memberId}` : 'admin-member-list.html';
-            headerBackLink.innerHTML = isEditMode
-                ? '<i class="fa-solid fa-chevron-left"></i> 会員詳細へ戻る'
-                : '<i class="fa-solid fa-chevron-left"></i> 会員一覧へ戻る';
-        }
+        formTitle.innerHTML = isEditMode
+            ? '<i class="fa-solid fa-user-pen"></i> 会員編集'
+            : '<i class="fa-solid fa-user-plus"></i> 会員新規登録';
+        submitBtn.textContent = isEditMode ? '更新' : '登録';
+        headerBackLink.href = isEditMode ? `admin-members.html?id=${memberId}` : 'admin-member-list.html';
+        headerBackLink.innerHTML = isEditMode
+            ? '<i class="fa-solid fa-chevron-left"></i> 会員詳細へ戻る'
+            : '<i class="fa-solid fa-chevron-left"></i> 会員一覧へ戻る';
     }
 
-    // ----------------------------------------------------------------
-    // 担当者カード生成
-    //   contact = { id?, member_id?, department, job_title, name, email,
-    //               phone(mobile), phone_direct, is_primary, is_cidm_contact,
-    //               receive_invite_mail, receive_invoice_mail, biko }
-    // ----------------------------------------------------------------
+    function renumberContacts() {
+        [...contactsList.children].forEach((row, i) => {
+            row.querySelector('.contact-row-num').textContent = `担当者 ${i + 1}`;
+        });
+    }
+
+    function createInviteButtonHandler(row) {
+        const inviteBtn = row.querySelector('[data-invite-btn]');
+        const inviteStatus = row.querySelector('[data-invite-status]');
+        const emailInput = row.querySelector('input[name="contact_email[]"]');
+
+        function refreshState() {
+            inviteBtn.disabled = !(row.dataset.contactId && emailInput.value.trim());
+        }
+
+        emailInput.addEventListener('input', refreshState);
+        refreshState();
+
+        inviteBtn.addEventListener('click', async () => {
+            const contactId = row.dataset.contactId;
+            if (!contactId) {
+                window.cidmAdminUi.showToast('先に保存してから招待メールを送信してください。', 'error', 2400);
+                return;
+            }
+            inviteStatus.textContent = '送信中...';
+            inviteStatus.className = 'invite-status';
+            inviteBtn.disabled = true;
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                const response = await fetch('https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/member-password-reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session?.access_token || ''}`
+                    },
+                    body: JSON.stringify({ action: 'invite', contact_id: contactId })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.ok) throw new Error(result.error || '送信に失敗しました');
+                inviteStatus.textContent = '招待メールを送信しました';
+                inviteStatus.className = 'invite-status sent';
+            } catch (error) {
+                inviteStatus.textContent = error?.message || '送信エラー';
+                inviteStatus.className = 'invite-status error';
+                refreshState();
+            }
+        });
+    }
+
     function addContactRow(contact = {}) {
         const idx = contactIndex++;
-        const num = contactsList.children.length + 1;
         const row = document.createElement('div');
         row.className = 'contact-row';
         row.dataset.idx = idx;
         if (contact.id) row.dataset.contactId = contact.id;
-
         row.innerHTML = `
             <div class="contact-row-header">
-                <span class="contact-row-num">担当者 ${num}</span>
-                <div style="display:flex;align-items:center;gap:0.8rem;">
-                    <label class="contact-primary-label">
-                        <input type="radio" name="primary_contact" value="${idx}" ${contact.is_primary ? 'checked' : ''}> 主担当者
-                    </label>
-                    <label class="cidm-contact-label">
-                        <input type="radio" name="cidm_contact" value="${idx}" ${contact.is_cidm_contact ? 'checked' : ''}> CIDM担当者
-                    </label>
+                <span class="contact-row-num">担当者 ${contactsList.children.length + 1}</span>
+                <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;">
+                    <label class="contact-primary-label"><input type="radio" name="primary_contact" value="${idx}" ${contact.is_primary ? 'checked' : ''}> 主担当者</label>
+                    <label class="cidm-contact-label"><input type="radio" name="cidm_contact" value="${idx}" ${contact.is_cidm_contact ? 'checked' : ''}> CIDM担当者</label>
                     <button type="button" class="contact-del-btn" title="削除"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
             </div>
             <div class="contact-fields">
                 <div class="form-group"><label>部署</label><input type="text" name="contact_department[]" value="${contact.department || ''}"></div>
                 <div class="form-group"><label>役職</label><input type="text" name="contact_job_title[]" value="${contact.job_title || ''}"></div>
-                <div class="form-group full"><label>担当者名</label><input type="text" name="contact_name[]" placeholder="山田 太郎" value="${contact.name || ''}"></div>
-                <div class="form-group full"><label>メールアドレス <small style="color:#94a3b8;font-weight:400;">（ログインIDになります）</small></label><input type="email" name="contact_email[]" value="${contact.email || ''}" placeholder="staff@example.com"></div>
+                <div class="form-group full"><label>担当者名</label><input type="text" name="contact_name[]" value="${contact.name || ''}" placeholder="山田 太郎"></div>
+                <div class="form-group full"><label>メールアドレス</label><input type="email" name="contact_email[]" value="${contact.email || ''}" placeholder="staff@example.com"></div>
                 <div class="form-group"><label>携帯電話番号</label><input type="text" name="contact_phone[]" value="${contact.phone || ''}" placeholder="090-0000-0000"></div>
                 <div class="form-group"><label>電話番号（直通）</label><input type="text" name="contact_phone_direct[]" value="${contact.phone_direct || ''}" placeholder="03-0000-0000"></div>
                 <div class="form-group full"><label style="text-transform:none;letter-spacing:0;"><input type="checkbox" name="contact_receive_invite[]" ${contact.receive_invite_mail === false ? '' : 'checked'}> 会議案内メールの送信対象に含める</label></div>
                 <div class="form-group full"><label style="text-transform:none;letter-spacing:0;"><input type="checkbox" name="contact_receive_invoice[]" ${contact.receive_invoice_mail === false ? '' : 'checked'}> 会費請求メールの送信対象に含める</label></div>
-                <div class="form-group full"><label>備考</label><textarea name="contact_biko[]" rows="2">${contact.biko || ''}</textarea></div>
+                <div class="form-group full"><label>備考</label><textarea name="contact_biko[]">${contact.biko || ''}</textarea></div>
             </div>
             <div class="contact-invite-bar">
-                <button type="button" class="btn-invite" data-invite-btn>
-                    <i class="fa-solid fa-envelope"></i> 招待メールを送信
-                </button>
+                <button type="button" class="btn-invite" data-invite-btn><i class="fa-solid fa-envelope"></i> 招待メールを送信</button>
                 <span class="invite-status" data-invite-status></span>
             </div>
         `;
-
-        const inviteBtn = row.querySelector('[data-invite-btn]');
-        const inviteStatus = row.querySelector('[data-invite-status]');
-
-        // 招待ボタン: DBに保存済みでemailがある場合のみ有効
-        function refreshInviteBtn() {
-            const emailVal = row.querySelector('input[name="contact_email[]"]').value.trim();
-            const cId = row.dataset.contactId;
-            const hasEmail = !!emailVal;
-            const isSaved = !!cId;
-            inviteBtn.disabled = !(hasEmail && isSaved);
-            inviteBtn.title = !isSaved ? '先に保存してから招待メールを送信できます' : (!hasEmail ? 'メールアドレスを入力してください' : '');
-        }
-        row.querySelector('input[name="contact_email[]"]').addEventListener('input', refreshInviteBtn);
-        refreshInviteBtn();
-
-        inviteBtn.addEventListener('click', async () => {
-            const cId = row.dataset.contactId;
-            if (!cId) {
-                window.cidmAdminUi.showToast('先に保存してから招待メールを送信してください。', 'error', 2400);
-                return;
-            }
-            inviteBtn.disabled = true;
-            inviteStatus.textContent = '送信中...';
-            inviteStatus.className = 'invite-status';
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                const jwt = session?.access_token || '';
-                const resp = await fetch(
-                    'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/member-password-reset',
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${jwt}`
-                        },
-                        body: JSON.stringify({ action: 'invite', contact_id: cId })
-                    }
-                );
-                const result = await resp.json();
-                if (!resp.ok || !result.ok) {
-                    throw new Error(result.error || '送信に失敗しました');
-                }
-                inviteStatus.textContent = '✓ 招待メールを送信しました';
-                inviteStatus.className = 'invite-status sent';
-            } catch (err) {
-                inviteStatus.textContent = '✗ ' + (err.message || '送信エラー');
-                inviteStatus.className = 'invite-status error';
-                inviteBtn.disabled = false;
-            }
-        });
-
         row.querySelector('.contact-del-btn').addEventListener('click', () => {
             if (contactsList.children.length <= 1) return;
-            const wasPrimary = row.querySelector('input[name=primary_contact]').checked;
-            const wasCidm = row.querySelector('input[name=cidm_contact]').checked;
+            const wasPrimary = row.querySelector('input[name="primary_contact"]').checked;
+            const wasCidm = row.querySelector('input[name="cidm_contact"]').checked;
             row.remove();
             renumberContacts();
             if (wasPrimary && contactsList.children.length > 0) {
-                contactsList.children[0].querySelector('input[name=primary_contact]').checked = true;
+                contactsList.children[0].querySelector('input[name="primary_contact"]').checked = true;
             }
             if (wasCidm && contactsList.children.length > 0) {
-                contactsList.children[0].querySelector('input[name=cidm_contact]').checked = true;
+                contactsList.children[0].querySelector('input[name="cidm_contact"]').checked = true;
             }
         });
-
+        createInviteButtonHandler(row);
         contactsList.appendChild(row);
     }
 
-    function renumberContacts() {
-        [...contactsList.children].forEach((r, i) => {
-            r.querySelector('.contact-row-num').textContent = `担当者 ${i + 1}`;
-        });
-    }
-
-    addContactBtn.addEventListener('click', () => addContactRow({ is_primary: false }));
-
-    cancelBtn?.addEventListener('click', async () => {
-        const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
-        if (!accepted) return;
-        window.history.back();
-    });
-
-    // ----------------------------------------------------------------
-    // 担当者データ収集
-    // ----------------------------------------------------------------
     function collectContacts() {
-        const rows = [...contactsList.querySelectorAll('.contact-row')];
-        const primaryIdxVal = parseInt(form.querySelector('input[name=primary_contact]:checked')?.value ?? '-1', 10);
-        const cidmIdxVal    = parseInt(form.querySelector('input[name=cidm_contact]:checked')?.value ?? '-1', 10);
-        return rows.map((row, i) => ({
-            id:                  row.dataset.contactId || null,
-            department:          row.querySelector('input[name="contact_department[]"]').value.trim() || null,
-            job_title:           row.querySelector('input[name="contact_job_title[]"]').value.trim() || null,
-            name:                row.querySelector('input[name="contact_name[]"]').value.trim() || null,
-            email:               row.querySelector('input[name="contact_email[]"]').value.trim() || null,
-            phone:               row.querySelector('input[name="contact_phone[]"]').value.trim() || null,
-            phone_direct:        row.querySelector('input[name="contact_phone_direct[]"]').value.trim() || null,
-            receive_invite_mail: row.querySelector('input[name="contact_receive_invite[]"]')?.checked !== false,
-            receive_invoice_mail:row.querySelector('input[name="contact_receive_invoice[]"]')?.checked !== false,
-            biko:                row.querySelector('textarea[name="contact_biko[]"]').value.trim() || null,
-            is_primary:          parseInt(row.dataset.idx, 10) === primaryIdxVal,
-            is_cidm_contact:     parseInt(row.dataset.idx, 10) === cidmIdxVal,
-            sort_order:          i
-        })).filter(c => c.name || c.email);
+        const primaryIdx = parseInt(form.querySelector('input[name="primary_contact"]:checked')?.value ?? '-1', 10);
+        const cidmIdx = parseInt(form.querySelector('input[name="cidm_contact"]:checked')?.value ?? '-1', 10);
+        return [...contactsList.querySelectorAll('.contact-row')].map((row, sortOrder) => ({
+            department: row.querySelector('input[name="contact_department[]"]').value.trim() || null,
+            job_title: row.querySelector('input[name="contact_job_title[]"]').value.trim() || null,
+            name: row.querySelector('input[name="contact_name[]"]').value.trim() || null,
+            email: row.querySelector('input[name="contact_email[]"]').value.trim() || null,
+            phone: row.querySelector('input[name="contact_phone[]"]').value.trim() || null,
+            phone_direct: row.querySelector('input[name="contact_phone_direct[]"]').value.trim() || null,
+            receive_invite_mail: row.querySelector('input[name="contact_receive_invite[]"]').checked,
+            receive_invoice_mail: row.querySelector('input[name="contact_receive_invoice[]"]').checked,
+            biko: row.querySelector('textarea[name="contact_biko[]"]').value.trim() || null,
+            is_primary: parseInt(row.dataset.idx, 10) === primaryIdx,
+            is_cidm_contact: parseInt(row.dataset.idx, 10) === cidmIdx,
+            sort_order: sortOrder
+        })).filter((contact) => contact.name || contact.email || contact.department || contact.job_title || contact.phone || contact.phone_direct || contact.biko);
     }
 
-    // ----------------------------------------------------------------
-    // ページ初期化
-    // ----------------------------------------------------------------
-    document.addEventListener('DOMContentLoaded', async () => {
-        updatePageByMode();
-        const authed = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
-        if (!authed) return;
-
-        if (!isEditMode) {
-            addContactRow({ is_primary: true, is_cidm_contact: true });
-            return;
-        }
-
-        // ---- 編集モード: データ読み込み ----
+    async function loadEditData() {
         const { data, error } = await supabaseClient.from('member').select('*').eq('id', memberId).single();
         if (error || !data) {
             window.cidmAdminUi.showToast('データ取得に失敗しました。', 'error', 3000);
             form.style.display = 'none';
             return;
         }
-
-        form.division_flag.value       = data.division_flag || '会員';
-        form.member_type.value         = data.member_type || '';
-        form.is_officer.checked        = Boolean(data.is_officer);
-        form.cidm_role.value           = data.cidm_role || '';
-        form.company_name.value        = data.company_name || '';
-        form.representative_name.value = data.representative_name || '';
-        form.zip_code.value            = data.zip_code || '';
-        form.address.value             = data.address || '';
-        form.phone_number.value        = data.phone_number || '';
-        form.fax_number.value          = data.fax_number || '';
-
-        const { data: contactData } = await supabaseClient
-            .from('member_contacts')
-            .select('id, department, job_title, name, phone, phone_direct, email, receive_invite_mail, receive_invoice_mail, is_primary, is_cidm_contact, biko, sort_order')
-            .eq('member_id', memberId)
-            .order('sort_order', { ascending: true });
-
-        contactsList.innerHTML = '';
-        if (Array.isArray(contactData) && contactData.length > 0) {
-            contactData.forEach(c => addContactRow(c));
-        } else {
-            addContactRow({ is_primary: true, is_cidm_contact: true });
-        }
-
-        if (!form.querySelector('input[name=primary_contact]:checked') && contactsList.children.length > 0) {
-            contactsList.children[0].querySelector('input[name=primary_contact]').checked = true;
-        }
-        if (!form.querySelector('input[name=cidm_contact]:checked') && contactsList.children.length > 0) {
-            contactsList.children[0].querySelector('input[name=cidm_contact]').checked = true;
-        }
-    });
-
-    // ----------------------------------------------------------------
-    // フォーム送信
-    // ----------------------------------------------------------------
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
-            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
-            if (!ok) return;
-
-            const contacts = collectContacts();
-            const primaryContact = contacts.find(c => c.is_primary) || contacts[0] || {};
-
-            const memberData = {
-                division_flag:       form.division_flag.value || '会員',
-                member_type:         form.member_type.value || null,
-                is_officer:          form.is_officer.checked,
-                cidm_role:           form.cidm_role.value.trim() || null,
-                company_name:        form.company_name.value.trim(),
-                representative_name: form.representative_name.value.trim(),
-                zip_code:            form.zip_code.value.trim(),
-                address:             form.address.value.trim(),
-                phone_number:        form.phone_number.value.trim(),
-                fax_number:          form.fax_number.value.trim() || null,
-                // 後方互換: 主担当者を staff_* にも反映
-                staff_name:          primaryContact.name   || null,
-                staff_mobile:        primaryContact.phone  || null,
-                staff_email:         primaryContact.email  || null,
-            };
-
-            if (!memberData.company_name || !memberData.representative_name) {
-                window.cidmAdminUi.showToast('会社名と代表者名は必須です。', 'error', 2200);
-                return;
-            }
-
-            // ---- 新規登録 ----
-            if (!isEditMode) {
-                const { data: inserted, error: insertErr } = await supabaseClient
-                    .from('member').insert([memberData]).select('id').single();
-                if (insertErr || !inserted) {
-                    window.cidmAdminUi.showToast('登録に失敗しました: ' + (insertErr?.message || 'unknown'), 'error', 3000);
-                    return;
-                }
-                savedMemberId = inserted.id;
-
-                if (contacts.length > 0) {
-                    const payload = contacts.map(c => {
-                        const { id: _id, ...rest } = c;
-                        return { ...rest, member_id: inserted.id };
-                    });
-                    const { error: cErr } = await supabaseClient.from('member_contacts').insert(payload);
-                    if (cErr) {
-                        window.cidmAdminUi.showToast('担当者情報の登録に失敗しました: ' + cErr.message, 'error', 3600);
-                        return;
-                    }
-
-                    // 登録後: 担当者カードに contact_id をセット（招待ボタン有効化）
-                    const { data: saved } = await supabaseClient
-                        .from('member_contacts')
-                        .select('id, email, sort_order')
-                        .eq('member_id', inserted.id)
-                        .order('sort_order', { ascending: true });
-                    if (Array.isArray(saved)) {
-                        [...contactsList.querySelectorAll('.contact-row')].forEach((row, i) => {
-                            if (saved[i]) {
-                                row.dataset.contactId = saved[i].id;
-                                row.querySelector('[data-invite-btn]').dispatchEvent(new Event('refresh'));
-                                // 招待ボタン有効化を再評価
-                                row.querySelector('input[name="contact_email[]"]').dispatchEvent(new Event('input'));
-                            }
-                        });
-                    }
-                }
-
-                window.cidmAdminUi.showToast('登録が完了しました。招待メールを送信してください。', 'success', 2400);
-                submitBtn.textContent = '更新';
-                // URL を更新してリロードなしで編集モードに切り替え
-                window.history.replaceState({}, '', `admin-member-new.html?id=${inserted.id}`);
-                if (headerBackLink) {
-                    headerBackLink.href = `admin-members.html?id=${inserted.id}`;
-                    headerBackLink.innerHTML = '<i class="fa-solid fa-chevron-left"></i> 会員詳細へ戻る';
-                }
-                return;
-            }
-
-            // ---- 更新 ----
-            const { error: updateErr } = await supabaseClient
-                .from('member').update(memberData).eq('id', memberId);
-            if (updateErr) {
-                window.cidmAdminUi.showToast('更新に失敗しました: ' + updateErr.message, 'error', 3000);
-                return;
-            }
-
-            // 担当者同期: 削除 → 再挿入
-            const isRls = (e) => String(e?.message || '').includes('row-level security policy') || String(e?.message || '').includes('permission denied');
-            const { error: delErr } = await supabaseClient.from('member_contacts').delete().eq('member_id', memberId);
-            if (delErr && !isRls(delErr)) {
-                window.cidmAdminUi.showToast('担当者情報の更新準備に失敗しました: ' + delErr.message, 'error', 3600);
-                return;
-            }
-
-            if (!delErr && contacts.length > 0) {
-                const payload = contacts.map(c => {
-                    const { id: _id, ...rest } = c;
-                    return { ...rest, member_id: memberId };
-                });
-                const { data: saved, error: insErr } = await supabaseClient
-                    .from('member_contacts').insert(payload).select('id, email, sort_order');
-                if (insErr && !isRls(insErr)) {
-                    window.cidmAdminUi.showToast('担当者情報の更新に失敗しました: ' + insErr.message, 'error', 3600);
-                    return;
-                }
-                // contact_id を更新（招待ボタン再有効化）
-                if (Array.isArray(saved)) {
-                    [...contactsList.querySelectorAll('.contact-row')].forEach((row, i) => {
-                        if (saved[i]) {
-                            row.dataset.contactId = saved[i].id;
-                            row.querySelector('input[name="contact_email[]"]').dispatchEvent(new Event('input'));
-                        }
-                    });
-                }
-            }
-
-            window.cidmAdminUi.showToast('更新が完了しました。', 'success', 1200);
-            setTimeout(() => { window.location.href = `admin-members.html?id=${memberId}`; }, 600);
-        }, isEditMode ? '更新中...' : '登録中...');
-    });
-    </script>
-    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
-</body>
-</html>
-
-    const contactsList = document.getElementById('contacts-list');
-    const addContactBtn = document.getElementById('add-contact-btn');
-    const initialPasswordInput = document.getElementById('initial_password');
-    const initialPasswordToggle = document.getElementById('initial-password-toggle');
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const memberId = urlParams.get('id');
-    const isEditMode = !!memberId;
-
-    let contactIndex = 0;
-    let loginRpcAvailable = true;
-
-    function isRlsPolicyError(error) {
-        const msg = String(error?.message || '');
-        return msg.includes('row-level security policy') || msg.includes('permission denied');
-    }
-
-    function updatePageByMode() {
-        document.title = isEditMode ? '会員編集 | 管理者ポータル' : '会員新規登録 | 管理者ポータル';
-        if (formTitle) {
-            formTitle.innerHTML = isEditMode
-                ? '<i id="form-title-icon" class="fa-solid fa-user-pen"></i> 会員編集'
-                : '<i id="form-title-icon" class="fa-solid fa-user-plus"></i> 会員新規登録';
-        }
-        if (submitBtn) submitBtn.textContent = isEditMode ? '更新' : '登録';
-        if (headerBackLink) {
-            headerBackLink.href = isEditMode ? `admin-members.html?id=${memberId}` : 'admin-member-list.html';
-            headerBackLink.innerHTML = isEditMode
-                ? '<i class="fa-solid fa-chevron-left"></i> 会員詳細へ戻る'
-                : '<i class="fa-solid fa-chevron-left"></i> 会員一覧へ戻る';
-        }
-        if (passwordLabel) {
-            passwordLabel.innerHTML = isEditMode
-                ? 'パスワード再設定'
-                : '初期パスワード <span style="color:#f87171">*</span>';
-        }
-        if (passwordHelp) {
-            passwordHelp.textContent = isEditMode
-                ? '入力した場合、更新後に初期ログイン情報のメールを送信します。'
-                : '登録完了後、Email とこのパスワードをメールで送信します。';
-        }
-        if (initialPasswordInput) {
-            initialPasswordInput.required = !isEditMode;
-            initialPasswordInput.placeholder = isEditMode ? '変更する場合のみ入力' : '8文字以上';
-        }
-        if (passwordStatus) {
-            passwordStatus.style.display = isEditMode ? 'block' : 'none';
-            passwordStatus.textContent = isEditMode ? 'ログイン設定を確認中...' : '';
-        }
-    }
-
-    function renderPasswordStatus(settings) {
-        if (!passwordStatus || !isEditMode) return;
-        if (!settings) {
-            passwordStatus.textContent = 'ログイン設定を読み込めませんでした。';
-            return;
-        }
-        const updatedAt = settings.password_updated_at
-            ? new Date(settings.password_updated_at).toLocaleString('ja-JP')
-            : '未設定';
-        passwordStatus.textContent = settings.has_password
-            ? `パスワード設定済み（最終更新: ${updatedAt}）`
-            : 'パスワード未設定です。';
-    }
-
-    function addContactRow(contact = null) {
-        const idx = contactIndex++;
-        const num = contactsList.children.length + 1;
-        const row = document.createElement('div');
-        row.className = 'contact-row';
-        row.dataset.idx = idx;
-        if (contact?.id) row.dataset.contactId = contact.id;
-        row.innerHTML = `
-            <div class="contact-row-header">
-                <span class="contact-row-num">担当者 ${num}</span>
-                <div style="display:flex;align-items:center;gap:0.8rem;">
-                    <label class="contact-primary-label">
-                        <input type="radio" name="primary_contact" value="${idx}" ${contact?.is_primary ? 'checked' : ''}> 主担当者
-                    </label>
-                    <button type="button" class="contact-del-btn" title="削除"><i class="fa-solid fa-trash-can"></i></button>
-                </div>
-            </div>
-            <div class="contact-fields">
-                <div class="form-group full"><label>担当者名</label><input type="text" name="contact_name[]" placeholder="山田 太郎" value="${contact?.name || ''}"></div>
-                <div class="form-group"><label>電話番号</label><input type="text" name="contact_phone[]" placeholder="090-0000-0000" value="${contact?.phone || ''}"></div>
-                <div class="form-group"><label>メールアドレス</label><input type="email" name="contact_email[]" value="${contact?.email || ''}"></div>
-                <div class="form-group full"><label><input type="checkbox" name="contact_receive_invite[]" ${contact?.receive_invite_mail === false ? '' : 'checked'}> 会議案内メールの送信対象に含める</label></div>
-                <div class="form-group full"><label><input type="checkbox" name="contact_receive_invoice[]" ${contact?.receive_invoice_mail === false ? '' : 'checked'}> 会費請求メールの送信対象に含める</label></div>
-            </div>
-        `;
-        row.querySelector('.contact-del-btn').addEventListener('click', () => {
-            if (contactsList.children.length <= 1) return;
-            const wasPrimary = row.querySelector('input[type=radio]').checked;
-            row.remove();
-            [...contactsList.children].forEach((r, i) => {
-                r.querySelector('.contact-row-num').textContent = `担当者 ${i + 1}`;
-            });
-            if (wasPrimary && contactsList.children.length > 0) {
-                contactsList.children[0].querySelector('input[type=radio]').checked = true;
-            }
-        });
-        contactsList.appendChild(row);
-    }
-
-    initialPasswordToggle?.addEventListener('click', () => {
-        const isPassword = initialPasswordInput?.type === 'password';
-        if (!initialPasswordInput) return;
-        initialPasswordInput.type = isPassword ? 'text' : 'password';
-        initialPasswordToggle.textContent = isPassword ? '非表示' : '表示';
-    });
-
-    addContactBtn.addEventListener('click', () => addContactRow({ is_primary: false }));
-
-    cancelBtn?.addEventListener('click', async () => {
-        const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
-        if (!accepted) return;
-        window.history.back();
-    });
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        updatePageByMode();
-        const authed = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
-        if (!authed) return;
-
-        if (!isEditMode) {
-            addContactRow({ is_primary: true });
-            return;
-        }
-
-        const { data, error } = await supabaseClient.from('member').select('*').eq('id', memberId).single();
-        if (error || !data) {
-            window.cidmAdminUi.showToast('データ取得に失敗しました。', 'error', 3000);
-            form.style.display = 'none';
-            return;
-        }
-
         form.division_flag.value = data.division_flag || '会員';
         form.member_type.value = data.member_type || '';
-        form.is_officer.checked = Boolean(data.is_officer) || data.member_type === '役員';
+        form.is_officer.checked = Boolean(data.is_officer);
         form.cidm_role.value = data.cidm_role || '';
         form.company_name.value = data.company_name || '';
-        form.department.value = data.department || '';
-        form.job_title.value = data.job_title || '';
         form.representative_name.value = data.representative_name || '';
         form.zip_code.value = data.zip_code || '';
         form.address.value = data.address || '';
         form.phone_number.value = data.phone_number || '';
         form.fax_number.value = data.fax_number || '';
-        form.email.value = data.email || '';
-        form.biko.value = data.biko || '';
 
-        const { data: contactData } = await supabaseClient
+        const { data: contacts } = await supabaseClient
             .from('member_contacts')
-            .select('id, name, phone, email, receive_invite_mail, receive_invoice_mail, is_primary, sort_order')
+            .select('id, department, job_title, name, email, phone, phone_direct, receive_invite_mail, receive_invoice_mail, biko, is_primary, is_cidm_contact, sort_order')
             .eq('member_id', memberId)
             .order('sort_order', { ascending: true });
 
         contactsList.innerHTML = '';
-        if (Array.isArray(contactData) && contactData.length > 0) {
-            contactData.forEach(c => addContactRow(c));
+        contactIndex = 0;
+        if (Array.isArray(contacts) && contacts.length > 0) {
+            contacts.forEach((contact) => addContactRow(contact));
         } else {
-            addContactRow({
-                name: data.staff_name || '',
-                phone: data.staff_mobile || '',
-                email: data.staff_email || '',
-                receive_invite_mail: true,
-                receive_invoice_mail: true,
-                is_primary: true
-            });
+            addContactRow({ is_primary: true, is_cidm_contact: true });
         }
-
-        if (!form.querySelector('input[name=primary_contact]:checked') && contactsList.children.length > 0) {
-            contactsList.children[0].querySelector('input[name=primary_contact]').checked = true;
+        if (!form.querySelector('input[name="primary_contact"]:checked') && contactsList.children.length > 0) {
+            contactsList.children[0].querySelector('input[name="primary_contact"]').checked = true;
         }
+        if (!form.querySelector('input[name="cidm_contact"]:checked') && contactsList.children.length > 0) {
+            contactsList.children[0].querySelector('input[name="cidm_contact"]').checked = true;
+        }
+    }
 
-        const { data: loginSettings, error: loginSettingsError } = await supabaseClient.rpc('cidm_get_member_login_settings', {
-            p_member_id: memberId
-        });
-        if (!loginSettingsError && Array.isArray(loginSettings) && loginSettings[0]) {
-            renderPasswordStatus(loginSettings[0]);
+    addContactBtn.addEventListener('click', () => addContactRow({}));
+
+    cancelBtn.addEventListener('click', async () => {
+        const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
+        if (!accepted) return;
+        window.history.back();
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        setPageMode();
+        const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
+        if (!ok) return;
+        if (isEditMode) {
+            await loadEditData();
         } else {
-            if (loginSettingsError && String(loginSettingsError.message || '').includes('admin access required')) {
-                loginRpcAvailable = false;
-                if (passwordStatus) {
-                    passwordStatus.textContent = '認証バイパス中のためログイン情報は更新できません。';
-                }
-                initialPasswordInput.disabled = true;
-                initialPasswordToggle.disabled = true;
-                initialPasswordToggle.style.opacity = '0.55';
-                initialPasswordToggle.style.cursor = 'default';
-            }
-            if (loginRpcAvailable) {
-                renderPasswordStatus(null);
-            }
+            addContactRow({ is_primary: true, is_cidm_contact: true });
         }
     });
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
         await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
             const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
             if (!ok) return;
 
-            const contactRows = [...contactsList.querySelectorAll('.contact-row')];
-            const primaryIdxVal = parseInt(form.querySelector('input[name=primary_contact]:checked')?.value ?? '-1', 10);
-            const contacts = contactRows.map((row, i) => ({
-                name: row.querySelector('input[name="contact_name[]"]').value.trim() || null,
-                phone: row.querySelector('input[name="contact_phone[]"]').value.trim() || null,
-                email: row.querySelector('input[name="contact_email[]"]').value.trim() || null,
-                receive_invite_mail: row.querySelector('input[name="contact_receive_invite[]"]')?.checked !== false,
-                receive_invoice_mail: row.querySelector('input[name="contact_receive_invoice[]"]')?.checked !== false,
-                is_primary: parseInt(row.dataset.idx, 10) === primaryIdxVal,
-                sort_order: i
-            })).filter(c => c.name || c.phone || c.email);
+            const contacts = collectContacts();
+            if (contacts.length === 0) {
+                window.cidmAdminUi.showToast('担当者を1名以上入力してください。', 'error', 2600);
+                return;
+            }
+            if (!contacts.some((contact) => contact.is_primary)) contacts[0].is_primary = true;
+            if (!contacts.some((contact) => contact.is_cidm_contact)) contacts[0].is_cidm_contact = true;
 
-            const primaryContact = contacts.find(c => c.is_primary) || contacts[0] || {};
-            const email = form.email.value.trim();
-            const memberPassword = form.initial_password.value.trim();
-
-            const data = {
+            const primaryContact = contacts.find((contact) => contact.is_primary) || contacts[0];
+            const memberData = {
                 division_flag: form.division_flag.value || '会員',
                 member_type: form.member_type.value || null,
                 is_officer: form.is_officer.checked,
                 cidm_role: form.cidm_role.value.trim() || null,
                 company_name: form.company_name.value.trim(),
-                department: form.department.value.trim() || null,
-                job_title: form.job_title.value.trim() || null,
                 representative_name: form.representative_name.value.trim(),
-                zip_code: form.zip_code.value.trim(),
-                address: form.address.value.trim(),
-                phone_number: form.phone_number.value.trim(),
+                zip_code: form.zip_code.value.trim() || null,
+                address: form.address.value.trim() || null,
+                phone_number: form.phone_number.value.trim() || null,
                 fax_number: form.fax_number.value.trim() || null,
-                email: email,
                 staff_name: primaryContact.name || null,
                 staff_mobile: primaryContact.phone || null,
                 staff_email: primaryContact.email || null,
-                biko: form.biko.value.trim()
+                department: primaryContact.department || null,
+                job_title: primaryContact.job_title || null,
+                biko: primaryContact.biko || null
             };
 
-            if (!data.company_name || !data.representative_name || !email || (!isEditMode && !memberPassword)) {
-                window.cidmAdminUi.showToast('必須項目を入力してください。', 'error', 2200);
-                return;
-            }
-            if (memberPassword && memberPassword.length < 8) {
-                window.cidmAdminUi.showToast(isEditMode ? 'パスワードは8文字以上で入力してください。' : '初期パスワードは8文字以上で入力してください。', 'error', 2600);
+            if (!memberData.company_name || !memberData.representative_name) {
+                window.cidmAdminUi.showToast('会社名と代表者名は必須です。', 'error', 2400);
                 return;
             }
 
             if (!isEditMode) {
-                const { data: insertedMember, error: insertError } = await supabaseClient.from('member').insert([data]).select('id').single();
-                if (insertError || !insertedMember) {
+                const { data: inserted, error: insertError } = await supabaseClient.from('member').insert([memberData]).select('id').single();
+                if (insertError || !inserted) {
                     window.cidmAdminUi.showToast('登録に失敗しました: ' + (insertError?.message || 'unknown error'), 'error', 3000);
                     return;
                 }
-
-                const { error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
-                    p_member_id: insertedMember.id,
-                    p_login_id: email,
-                    p_password: memberPassword
-                });
-                if (loginError) {
-                    const loginMessage = String(loginError.message || '');
-                    if (loginMessage.includes('admin access required')) {
-                        window.cidmAdminUi.showToast('認証バイパス中のためログイン情報の登録はスキップしました。', 'info', 2800);
-                    } else {
-                        await supabaseClient.from('member').delete().eq('id', insertedMember.id);
-                        window.cidmAdminUi.showToast('ログイン情報の登録に失敗しました: ' + loginError.message, 'error', 3600);
-                        return;
-                    }
+                const payload = contacts.map((contact) => ({ ...contact, member_id: inserted.id }));
+                const { error: contactError } = await supabaseClient.from('member_contacts').insert(payload);
+                if (contactError) {
+                    window.cidmAdminUi.showToast('担当者情報の登録に失敗しました: ' + contactError.message, 'error', 3600);
+                    return;
                 }
-
-                if (contacts.length > 0) {
-                    const contactsData = contacts.map(c => ({ ...c, member_id: insertedMember.id }));
-                    const { error: contactError } = await supabaseClient.from('member_contacts').insert(contactsData);
-                    if (contactError) {
-                        window.cidmAdminUi.showToast('担当者情報の登録に失敗しました: ' + contactError.message, 'error', 3600);
-                        return;
-                    }
-                }
-
-                let mailMessage = '登録が完了しました。';
-                try {
-                    if (window.cidmAdminMail?.sendMemberLoginMail) {
-                        await window.cidmAdminMail.sendMemberLoginMail({
-                            email: email,
-                            login_id: email,
-                            password: memberPassword,
-                            member_name: data.representative_name,
-                            company_name: data.company_name,
-                            login_url: new URL('index.html', window.location.href).href
-                        });
-                        mailMessage = '登録が完了しました。初期ログイン情報のメールも送信しました。';
-                    }
-                } catch (mailError) {
-                    mailMessage = '登録は完了しましたが、初期ログイン情報のメール送信に失敗しました: ' + (mailError?.message || 'unknown error');
-                    window.cidmAdminUi.showToast(mailMessage, 'error', 4200);
-                }
-
-                if (mailMessage.startsWith('登録が完了しました。')) {
-                    window.cidmAdminUi.showToast(mailMessage, 'success', 1600);
-                }
-                setTimeout(() => { window.location.href = 'admin-member-list.html'; }, 500);
+                window.cidmAdminUi.showToast('登録が完了しました。招待メールを送信してください。', 'success', 2200);
+                setTimeout(() => { window.location.href = `admin-member-new.html?id=${inserted.id}`; }, 500);
                 return;
             }
 
-            const { error: updateError } = await supabaseClient.from('member').update(data).eq('id', memberId);
+            const { error: updateError } = await supabaseClient.from('member').update(memberData).eq('id', memberId);
             if (updateError) {
                 window.cidmAdminUi.showToast('更新に失敗しました: ' + updateError.message, 'error', 3000);
                 return;
             }
-
-            let updatedLoginSettings = null;
-            const shouldUpdateLogin = loginRpcAvailable && !!memberPassword;
-            if (!loginRpcAvailable && !!memberPassword) {
-                window.cidmAdminUi.showToast('認証バイパス中のためログイン情報の更新はスキップしました。', 'info', 2800);
+            const { error: deleteError } = await supabaseClient.from('member_contacts').delete().eq('member_id', memberId);
+            if (deleteError) {
+                window.cidmAdminUi.showToast('担当者情報の更新準備に失敗しました: ' + deleteError.message, 'error', 3600);
+                return;
             }
-            if (shouldUpdateLogin) {
-                const { data: loginData, error: loginError } = await supabaseClient.rpc('cidm_admin_set_member_login', {
-                    p_member_id: memberId,
-                    p_login_id: email,
-                    p_password: memberPassword || null
-                });
-                if (loginError) {
-                    window.cidmAdminUi.showToast('基本情報は更新しましたが、ログイン情報の更新に失敗しました: ' + loginError.message, 'error', 4200);
-                    return;
-                }
-                updatedLoginSettings = loginData;
+            const payload = contacts.map((contact) => ({ ...contact, member_id: memberId }));
+            const { error: insertContactError } = await supabaseClient.from('member_contacts').insert(payload);
+            if (insertContactError) {
+                window.cidmAdminUi.showToast('担当者情報の更新に失敗しました: ' + insertContactError.message, 'error', 3600);
+                return;
             }
-
-            let canSyncContacts = true;
-            const { error: delError } = await supabaseClient.from('member_contacts').delete().eq('member_id', memberId);
-            if (delError) {
-                if (isRlsPolicyError(delError)) {
-                    canSyncContacts = false;
-                    window.cidmAdminUi.showToast('認証バイパス中のため担当者テーブル同期はスキップしました。', 'info', 2800);
-                } else {
-                    window.cidmAdminUi.showToast('担当者情報の更新準備に失敗しました: ' + delError.message, 'error', 3600);
-                    return;
-                }
-            }
-
-            if (canSyncContacts && contacts.length > 0) {
-                const payload = contacts.map(c => ({ ...c, member_id: memberId }));
-                const { error: insError } = await supabaseClient.from('member_contacts').insert(payload);
-                if (insError) {
-                    if (isRlsPolicyError(insError)) {
-                        window.cidmAdminUi.showToast('認証バイパス中のため担当者テーブル同期はスキップしました。', 'info', 2800);
-                    } else {
-                        window.cidmAdminUi.showToast('担当者情報の更新に失敗しました: ' + insError.message, 'error', 3600);
-                        return;
-                    }
-                }
-            }
-
-            if (Array.isArray(updatedLoginSettings) && updatedLoginSettings[0]) {
-                renderPasswordStatus(updatedLoginSettings[0]);
-            }
-
-            if (memberPassword) {
-                try {
-                    if (window.cidmAdminMail?.sendMemberLoginMail) {
-                        await window.cidmAdminMail.sendMemberLoginMail({
-                            email: email,
-                            login_id: email,
-                            password: memberPassword,
-                            member_name: form.representative_name.value.trim(),
-                            company_name: form.company_name.value.trim(),
-                            login_url: new URL('index.html', window.location.href).href
-                        });
-                        window.cidmAdminUi.showToast('初期ログイン情報のメールを送信しました。', 'success', 1600);
-                    }
-                } catch (mailError) {
-                    window.cidmAdminUi.showToast('更新は完了しましたが、初期ログイン情報のメール送信に失敗しました: ' + (mailError?.message || 'unknown error'), 'error', 4200);
-                }
-            }
-
-            form.initial_password.value = '';
             window.cidmAdminUi.showToast('更新が完了しました。', 'success', 1200);
             setTimeout(() => { window.location.href = `admin-members.html?id=${memberId}`; }, 500);
         }, isEditMode ? '更新中...' : '登録中...');

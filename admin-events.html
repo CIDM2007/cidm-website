@@ -175,7 +175,7 @@
                         <label>対象者 *</label>
                         <div class="target-mode">
                             <label><input type="radio" name="target_mode" value="manual" checked> 会員一覧から個別選択</label>
-                            <label><input type="radio" name="target_mode" value="filter"> 条件指定（種別/区分/役員/CIDM役職）</label>
+                            <label><input type="radio" name="target_mode" value="filter"> 条件指定（種別/区分/役員/CIDM担当者）</label>
                         </div>
 
                         <div id="target-manual" class="target-box">
@@ -202,8 +202,10 @@
                                 <div class="check-wrap" id="filter-member-type"></div>
                             </div>
                             <div class="form-group" style="margin-bottom:0;">
-                                <label style="margin-bottom:.25rem;">CIDM役職</label>
-                                <div class="check-wrap" id="filter-cidm-role"></div>
+                                <label style="margin-bottom:.25rem;">CIDM担当者</label>
+                                <div class="check-wrap" id="filter-cidm-role">
+                                    <label><input type="checkbox" id="filter-cidm-contact" name="filter_cidm_contact" value="CIDM担当者"> CIDM担当者のみ</label>
+                                </div>
                             </div>
                             <div class="filter-list-actions">
                                 <button type="button" class="btn btn-secondary" id="open-filter-list"><i class="fa-solid fa-list"></i> リスト表示</button>
@@ -350,7 +352,7 @@
             divisions: getCheckedValues('filter_division'),
             officerOnly: Boolean(document.getElementById('filter-is-officer')?.checked),
             memberTypes: getCheckedValues('filter_member_type'),
-            roles: getCheckedValues('filter_cidm_role')
+            roles: getCheckedValues('filter_cidm_contact')
         };
     }
 
@@ -373,7 +375,7 @@
                 (filters.divisions.length === 0 || filters.divisions.includes(division))
                 && (!filters.officerOnly || isOfficer)
                 && (filters.memberTypes.length === 0 || filters.memberTypes.includes(memberType))
-                && (filters.roles.length === 0 || filters.roles.includes(role))
+                && (filters.roles.length === 0 || (filters.roles.includes('CIDM担当者') ? Boolean(m.has_cidm_contact) : filters.roles.includes(role)))
             );
         });
     }
@@ -482,19 +484,29 @@
             .select('id, company_name, staff_name, division_flag, is_officer, member_type, cidm_role')
             .order('company_name', { ascending: true });
 
-        if (error) {
-            window.cidmAdminUi.showToast('会員マスタ取得に失敗しました: ' + error.message, 'error', 2800);
+        const { data: cidmContacts, error: cidmContactError } = await supabaseClient
+            .from('member_contacts')
+            .select('member_id')
+            .eq('is_cidm_contact', true);
+
+        if (error || cidmContactError) {
+            window.cidmAdminUi.showToast('会員マスタ取得に失敗しました: ' + (error?.message || cidmContactError?.message), 'error', 2800);
             memberMaster = [];
             renderManualMembers([]);
             renderFilterCheckboxes('filter-division', 'filter_division', []);
             const officerOnly = document.getElementById('filter-is-officer');
             if (officerOnly) officerOnly.checked = false;
             renderFilterCheckboxes('filter-member-type', 'filter_member_type', []);
-            renderFilterCheckboxes('filter-cidm-role', 'filter_cidm_role', []);
+            const cidmCheckbox = document.getElementById('filter-cidm-contact');
+            if (cidmCheckbox) cidmCheckbox.checked = false;
             return;
         }
 
-        memberMaster = data || [];
+        const cidmMemberIds = new Set((cidmContacts || []).map((row) => row.member_id));
+        memberMaster = (data || []).map((member) => ({
+            ...member,
+            has_cidm_contact: cidmMemberIds.has(member.id)
+        }));
         filterPreviewAppliedIds = null;
         updateFilterListSummary();
         renderManualMembers(memberMaster);
@@ -502,7 +514,8 @@
         const officerOnly = document.getElementById('filter-is-officer');
         if (officerOnly) officerOnly.checked = false;
         renderFilterCheckboxes('filter-member-type', 'filter_member_type', uniqueNonEmpty(memberMaster.map((m) => m.member_type)));
-        renderFilterCheckboxes('filter-cidm-role', 'filter_cidm_role', uniqueNonEmpty(memberMaster.map((m) => m.cidm_role)));
+        const cidmCheckbox = document.getElementById('filter-cidm-contact');
+        if (cidmCheckbox) cidmCheckbox.checked = false;
     }
 
     function renderEvents(events) {
@@ -594,7 +607,7 @@
                 if (selectedDivisions.length) targetNoteParts.push(`区分:${selectedDivisions.join(' / ')}`);
                 if (filters.officerOnly) targetNoteParts.push('役員:役員のみ');
                 if (selectedMemberTypes.length) targetNoteParts.push(`種別:${selectedMemberTypes.join(' / ')}`);
-                if (selectedRoles.length) targetNoteParts.push(`役職:${selectedRoles.join(' / ')}`);
+                if (selectedRoles.length) targetNoteParts.push(`CIDM担当者:${selectedRoles.join(' / ')}`);
                 if (selectedFilteredMemberIds) targetNoteParts.push(`対象者調整:${selectedFilteredMemberIds.length}件`);
             }
 
@@ -644,7 +657,8 @@
             updateFilterListSummary();
             renderFilterCheckboxes('filter-division', 'filter_division', uniqueNonEmpty(memberMaster.map((m) => m.division_flag || '会員')));
             renderFilterCheckboxes('filter-member-type', 'filter_member_type', uniqueNonEmpty(memberMaster.map((m) => m.member_type)));
-            renderFilterCheckboxes('filter-cidm-role', 'filter_cidm_role', uniqueNonEmpty(memberMaster.map((m) => m.cidm_role)));
+            const cidmCheckbox = document.getElementById('filter-cidm-contact');
+            if (cidmCheckbox) cidmCheckbox.checked = false;
             form.invite_mail_body.value = getDefaultInviteBodyByMode('rsvp');
             await loadEvents();
             if (data) {
@@ -674,7 +688,7 @@
         el.addEventListener('change', updateDeliveryModeUI);
     });
 
-    ['filter_division', 'filter_member_type', 'filter_cidm_role', 'filter_is_officer'].forEach((name) => {
+    ['filter_division', 'filter_member_type', 'filter_cidm_contact', 'filter_is_officer'].forEach((name) => {
         document.addEventListener('change', (e) => {
             const target = e.target;
             if (!(target instanceof HTMLInputElement)) return;
