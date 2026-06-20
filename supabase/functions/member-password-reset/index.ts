@@ -1,5 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// member-password-reset Edge Function
+// action=request  : 担当者が自分でリセット要求（セルフサービス）
+// action=consume  : トークンを使ってパスワード設定（担当者・旧会員両対応）
+// action=invite   : 管理者が担当者を招待（招待メール送信）
+
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('CIDM_SUPABASE_SECRET_KEY') || Deno.env.get('SUPABASE_SECRET_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
@@ -99,6 +104,9 @@ async function sendResetMail(toEmail: string, resetUrl: string): Promise<void> {
   }
 }
 
+// -------------------------------------------------------
+// action=request: 担当者セルフサービス パスワードリセット要求
+// -------------------------------------------------------
 async function requestReset(req: Request, payload: Record<string, unknown>): Promise<Response> {
   const loginId = normalizeEmail(payload.login_id)
 
@@ -106,48 +114,30 @@ async function requestReset(req: Request, payload: Record<string, unknown>): Pro
     return jsonResponse({ ok: true })
   }
 
-  const { data: member, error } = await supabase
-    .from('member')
-    .select('id, login_id')
-    .eq('login_id', loginId)
-    .limit(1)
-    .maybeSingle()
-
-  if (error) {
-    console.error('member-password-reset request lookup error:', error)
-    return jsonResponse({ error: 'Internal server error' }, 500)
-  }
-
-  if (!member || !member.id) {
-    return jsonResponse({ ok: true })
-  }
-
   const rawToken = createRawToken()
   const tokenHash = await sha256Hex(rawToken)
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString()
 
-  await supabase
-    .from('member_password_reset_tokens')
-    .update({ used_at: new Date().toISOString() })
-    .eq('member_id', member.id)
-    .is('used_at', null)
+  // 担当者（member_staff_auth）から検索
+  const { data: rows, error: rpcError } = await supabase.rpc(
+    'cidm_request_contact_password_reset',
+    { p_login_id: loginId, p_token_hash: tokenHash }
+  )
 
-  const { error: insertError } = await supabase
-    .from('member_password_reset_tokens')
-    .insert({
-      member_id: member.id,
-      token_hash: tokenHash,
-      expires_at: expiresAt
-    })
-
-  if (insertError) {
-    console.error('member-password-reset token insert error:', insertError)
+  if (rpcError) {
+    console.error('member-password-reset contact request error:', rpcError)
     return jsonResponse({ error: 'Internal server error' }, 500)
+  }
+
+  const contact = Array.isArray(rows) ? rows[0] : null
+
+  // 見つからない場合は成功扱い（列挙攻撃防止）
+  if (!contact || !contact.contact_email) {
+    return jsonResponse({ ok: true })
   }
 
   try {
     const resetUrl = buildResetUrl(req, rawToken)
-    await sendResetMail(loginId, resetUrl)
+    await sendResetMail(contact.contact_email, resetUrl)
   } catch (mailError) {
     console.error('member-password-reset send mail error:', mailError)
     return jsonResponse({ error: 'メール送信に失敗しました。時間をおいて再度お試しください。' }, 500)
@@ -156,6 +146,101 @@ async function requestReset(req: Request, payload: Record<string, unknown>): Pro
   return jsonResponse({ ok: true })
 }
 
+// -------------------------------------------------------
+// action=invite: 管理者が担当者に招待メールを送信
+// -------------------------------------------------------
+async function inviteContact(req: Request, payload: Record<string, unknown>): Promise<Response> {
+  const contactId = String(payload.contact_id || '').trim()
+  if (!contactId) {
+    return jsonResponse({ error: 'contact_id is required' }, 400)
+  }
+
+  // 管理者認証: Authorization ヘッダーの JWT を使って呼び出し元を確認
+  const authHeader = (req.headers.get('Authorization') || req.headers.get('authorization') || '').trim()
+  if (!authHeader.startsWith('Bearer ')) {
+    return jsonResponse({ error: 'Unauthorized' }, 401)
+  }
+  const callerJwt = authHeader.slice(7)
+  const callerClient = createClient(SUPABASE_URL, callerJwt, {
+    auth: { persistSession: false }
+  })
+  const { data: { user }, error: userErr } = await callerClient.auth.getUser()
+  if (userErr || !user) {
+    return jsonResponse({ error: 'Unauthorized' }, 401)
+  }
+
+  const rawToken = createRawToken()
+  const tokenHash = await sha256Hex(rawToken)
+
+  const { data: rows, error: rpcError } = await supabase.rpc(
+    'cidm_admin_create_contact_invite',
+    {
+      p_contact_id: contactId,
+      p_token_hash: tokenHash,
+      p_token_type: 'invite'
+    }
+  )
+
+  if (rpcError) {
+    console.error('invite contact rpc error:', rpcError)
+    return jsonResponse({ error: rpcError.message || 'Internal server error' }, 500)
+  }
+
+  const row = Array.isArray(rows) ? rows[0] : null
+  if (!row || !row.contact_email) {
+    return jsonResponse({ error: 'contact not found or has no email' }, 400)
+  }
+
+  const inviteUrl = buildResetUrl(req, rawToken)
+
+  try {
+    await sendInviteMail(row.contact_email, row.contact_name || '', inviteUrl)
+  } catch (mailError) {
+    console.error('invite mail error:', mailError)
+    return jsonResponse({ error: 'メール送信に失敗しました。' }, 500)
+  }
+
+  return jsonResponse({ ok: true, contact_email: row.contact_email })
+}
+
+async function sendInviteMail(toEmail: string, contactName: string, inviteUrl: string): Promise<void> {
+  const resendApiKey = Deno.env.get('RESEND_API_KEY')
+  const from = Deno.env.get('RESEND_FROM_EMAIL')
+  if (!resendApiKey || !from) throw new Error('Missing email environment variables')
+
+  const subject = '【CIDM】会員ポータル ご利用開始のご案内'
+  const text = [
+    contactName ? `${contactName} 様` : 'CIDM 会員担当者様',
+    '',
+    'このたびは CIDM 会員ポータルのご登録、誠にありがとうございます。',
+    '以下の URL からパスワードを設定のうえ、ポータルへのログインをお願いいたします。',
+    '',
+    inviteUrl,
+    '',
+    '※ このURLの有効期限は 72 時間です。期限を過ぎた場合は管理者までお問い合わせください。',
+    '',
+    'このメールに心当たりがない場合は、恐れ入りますが破棄してください。',
+    '',
+    '――――――――――――――――――',
+    'CIDM',
+    `送信先: ${toEmail}`
+  ].join('\n')
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from, to: [toEmail], subject, text })
+  })
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(errText || 'Failed to send invite email')
+  }
+}
+
+// -------------------------------------------------------
+// action=consume: トークンを消費してパスワードを設定
+//   担当者トークン（contact_password_reset_tokens）を優先して試みる
+// -------------------------------------------------------
 async function consumeReset(payload: Record<string, unknown>): Promise<Response> {
   const token = String(payload.token || '').trim()
   const newPassword = String(payload.new_password || '')
@@ -174,17 +259,36 @@ async function consumeReset(payload: Record<string, unknown>): Promise<Response>
   }
 
   const tokenHash = await sha256Hex(token)
-  const { data, error } = await supabase.rpc('cidm_consume_member_password_reset', {
-    p_token_hash: tokenHash,
-    p_new_password: newPassword
-  })
 
-  if (error) {
-    console.error('member-password-reset consume rpc error:', error)
+  // 担当者トークンを優先して試みる
+  const { data: contactResult, error: contactError } = await supabase.rpc(
+    'cidm_consume_contact_password_reset',
+    { p_token_hash: tokenHash, p_new_password: newPassword }
+  )
+
+  if (!contactError && contactResult?.ok === true) {
+    return jsonResponse({ ok: true })
+  }
+
+  // 担当者トークンで "invalid or expired token" 以外のエラーは内部エラー
+  if (contactError) {
+    console.error('member-password-reset consume contact rpc error:', contactError)
     return jsonResponse({ error: 'パスワード更新に失敗しました。' }, 400)
   }
 
-  if (!data) {
+  // contactResult.ok === false の場合: トークンが見つからなかった
+  // 旧 member トークンにフォールバック（後方互換）
+  const { data: memberResult, error: memberError } = await supabase.rpc(
+    'cidm_consume_member_password_reset',
+    { p_token_hash: tokenHash, p_new_password: newPassword }
+  )
+
+  if (memberError) {
+    console.error('member-password-reset consume member rpc error:', memberError)
+    return jsonResponse({ error: 'パスワード更新に失敗しました。' }, 400)
+  }
+
+  if (!memberResult) {
     return jsonResponse({ error: 'URLが無効か有効期限切れです。' }, 400)
   }
 
@@ -213,6 +317,10 @@ export default async function handler(req: Request): Promise<Response> {
 
     if (action === 'consume') {
       return await consumeReset(payload)
+    }
+
+    if (action === 'invite') {
+      return await inviteContact(req, payload)
     }
 
     return jsonResponse({ error: 'Invalid action' }, 400)

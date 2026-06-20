@@ -74,6 +74,17 @@
         }
         .officer-check-title { font-weight:700; }
         .officer-check-help { display:block; margin-top:0.15rem; color:#64748b; font-size:0.78rem; line-height:1.5; }
+        /* 担当者カード内の招待ボタンエリア */
+        .contact-invite-bar { display:flex; align-items:center; gap:0.6rem; margin-top:0.5rem; padding-top:0.6rem; border-top:1px dashed #e2e8f0; flex-wrap:wrap; }
+        .btn-invite { display:inline-flex; align-items:center; gap:0.35rem; background:#eff6ff; border:1px solid #93c5fd; color:#1d4ed8; border-radius:0.5rem; padding:0.3rem 0.8rem; font-size:0.76rem; font-weight:700; cursor:pointer; transition:background 0.15s; }
+        .btn-invite:hover { background:#dbeafe; }
+        .btn-invite:disabled { opacity:0.5; cursor:not-allowed; }
+        .invite-status { font-size:0.74rem; color:#64748b; }
+        .invite-status.sent { color:#16a34a; }
+        .invite-status.error { color:#dc2626; }
+        /* CIDM担当者ラジオ */
+        .cidm-contact-label { display:inline-flex; align-items:center; gap:0.4rem; font-size:0.75rem; color:#64748b; cursor:pointer; }
+        .cidm-contact-label input[type=radio] { accent-color:#0ea5e9; }
     </style>
 </head>
 <body>
@@ -92,6 +103,7 @@
                 <h1 id="form-title"><i id="form-title-icon" class="fa-solid fa-user-plus"></i> 会員新規登録</h1>
             </div>
             <form id="member-form" autocomplete="off">
+                <!-- ========== 会社情報 ========== -->
                 <div class="form-section">
                     <p class="section-label"><i class="fa-solid fa-building"></i> 会社情報</p>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1rem;">
@@ -123,35 +135,26 @@
                     </div>
                     <div class="form-group"><label for="cidm_role">CIDM役職</label><input type="text" id="cidm_role" name="cidm_role" placeholder="副理事長, 理事, 監事 等"></div>
                     <div class="form-group"><label for="company_name">会社名 <span style="color:#f87171">*</span></label><input type="text" id="company_name" name="company_name" required></div>
-                    <div class="form-group"><label for="department">部署</label><input type="text" id="department" name="department"></div>
-                    <div class="form-group"><label for="job_title">役職</label><input type="text" id="job_title" name="job_title"></div>
-                    <div class="form-group"><label for="representative_name">責任者名 <span style="color:#f87171">*</span></label><input type="text" id="representative_name" name="representative_name" required></div>
+                    <div class="form-group"><label for="representative_name">代表者名 <span style="color:#f87171">*</span></label><input type="text" id="representative_name" name="representative_name" required></div>
                     <div class="form-group"><label for="zip_code">郵便番号</label><input type="text" id="zip_code" name="zip_code" placeholder="000-0000"></div>
                     <div class="form-group"><label for="address">住所</label><input type="text" id="address" name="address"></div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1rem;">
                         <div class="form-group"><label for="phone_number">電話番号</label><input type="text" id="phone_number" name="phone_number" placeholder="03-0000-0000"></div>
                         <div class="form-group"><label for="fax_number">FAX番号</label><input type="text" id="fax_number" name="fax_number" placeholder="03-0000-0000"></div>
                     </div>
-                    <div class="form-group"><label for="email">Email（会社代表・ログイン用） <span style="color:#f87171">*</span></label><input type="email" id="email" name="email" required></div>
                 </div>
-                <div class="form-section" id="login-section">
-                    <p class="section-label"><i class="fa-solid fa-key"></i> ログイン情報</p>
-                    <div class="form-group">
-                        <label for="initial_password" id="password-label">初期パスワード <span style="color:#f87171">*</span></label>
-                        <div style="position:relative;">
-                            <input type="password" id="initial_password" name="initial_password" required minlength="8" placeholder="8文字以上" style="padding-right:4.5rem;" value="" autocomplete="new-password" autocapitalize="off" spellcheck="false">
-                            <button type="button" id="initial-password-toggle" style="position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); border:none; background:transparent; color:#64748b; font-size:0.78rem; font-weight:700; cursor:pointer;">表示</button>
-                        </div>
-                        <p class="help" id="password-help" style="margin-top:0.35rem; color:#64748b; font-size:0.78rem;">登録完了後、Email とこのパスワードをメールで送信します。</p>
-                        <p class="help" id="password-status" style="display:none; margin-top:0.35rem; color:#64748b; font-size:0.78rem;"></p>
-                    </div>
-                </div>
+
+                <!-- ========== 担当者情報 ========== -->
                 <div class="form-section">
                     <p class="section-label"><i class="fa-solid fa-users"></i> 担当者情報</p>
+                    <p style="font-size:0.78rem; color:#64748b; margin-bottom:1rem; line-height:1.6;">
+                        担当者のメールアドレスがログインIDになります。<br>
+                        保存後に「招待メールを送信」ボタンを押すと、担当者本人がパスワードを設定できます。
+                    </p>
                     <div id="contacts-list"></div>
                     <button type="button" id="add-contact-btn" class="contact-add-btn"><i class="fa-solid fa-plus"></i> 担当者を追加</button>
-                    <div class="form-group" style="margin-top:1.2rem;"><label for="biko">備考</label><textarea id="biko" name="biko"></textarea></div>
                 </div>
+
                 <div class="form-actions">
                     <button type="button" id="cancel-btn" class="btn btn-cancel">キャンセル</button>
                     <button type="submit" class="btn btn-submit">登録</button>
@@ -163,7 +166,6 @@
     <script src="./cidm-config.js"></script>
     <script src="./admin-auth.js"></script>
     <script src="./admin-ui.js"></script>
-    <script src="./admin-login-mail.js"></script>
     <script>
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
 
@@ -172,10 +174,371 @@
     const submitBtn = form.querySelector('.btn-submit');
     const headerBackLink = document.getElementById('header-back-link');
     const formTitle = document.getElementById('form-title');
-    const formTitleIcon = document.getElementById('form-title-icon');
-    const passwordLabel = document.getElementById('password-label');
-    const passwordHelp = document.getElementById('password-help');
-    const passwordStatus = document.getElementById('password-status');
+
+    const contactsList = document.getElementById('contacts-list');
+    const addContactBtn = document.getElementById('add-contact-btn');
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const memberId = urlParams.get('id');
+    const isEditMode = !!memberId;
+
+    let contactIndex = 0;
+    let savedMemberId = memberId || null; // 新規登録後に確定する
+
+    // ----------------------------------------------------------------
+    // ページモード設定
+    // ----------------------------------------------------------------
+    function updatePageByMode() {
+        document.title = isEditMode ? '会員編集 | 管理者ポータル' : '会員新規登録 | 管理者ポータル';
+        if (formTitle) {
+            formTitle.innerHTML = isEditMode
+                ? '<i class="fa-solid fa-user-pen"></i> 会員編集'
+                : '<i class="fa-solid fa-user-plus"></i> 会員新規登録';
+        }
+        if (submitBtn) submitBtn.textContent = isEditMode ? '更新' : '登録';
+        if (headerBackLink) {
+            headerBackLink.href = isEditMode ? `admin-members.html?id=${memberId}` : 'admin-member-list.html';
+            headerBackLink.innerHTML = isEditMode
+                ? '<i class="fa-solid fa-chevron-left"></i> 会員詳細へ戻る'
+                : '<i class="fa-solid fa-chevron-left"></i> 会員一覧へ戻る';
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // 担当者カード生成
+    //   contact = { id?, member_id?, department, job_title, name, email,
+    //               phone(mobile), phone_direct, is_primary, is_cidm_contact,
+    //               receive_invite_mail, receive_invoice_mail, biko }
+    // ----------------------------------------------------------------
+    function addContactRow(contact = {}) {
+        const idx = contactIndex++;
+        const num = contactsList.children.length + 1;
+        const row = document.createElement('div');
+        row.className = 'contact-row';
+        row.dataset.idx = idx;
+        if (contact.id) row.dataset.contactId = contact.id;
+
+        row.innerHTML = `
+            <div class="contact-row-header">
+                <span class="contact-row-num">担当者 ${num}</span>
+                <div style="display:flex;align-items:center;gap:0.8rem;">
+                    <label class="contact-primary-label">
+                        <input type="radio" name="primary_contact" value="${idx}" ${contact.is_primary ? 'checked' : ''}> 主担当者
+                    </label>
+                    <label class="cidm-contact-label">
+                        <input type="radio" name="cidm_contact" value="${idx}" ${contact.is_cidm_contact ? 'checked' : ''}> CIDM担当者
+                    </label>
+                    <button type="button" class="contact-del-btn" title="削除"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+            </div>
+            <div class="contact-fields">
+                <div class="form-group"><label>部署</label><input type="text" name="contact_department[]" value="${contact.department || ''}"></div>
+                <div class="form-group"><label>役職</label><input type="text" name="contact_job_title[]" value="${contact.job_title || ''}"></div>
+                <div class="form-group full"><label>担当者名</label><input type="text" name="contact_name[]" placeholder="山田 太郎" value="${contact.name || ''}"></div>
+                <div class="form-group full"><label>メールアドレス <small style="color:#94a3b8;font-weight:400;">（ログインIDになります）</small></label><input type="email" name="contact_email[]" value="${contact.email || ''}" placeholder="staff@example.com"></div>
+                <div class="form-group"><label>携帯電話番号</label><input type="text" name="contact_phone[]" value="${contact.phone || ''}" placeholder="090-0000-0000"></div>
+                <div class="form-group"><label>電話番号（直通）</label><input type="text" name="contact_phone_direct[]" value="${contact.phone_direct || ''}" placeholder="03-0000-0000"></div>
+                <div class="form-group full"><label style="text-transform:none;letter-spacing:0;"><input type="checkbox" name="contact_receive_invite[]" ${contact.receive_invite_mail === false ? '' : 'checked'}> 会議案内メールの送信対象に含める</label></div>
+                <div class="form-group full"><label style="text-transform:none;letter-spacing:0;"><input type="checkbox" name="contact_receive_invoice[]" ${contact.receive_invoice_mail === false ? '' : 'checked'}> 会費請求メールの送信対象に含める</label></div>
+                <div class="form-group full"><label>備考</label><textarea name="contact_biko[]" rows="2">${contact.biko || ''}</textarea></div>
+            </div>
+            <div class="contact-invite-bar">
+                <button type="button" class="btn-invite" data-invite-btn>
+                    <i class="fa-solid fa-envelope"></i> 招待メールを送信
+                </button>
+                <span class="invite-status" data-invite-status></span>
+            </div>
+        `;
+
+        const inviteBtn = row.querySelector('[data-invite-btn]');
+        const inviteStatus = row.querySelector('[data-invite-status]');
+
+        // 招待ボタン: DBに保存済みでemailがある場合のみ有効
+        function refreshInviteBtn() {
+            const emailVal = row.querySelector('input[name="contact_email[]"]').value.trim();
+            const cId = row.dataset.contactId;
+            const hasEmail = !!emailVal;
+            const isSaved = !!cId;
+            inviteBtn.disabled = !(hasEmail && isSaved);
+            inviteBtn.title = !isSaved ? '先に保存してから招待メールを送信できます' : (!hasEmail ? 'メールアドレスを入力してください' : '');
+        }
+        row.querySelector('input[name="contact_email[]"]').addEventListener('input', refreshInviteBtn);
+        refreshInviteBtn();
+
+        inviteBtn.addEventListener('click', async () => {
+            const cId = row.dataset.contactId;
+            if (!cId) {
+                window.cidmAdminUi.showToast('先に保存してから招待メールを送信してください。', 'error', 2400);
+                return;
+            }
+            inviteBtn.disabled = true;
+            inviteStatus.textContent = '送信中...';
+            inviteStatus.className = 'invite-status';
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                const jwt = session?.access_token || '';
+                const resp = await fetch(
+                    'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/member-password-reset',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${jwt}`
+                        },
+                        body: JSON.stringify({ action: 'invite', contact_id: cId })
+                    }
+                );
+                const result = await resp.json();
+                if (!resp.ok || !result.ok) {
+                    throw new Error(result.error || '送信に失敗しました');
+                }
+                inviteStatus.textContent = '✓ 招待メールを送信しました';
+                inviteStatus.className = 'invite-status sent';
+            } catch (err) {
+                inviteStatus.textContent = '✗ ' + (err.message || '送信エラー');
+                inviteStatus.className = 'invite-status error';
+                inviteBtn.disabled = false;
+            }
+        });
+
+        row.querySelector('.contact-del-btn').addEventListener('click', () => {
+            if (contactsList.children.length <= 1) return;
+            const wasPrimary = row.querySelector('input[name=primary_contact]').checked;
+            const wasCidm = row.querySelector('input[name=cidm_contact]').checked;
+            row.remove();
+            renumberContacts();
+            if (wasPrimary && contactsList.children.length > 0) {
+                contactsList.children[0].querySelector('input[name=primary_contact]').checked = true;
+            }
+            if (wasCidm && contactsList.children.length > 0) {
+                contactsList.children[0].querySelector('input[name=cidm_contact]').checked = true;
+            }
+        });
+
+        contactsList.appendChild(row);
+    }
+
+    function renumberContacts() {
+        [...contactsList.children].forEach((r, i) => {
+            r.querySelector('.contact-row-num').textContent = `担当者 ${i + 1}`;
+        });
+    }
+
+    addContactBtn.addEventListener('click', () => addContactRow({ is_primary: false }));
+
+    cancelBtn?.addEventListener('click', async () => {
+        const accepted = await window.cidmAdminUi.showConfirm('入力内容を破棄して戻りますか？', { confirmText: '戻る' });
+        if (!accepted) return;
+        window.history.back();
+    });
+
+    // ----------------------------------------------------------------
+    // 担当者データ収集
+    // ----------------------------------------------------------------
+    function collectContacts() {
+        const rows = [...contactsList.querySelectorAll('.contact-row')];
+        const primaryIdxVal = parseInt(form.querySelector('input[name=primary_contact]:checked')?.value ?? '-1', 10);
+        const cidmIdxVal    = parseInt(form.querySelector('input[name=cidm_contact]:checked')?.value ?? '-1', 10);
+        return rows.map((row, i) => ({
+            id:                  row.dataset.contactId || null,
+            department:          row.querySelector('input[name="contact_department[]"]').value.trim() || null,
+            job_title:           row.querySelector('input[name="contact_job_title[]"]').value.trim() || null,
+            name:                row.querySelector('input[name="contact_name[]"]').value.trim() || null,
+            email:               row.querySelector('input[name="contact_email[]"]').value.trim() || null,
+            phone:               row.querySelector('input[name="contact_phone[]"]').value.trim() || null,
+            phone_direct:        row.querySelector('input[name="contact_phone_direct[]"]').value.trim() || null,
+            receive_invite_mail: row.querySelector('input[name="contact_receive_invite[]"]')?.checked !== false,
+            receive_invoice_mail:row.querySelector('input[name="contact_receive_invoice[]"]')?.checked !== false,
+            biko:                row.querySelector('textarea[name="contact_biko[]"]').value.trim() || null,
+            is_primary:          parseInt(row.dataset.idx, 10) === primaryIdxVal,
+            is_cidm_contact:     parseInt(row.dataset.idx, 10) === cidmIdxVal,
+            sort_order:          i
+        })).filter(c => c.name || c.email);
+    }
+
+    // ----------------------------------------------------------------
+    // ページ初期化
+    // ----------------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', async () => {
+        updatePageByMode();
+        const authed = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
+        if (!authed) return;
+
+        if (!isEditMode) {
+            addContactRow({ is_primary: true, is_cidm_contact: true });
+            return;
+        }
+
+        // ---- 編集モード: データ読み込み ----
+        const { data, error } = await supabaseClient.from('member').select('*').eq('id', memberId).single();
+        if (error || !data) {
+            window.cidmAdminUi.showToast('データ取得に失敗しました。', 'error', 3000);
+            form.style.display = 'none';
+            return;
+        }
+
+        form.division_flag.value       = data.division_flag || '会員';
+        form.member_type.value         = data.member_type || '';
+        form.is_officer.checked        = Boolean(data.is_officer);
+        form.cidm_role.value           = data.cidm_role || '';
+        form.company_name.value        = data.company_name || '';
+        form.representative_name.value = data.representative_name || '';
+        form.zip_code.value            = data.zip_code || '';
+        form.address.value             = data.address || '';
+        form.phone_number.value        = data.phone_number || '';
+        form.fax_number.value          = data.fax_number || '';
+
+        const { data: contactData } = await supabaseClient
+            .from('member_contacts')
+            .select('id, department, job_title, name, phone, phone_direct, email, receive_invite_mail, receive_invoice_mail, is_primary, is_cidm_contact, biko, sort_order')
+            .eq('member_id', memberId)
+            .order('sort_order', { ascending: true });
+
+        contactsList.innerHTML = '';
+        if (Array.isArray(contactData) && contactData.length > 0) {
+            contactData.forEach(c => addContactRow(c));
+        } else {
+            addContactRow({ is_primary: true, is_cidm_contact: true });
+        }
+
+        if (!form.querySelector('input[name=primary_contact]:checked') && contactsList.children.length > 0) {
+            contactsList.children[0].querySelector('input[name=primary_contact]').checked = true;
+        }
+        if (!form.querySelector('input[name=cidm_contact]:checked') && contactsList.children.length > 0) {
+            contactsList.children[0].querySelector('input[name=cidm_contact]').checked = true;
+        }
+    });
+
+    // ----------------------------------------------------------------
+    // フォーム送信
+    // ----------------------------------------------------------------
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await window.cidmAdminUi.runWithButtonBusy(submitBtn, async () => {
+            const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
+            if (!ok) return;
+
+            const contacts = collectContacts();
+            const primaryContact = contacts.find(c => c.is_primary) || contacts[0] || {};
+
+            const memberData = {
+                division_flag:       form.division_flag.value || '会員',
+                member_type:         form.member_type.value || null,
+                is_officer:          form.is_officer.checked,
+                cidm_role:           form.cidm_role.value.trim() || null,
+                company_name:        form.company_name.value.trim(),
+                representative_name: form.representative_name.value.trim(),
+                zip_code:            form.zip_code.value.trim(),
+                address:             form.address.value.trim(),
+                phone_number:        form.phone_number.value.trim(),
+                fax_number:          form.fax_number.value.trim() || null,
+                // 後方互換: 主担当者を staff_* にも反映
+                staff_name:          primaryContact.name   || null,
+                staff_mobile:        primaryContact.phone  || null,
+                staff_email:         primaryContact.email  || null,
+            };
+
+            if (!memberData.company_name || !memberData.representative_name) {
+                window.cidmAdminUi.showToast('会社名と代表者名は必須です。', 'error', 2200);
+                return;
+            }
+
+            // ---- 新規登録 ----
+            if (!isEditMode) {
+                const { data: inserted, error: insertErr } = await supabaseClient
+                    .from('member').insert([memberData]).select('id').single();
+                if (insertErr || !inserted) {
+                    window.cidmAdminUi.showToast('登録に失敗しました: ' + (insertErr?.message || 'unknown'), 'error', 3000);
+                    return;
+                }
+                savedMemberId = inserted.id;
+
+                if (contacts.length > 0) {
+                    const payload = contacts.map(c => {
+                        const { id: _id, ...rest } = c;
+                        return { ...rest, member_id: inserted.id };
+                    });
+                    const { error: cErr } = await supabaseClient.from('member_contacts').insert(payload);
+                    if (cErr) {
+                        window.cidmAdminUi.showToast('担当者情報の登録に失敗しました: ' + cErr.message, 'error', 3600);
+                        return;
+                    }
+
+                    // 登録後: 担当者カードに contact_id をセット（招待ボタン有効化）
+                    const { data: saved } = await supabaseClient
+                        .from('member_contacts')
+                        .select('id, email, sort_order')
+                        .eq('member_id', inserted.id)
+                        .order('sort_order', { ascending: true });
+                    if (Array.isArray(saved)) {
+                        [...contactsList.querySelectorAll('.contact-row')].forEach((row, i) => {
+                            if (saved[i]) {
+                                row.dataset.contactId = saved[i].id;
+                                row.querySelector('[data-invite-btn]').dispatchEvent(new Event('refresh'));
+                                // 招待ボタン有効化を再評価
+                                row.querySelector('input[name="contact_email[]"]').dispatchEvent(new Event('input'));
+                            }
+                        });
+                    }
+                }
+
+                window.cidmAdminUi.showToast('登録が完了しました。招待メールを送信してください。', 'success', 2400);
+                submitBtn.textContent = '更新';
+                // URL を更新してリロードなしで編集モードに切り替え
+                window.history.replaceState({}, '', `admin-member-new.html?id=${inserted.id}`);
+                if (headerBackLink) {
+                    headerBackLink.href = `admin-members.html?id=${inserted.id}`;
+                    headerBackLink.innerHTML = '<i class="fa-solid fa-chevron-left"></i> 会員詳細へ戻る';
+                }
+                return;
+            }
+
+            // ---- 更新 ----
+            const { error: updateErr } = await supabaseClient
+                .from('member').update(memberData).eq('id', memberId);
+            if (updateErr) {
+                window.cidmAdminUi.showToast('更新に失敗しました: ' + updateErr.message, 'error', 3000);
+                return;
+            }
+
+            // 担当者同期: 削除 → 再挿入
+            const isRls = (e) => String(e?.message || '').includes('row-level security policy') || String(e?.message || '').includes('permission denied');
+            const { error: delErr } = await supabaseClient.from('member_contacts').delete().eq('member_id', memberId);
+            if (delErr && !isRls(delErr)) {
+                window.cidmAdminUi.showToast('担当者情報の更新準備に失敗しました: ' + delErr.message, 'error', 3600);
+                return;
+            }
+
+            if (!delErr && contacts.length > 0) {
+                const payload = contacts.map(c => {
+                    const { id: _id, ...rest } = c;
+                    return { ...rest, member_id: memberId };
+                });
+                const { data: saved, error: insErr } = await supabaseClient
+                    .from('member_contacts').insert(payload).select('id, email, sort_order');
+                if (insErr && !isRls(insErr)) {
+                    window.cidmAdminUi.showToast('担当者情報の更新に失敗しました: ' + insErr.message, 'error', 3600);
+                    return;
+                }
+                // contact_id を更新（招待ボタン再有効化）
+                if (Array.isArray(saved)) {
+                    [...contactsList.querySelectorAll('.contact-row')].forEach((row, i) => {
+                        if (saved[i]) {
+                            row.dataset.contactId = saved[i].id;
+                            row.querySelector('input[name="contact_email[]"]').dispatchEvent(new Event('input'));
+                        }
+                    });
+                }
+            }
+
+            window.cidmAdminUi.showToast('更新が完了しました。', 'success', 1200);
+            setTimeout(() => { window.location.href = `admin-members.html?id=${memberId}`; }, 600);
+        }, isEditMode ? '更新中...' : '登録中...');
+    });
+    </script>
+    <footer class="admin-footer">© 2013–2026 Center for Innovative Data and Mobility</footer>
+</body>
+</html>
 
     const contactsList = document.getElementById('contacts-list');
     const addContactBtn = document.getElementById('add-contact-btn');
