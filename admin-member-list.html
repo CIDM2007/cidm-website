@@ -132,6 +132,22 @@
             .replace(/'/g, '&#39;');
     }
 
+    function normalizeStatus(value) {
+        const text = String(value ?? '').trim();
+        if (!text) return '承認済';
+        if (text.includes('未審査')) return '未審査';
+        if (text.includes('差戻')) return '差戻し';
+        if (text.includes('却下')) return '却下';
+        if (text.includes('承認')) return '承認済';
+        return text;
+    }
+
+    function normalizeDivision(value) {
+        const text = String(value ?? '').trim();
+        if (text === '関係者') return '関係者';
+        return '会員';
+    }
+
     function getStatusMeta(status) {
         switch (status) {
             case '未審査':
@@ -207,7 +223,8 @@
         });
 
         tbody.innerHTML = sorted.map(item => {
-            const statusMeta = getStatusMeta(item.application_status || '承認済');
+            const normalizedStatus = normalizeStatus(item.application_status);
+            const statusMeta = getStatusMeta(normalizedStatus);
             const note = item.application_review_note ? `<div class="sub-text">${escapeHtml(item.application_review_note)}</div>` : '';
             return `
             <tr style="cursor:pointer;" data-member-id="${item.id}">
@@ -232,15 +249,15 @@
         const includeRelated = document.getElementById('division-related')?.checked;
         const pendingOnly = document.getElementById('status-pending-only')?.checked;
         const filtered = allMembers.filter((item) => {
-            const status = item.application_status || '承認済';
-            const divisionText = String(item.division_flag || '').trim();
-            const division = divisionText === '関係者' ? '関係者' : '会員';
+            const status = normalizeStatus(item.application_status);
+            const division = normalizeDivision(item.division_flag);
             const hasDivisionFilter = Boolean(includeMember || includeRelated);
             const divisionIncluded = division === '会員' ? includeMember : includeRelated;
 
             if (!pendingOnly) {
                 // 通常表示では未審査を除外する。
                 if (status === '未審査') return false;
+                if (!hasDivisionFilter) return false;
                 return divisionIncluded;
             }
 
@@ -249,8 +266,8 @@
                 return status === '未審査';
             }
 
-            // 区分フィルタがある場合、通常審査済みデータ + 未審査データを同時表示する。
-            return divisionIncluded;
+            // 区分フィルタがある場合、区分一致データに加えて未審査データを追加表示する。
+            return divisionIncluded || status === '未審査';
         });
         renderMembers(filtered);
     }
