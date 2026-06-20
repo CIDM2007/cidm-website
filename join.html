@@ -176,6 +176,25 @@
     const SUBMIT_APPLICATION_URL = 'https://uhhhifbotqidqeceqyis.supabase.co/functions/v1/submit-application';
     const SEND_APPLICATION_MAIL_URL = 'https://uhhhifbotqidqeceqyis.functions.supabase.co/send-application-mail';
 
+    function toErrorMessage(value) {
+        if (value == null) return '不明なエラー';
+        if (typeof value === 'string') return value;
+        if (value instanceof Error) return value.message;
+        if (typeof value === 'object') {
+            if (typeof value.message === 'string' && value.message.trim()) return value.message;
+            if (typeof value.error === 'string' && value.error.trim()) return value.error;
+            if (typeof value.details === 'string' && value.details.trim()) return value.details;
+            if (typeof value.hint === 'string' && value.hint.trim()) return value.hint;
+            if (typeof value.code === 'string' && value.code.trim()) return `エラーコード: ${value.code}`;
+            try {
+                return JSON.stringify(value);
+            } catch (_e) {
+                return String(value);
+            }
+        }
+        return String(value);
+    }
+
     document.getElementById('application-form')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         const form = e.target;
@@ -220,14 +239,23 @@
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Submission failed');
+                const raw = await response.text();
+                let parsed = null;
+                try {
+                    parsed = raw ? JSON.parse(raw) : null;
+                } catch (_e) {
+                    parsed = null;
+                }
+
+                const apiError = parsed?.error ?? parsed ?? raw;
+                const message = toErrorMessage(apiError) || 'Submission failed';
+                throw new Error(`HTTP ${response.status}: ${message}`);
             }
 
             alert('送信が完了しました。ありがとうございました。');
             form.reset();
         } catch (error) {
-            alert('通信エラーが発生しました。\\n' + error.message);
+            alert('通信エラーが発生しました。\\n' + toErrorMessage(error));
             console.error('Application submit exception:', error);
         } finally {
             submitButton.disabled = false;
