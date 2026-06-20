@@ -26,6 +26,17 @@ function firstFilled(source: Record<string, unknown>, keys: string[]) {
   return ""
 }
 
+function normalizeSecret(value: string | undefined | null): string {
+  const raw = String(value ?? "").trim()
+  if (!raw) return ""
+  // Secret managers sometimes store quoted values; trim them for header safety.
+  const unquoted =
+    (raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))
+      ? raw.slice(1, -1)
+      : raw
+  return unquoted.replace(/[\r\n]+/g, "").trim()
+}
+
 function serializeError(input: unknown): { message: string; detail?: Record<string, unknown> } {
   if (input instanceof Error) {
     return { message: input.message || "Unknown error" }
@@ -71,8 +82,6 @@ async function notifyApplicationMail(
   const response = await fetch(`${supabaseUrl}/functions/v1/send-application-mail`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${serviceRoleKey}`,
-      apikey: serviceRoleKey,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -102,15 +111,21 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
-    const serviceRoleKey =
+    const supabaseUrl = normalizeSecret(Deno.env.get("SUPABASE_URL"))
+    const serviceRoleKey = normalizeSecret(
       Deno.env.get("CIDM_SUPABASE_SECRET_KEY") ??
-      Deno.env.get("SUPABASE_SECRET_KEY") ??
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-      ""
+        Deno.env.get("SUPABASE_SECRET_KEY") ??
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
+        "",
+    )
+    const rpcKey = normalizeSecret(
+      Deno.env.get("SUPABASE_ANON_KEY") ??
+        Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ??
+        serviceRoleKey,
+    )
 
-    if (!supabaseUrl || !serviceRoleKey) {
-      throw new Error("Supabase service credentials are not configured")
+    if (!supabaseUrl || !rpcKey) {
+      throw new Error("Supabase credentials are not configured")
     }
 
     const payload = await request.json()
@@ -130,7 +145,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "contact_email is required" }, 400)
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+    const supabase = createClient(supabaseUrl, rpcKey, {
       auth: { persistSession: false },
     })
 
@@ -146,6 +161,9 @@ Deno.serve(async (request) => {
     let mailWarning: string | null = null
 
     try {
+      if (!serviceRoleKey) {
+        throw new Error("mail send skipped: service role key is not configured")
+      }
       await notifyApplicationMail(supabaseUrl, serviceRoleKey, payload, registrationResult)
     } catch (mailError) {
       mailWarning = serializeError(mailError).message

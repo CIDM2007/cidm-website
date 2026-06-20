@@ -232,15 +232,25 @@
         const includeRelated = document.getElementById('division-related')?.checked;
         const pendingOnly = document.getElementById('status-pending-only')?.checked;
         const filtered = allMembers.filter((item) => {
-            const division = item.division_flag || '会員';
-            const divisionIncluded = division === '会員'
-                ? includeMember
-                : division === '関係者'
-                    ? includeRelated
-                    : includeMember;
-            if (!divisionIncluded) return false;
-            if (pendingOnly && (item.application_status || '承認済') !== '未審査') return false;
-            return true;
+            const status = item.application_status || '承認済';
+            const divisionText = String(item.division_flag || '').trim();
+            const division = divisionText === '関係者' ? '関係者' : '会員';
+            const hasDivisionFilter = Boolean(includeMember || includeRelated);
+            const divisionIncluded = division === '会員' ? includeMember : includeRelated;
+
+            if (!pendingOnly) {
+                // 通常表示では未審査を除外する。
+                if (status === '未審査') return false;
+                return divisionIncluded;
+            }
+
+            // 「未審査のみ」単独チェック時は、区分を問わず未審査を表示する。
+            if (pendingOnly && !hasDivisionFilter) {
+                return status === '未審査';
+            }
+
+            // 区分フィルタがある場合、通常審査済みデータ + 未審査データを同時表示する。
+            return divisionIncluded;
         });
         renderMembers(filtered);
     }
