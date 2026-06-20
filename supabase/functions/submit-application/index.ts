@@ -26,6 +26,42 @@ function firstFilled(source: Record<string, unknown>, keys: string[]) {
   return ""
 }
 
+function serializeError(input: unknown): { message: string; detail?: Record<string, unknown> } {
+  if (input instanceof Error) {
+    return { message: input.message || "Unknown error" }
+  }
+
+  if (typeof input === "string") {
+    return { message: input }
+  }
+
+  if (input && typeof input === "object") {
+    const asRecord = input as Record<string, unknown>
+    const messageCandidate = [
+      asRecord.message,
+      asRecord.error_description,
+      asRecord.details,
+      asRecord.hint,
+      asRecord.error,
+      asRecord.code,
+    ].find((value) => typeof value === "string" && value.trim())
+
+    const detail: Record<string, unknown> = {}
+    for (const key of ["code", "details", "hint", "message", "error"]) {
+      if (asRecord[key] !== undefined) {
+        detail[key] = asRecord[key]
+      }
+    }
+
+    return {
+      message: typeof messageCandidate === "string" ? messageCandidate : "Unexpected error",
+      detail: Object.keys(detail).length > 0 ? detail : asRecord,
+    }
+  }
+
+  return { message: String(input) }
+}
+
 async function notifyApplicationMail(
   supabaseUrl: string,
   serviceRoleKey: string,
@@ -112,7 +148,7 @@ Deno.serve(async (request) => {
     try {
       await notifyApplicationMail(supabaseUrl, serviceRoleKey, payload, registrationResult)
     } catch (mailError) {
-      mailWarning = mailError instanceof Error ? mailError.message : String(mailError)
+      mailWarning = serializeError(mailError).message
       console.error(mailWarning)
     }
 
@@ -124,8 +160,8 @@ Deno.serve(async (request) => {
       mail_warning: mailWarning,
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.error(message)
-    return jsonResponse({ error: message }, 500)
+    const serialized = serializeError(error)
+    console.error(serialized)
+    return jsonResponse({ error: serialized }, 500)
   }
 })
