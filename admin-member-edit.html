@@ -140,6 +140,7 @@
                     <input type="password" id="member_password" name="member_password" minlength="8" placeholder="変更する場合のみ入力" style="padding-right:4.5rem;">
                     <button type="button" id="member-password-toggle" style="position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); border:none; background:transparent; color:#64748b; font-size:0.78rem; font-weight:700; cursor:pointer;">表示</button>
                 </div>
+                <p class="help" style="margin-top:0.35rem; color:#64748b; font-size:0.78rem;">入力した場合、更新後に初期ログイン情報のメールを送信します。</p>
             </div>
             <div class="form-group" style="margin-top:-0.8rem; color:#6b7280; font-size:0.92rem;">
                 <span id="password-status">ログイン設定を確認中...</span>
@@ -162,6 +163,7 @@
     <script src="./cidm-config.js"></script>
     <script src="./admin-auth.js"></script>
     <script src="./admin-ui.js"></script>
+    <script src="./admin-login-mail.js"></script>
     <script>
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
 
@@ -462,6 +464,25 @@
             if (Array.isArray(updatedLoginSettings) && updatedLoginSettings[0]) {
                 renderPasswordStatus(updatedLoginSettings[0]);
             }
+
+            if (memberPassword) {
+                try {
+                    if (window.cidmAdminMail?.sendMemberLoginMail) {
+                        await window.cidmAdminMail.sendMemberLoginMail({
+                            email: loginId,
+                            login_id: loginId,
+                            password: memberPassword,
+                            member_name: form.representative_name.value.trim(),
+                            company_name: form.company_name.value.trim(),
+                            login_url: new URL('index.html', window.location.href).href
+                        });
+                        window.cidmAdminUi.showToast('初期ログイン情報のメールを送信しました。', 'success', 1600);
+                    }
+                } catch (mailError) {
+                    window.cidmAdminUi.showToast('更新は完了しましたが、初期ログイン情報のメール送信に失敗しました: ' + (mailError?.message || 'unknown error'), 'error', 4200);
+                }
+            }
+
             form.member_password.value = '';
             window.cidmAdminUi.showToast('更新が完了しました。', 'success', 900);
             setTimeout(() => { window.location.href = `admin-members.html?id=${memberId}`; }, 500);

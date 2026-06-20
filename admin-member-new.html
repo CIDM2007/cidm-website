@@ -143,6 +143,7 @@
                             <input type="password" id="initial_password" name="initial_password" required minlength="8" placeholder="8文字以上" style="padding-right:4.5rem;" value="" autocomplete="new-password" autocapitalize="off" spellcheck="false">
                             <button type="button" id="initial-password-toggle" style="position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); border:none; background:transparent; color:#64748b; font-size:0.78rem; font-weight:700; cursor:pointer;">表示</button>
                         </div>
+                        <p class="help" style="margin-top:0.35rem; color:#64748b; font-size:0.78rem;">登録完了後、この初期情報をメールで送信します。</p>
                     </div>
                 </div>
                 <div class="form-section">
@@ -162,6 +163,7 @@
     <script src="./cidm-config.js"></script>
     <script src="./admin-auth.js"></script>
     <script src="./admin-ui.js"></script>
+    <script src="./admin-login-mail.js"></script>
     <script>
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
 
@@ -323,7 +325,27 @@
                 }
             }
 
-            window.cidmAdminUi.showToast('登録が完了しました。', 'success', 900);
+            let mailMessage = '登録が完了しました。';
+            try {
+                if (window.cidmAdminMail?.sendMemberLoginMail) {
+                    await window.cidmAdminMail.sendMemberLoginMail({
+                        email: loginId,
+                        login_id: loginId,
+                        password: initialPassword,
+                        member_name: data.representative_name,
+                        company_name: data.company_name,
+                        login_url: new URL('index.html', window.location.href).href
+                    });
+                    mailMessage = '登録が完了しました。初期ログイン情報のメールも送信しました。';
+                }
+            } catch (mailError) {
+                mailMessage = '登録は完了しましたが、初期ログイン情報のメール送信に失敗しました: ' + (mailError?.message || 'unknown error');
+                window.cidmAdminUi.showToast(mailMessage, 'error', 4200);
+            }
+
+            if (mailMessage.startsWith('登録が完了しました。')) {
+                window.cidmAdminUi.showToast(mailMessage, 'success', 1600);
+            }
             setTimeout(() => { window.location.href = 'admin-member-list.html'; }, 500);
         }, '登録中...');
     });
