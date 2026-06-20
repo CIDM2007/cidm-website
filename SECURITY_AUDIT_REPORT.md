@@ -311,7 +311,7 @@ HTMLのパスワード入力フィールドも更新：
 
 ### 6. パスワード表示/非表示トグルのUX vs セキュリティー問題
 
-**ファイル:** [admin-member-edit.html](admin-member-edit.html#L126-L138), [admin-member-new.html](admin-member-new.html#L140-L152)
+**ファイル:** [admin-member-new.html](admin-member-new.html)
 
 **現在の実装:**
 ```html
