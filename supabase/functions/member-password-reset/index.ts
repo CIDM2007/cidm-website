@@ -62,13 +62,21 @@ async function sendResetMail(toEmail: string, resetUrl: string): Promise<void> {
 
   const subject = '【CIDM】パスワード再設定のご案内'
   const text = [
-    'パスワード再設定のリクエストを受け付けました。',
-    '以下のURLを開き、新しいパスワードを設定してください。',
+    'CIDM 会員各位',
+    '',
+    'パスワード再設定のお手続きをご案内いたします。',
+    'お手数ですが、下記URLから新しいパスワードへの変更をお願いいたします。',
     '',
     resetUrl,
     '',
-    'このURLの有効期限は1時間です。',
-    'このメールに心当たりがない場合は、本メールを破棄してください。'
+    'URLの有効期限は1時間となっております。',
+    '有効期限を過ぎた場合は、お手数ですが再度お申し込みください。',
+    '',
+    'このメールに心当たりがない場合は、お手数ですが破棄していただければ幸いです。',
+    '',
+    '――――――――――――――――――',
+    'CIDM',
+    `送信先: ${toEmail}`
   ].join('\n')
 
   const response = await fetch('https://api.resend.com/emails', {
