@@ -5,8 +5,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 // action=consume  : トークンを使ってパスワード設定（担当者・旧会員両対応）
 // action=invite   : 管理者が担当者を招待（招待メール送信）
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('CIDM_SUPABASE_SECRET_KEY') || Deno.env.get('SUPABASE_SECRET_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+const SUPABASE_URL = (Deno.env.get('SUPABASE_URL') || '').trim()
+const SUPABASE_SERVICE_ROLE_KEY = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '').trim()
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
@@ -14,7 +14,7 @@ const corsHeaders = {
   'Content-Type': 'application/json',
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey'
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info, x-supabase-api-version'
 }
 
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
@@ -155,24 +155,22 @@ async function inviteContact(req: Request, payload: Record<string, unknown>): Pr
     return jsonResponse({ error: 'contact_id is required' }, 400)
   }
 
-  // 管理者認証: Authorization ヘッダーの JWT を使って呼び出し元を確認
   const authHeader = (req.headers.get('Authorization') || req.headers.get('authorization') || '').trim()
   if (!authHeader.startsWith('Bearer ')) {
     return jsonResponse({ error: 'Unauthorized' }, 401)
   }
-  const callerJwt = authHeader.slice(7)
-  const callerClient = createClient(SUPABASE_URL, callerJwt, {
+
+  // ユーザーの JWT を使ってクライアントを作成（RLS・admin チェックが機能する）
+  const ANON_KEY = (Deno.env.get('SUPABASE_ANON_KEY') || '').trim()
+  const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false }
   })
-  const { data: { user }, error: userErr } = await callerClient.auth.getUser()
-  if (userErr || !user) {
-    return jsonResponse({ error: 'Unauthorized' }, 401)
-  }
 
   const rawToken = createRawToken()
   const tokenHash = await sha256Hex(rawToken)
 
-  const { data: rows, error: rpcError } = await supabase.rpc(
+  const { data: rows, error: rpcError } = await userClient.rpc(
     'cidm_admin_create_contact_invite',
     {
       p_contact_id: contactId,
@@ -295,7 +293,7 @@ async function consumeReset(payload: Record<string, unknown>): Promise<Response>
   return jsonResponse({ ok: true })
 }
 
-export default async function handler(req: Request): Promise<Response> {
+Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       status: 200,
@@ -328,4 +326,4 @@ export default async function handler(req: Request): Promise<Response> {
     console.error('member-password-reset error:', error)
     return jsonResponse({ error: 'Internal server error' }, 500)
   }
-}
+})
