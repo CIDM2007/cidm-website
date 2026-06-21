@@ -241,7 +241,7 @@
             const currentRole = toggleBtn.getAttribute('data-current-role');
             const newRole = currentRole === 'admin' ? 'member' : 'admin';
             const label = newRole === 'admin' ? '管理者権限を付与' : '管理者権限を解除';
-            const confirmed = await window.cidmAdminUi.showConfirm(`${label}しますか？`);
+            const confirmed = await window.cidmAdminUi.showConfirm(`${label}しますか？`, { confirmText: newRole === 'admin' ? '付与する' : '解除する' });
             if (!confirmed) return;
             await window.cidmAdminUi.runWithButtonBusy(toggleBtn, async () => {
                 const { error } = await supabaseClient.rpc('cidm_set_member_app_role', {
