@@ -178,7 +178,7 @@
             const note = item.application_review_note ? `<div class="sub-text">${escapeHtml(item.application_review_note)}</div>` : '';
             const isAdmin = item.app_role === 'admin';
             const adminCell = isSuperAdmin ? `
-                <td style="text-align:center;" onclick="event.stopPropagation()">
+                <td style="text-align:center;">
                     <button
                         class="btn ${isAdmin ? 'btn-danger' : 'btn-primary'}"
                         style="font-size:0.72rem; padding:0.3rem 0.7rem;"
