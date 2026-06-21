@@ -1,3 +1,9 @@
 # Node modules and build artifacts
 node_modules/
 .DS_Store
+
+# Local config with real Supabase keys — do not commit
+cidm-config.js
+
+# Supabase CLI temporary files
+supabase/.temp/
