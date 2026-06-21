@@ -82,6 +82,7 @@
                         <th>主担当メール</th>
                         <th>登録人数</th>
                         <th>備考</th>
+                        <th id="admin-role-col-header" style="display:none;">管理者</th>
                     </tr>
                 </thead>
                 <tbody id="members-tbody">
@@ -98,6 +99,7 @@
     <script src="./admin-ui.js"></script>
     <script>
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
+    let isSuperAdmin = false;
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -124,21 +126,10 @@
 
     function renderLoadingRows() {
         const cell = window.cidmAdminUi.getSkeletonLine('100%', '0.9rem');
-        return Array.from({ length: 6 }).map(() => `
-            <tr>
-                <td>${cell}</td>
-                <td>${cell}</td>
-                <td>${cell}</td>
-                <td>${cell}</td>
-                <td>${cell}</td>
-                <td>${cell}</td>
-                <td>${cell}</td>
-                <td>${cell}</td>
-                <td>${cell}</td>
-                <td>${cell}</td>
-                <td>${cell}</td>
-            </tr>
-        `).join('');
+        const cols = isSuperAdmin ? 12 : 11;
+        return Array.from({ length: 6 }).map(() =>
+            `<tr>${Array.from({ length: cols }).map(() => `<td>${cell}</td>`).join('')}</tr>`
+        ).join('');
     }
 
     function renderMembers(data) {
@@ -185,6 +176,16 @@
         tbody.innerHTML = sorted.map(item => {
             const statusMeta = getStatusMeta(item.application_status || '承認済');
             const note = item.application_review_note ? `<div class="sub-text">${escapeHtml(item.application_review_note)}</div>` : '';
+            const isAdmin = item.app_role === 'admin';
+            const adminCell = isSuperAdmin ? `
+                <td style="text-align:center;" onclick="event.stopPropagation()">
+                    <button
+                        class="btn ${isAdmin ? 'btn-danger' : 'btn-primary'}"
+                        style="font-size:0.72rem; padding:0.3rem 0.7rem;"
+                        data-toggle-admin="${item.id}"
+                        data-current-role="${item.app_role || 'member'}"
+                    >${isAdmin ? '管理者 ✓' : '－'}</button>
+                </td>` : '';
             return `
             <tr style="cursor:pointer;" data-member-id="${item.id}">
                 <td><span class="${statusMeta.className}">${statusMeta.label}</span>${note}</td>
@@ -198,6 +199,7 @@
                 <td><span class="sub-text">${item.staff_email || ''}</span></td>
                 <td><span class="sub-text">${Math.max(1, Number(item.contact_count || 0))}名</span></td>
                 <td><span class="sub-text">${item.biko || ''}</span></td>
+                ${adminCell}
             </tr>
         `;
         }).join('');
@@ -217,18 +219,46 @@
         });
 
         if (memberError) {
-            tbody.innerHTML = `<tr><td colspan="11" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
+            const cols = isSuperAdmin ? 12 : 11;
+            tbody.innerHTML = `<tr><td colspan="${cols}" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
             return;
         }
         if (!members || members.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
+            const cols = isSuperAdmin ? 12 : 11;
+            tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
             return;
         }
 
         renderMembers(members);
     }
 
-    document.getElementById('members-tbody')?.addEventListener('click', (event) => {
+    document.getElementById('members-tbody')?.addEventListener('click', async (event) => {
+        // 管理者トグルボタン
+        const toggleBtn = event.target.closest('[data-toggle-admin]');
+        if (toggleBtn) {
+            event.stopPropagation();
+            const memberId = toggleBtn.getAttribute('data-toggle-admin');
+            const currentRole = toggleBtn.getAttribute('data-current-role');
+            const newRole = currentRole === 'admin' ? 'member' : 'admin';
+            const label = newRole === 'admin' ? '管理者権限を付与' : '管理者権限を解除';
+            const confirmed = await window.cidmAdminUi.showConfirm(`${label}しますか？`);
+            if (!confirmed) return;
+            await window.cidmAdminUi.runWithButtonBusy(toggleBtn, async () => {
+                const { error } = await supabaseClient.rpc('cidm_set_member_app_role', {
+                    p_member_id: memberId,
+                    p_role: newRole
+                });
+                if (error) throw new Error(error.message);
+                window.cidmAdminUi.showToast(
+                    newRole === 'admin' ? '管理者権限を付与しました。' : '管理者権限を解除しました。',
+                    'success', 2200
+                );
+                await loadMembers();
+            }, '処理中...');
+            return;
+        }
+
+        // 行クリック → 詳細画面へ
         const row = event.target.closest('tr[data-member-id]');
         if (!row) return;
         const id = row.getAttribute('data-member-id');
@@ -239,6 +269,15 @@
     document.addEventListener('DOMContentLoaded', async () => {
         const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
         if (!ok) return;
+
+        // スーパー管理者かどうか確認
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const email = (user?.email || '').toLowerCase();
+        isSuperAdmin = email === 'carinformationdatamanagement@gmail.com';
+        if (isSuperAdmin) {
+            document.getElementById('admin-role-col-header')?.style.setProperty('display', '');
+        }
+
         document.getElementById('division-member')?.addEventListener('change', loadMembers);
         document.getElementById('division-related')?.addEventListener('change', loadMembers);
         document.getElementById('status-pending-only')?.addEventListener('change', loadMembers);
