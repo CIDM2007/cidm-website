@@ -1,0 +1,50 @@
+name: GitHub Pages へデプロイ
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリをチェックアウト
+        uses: actions/checkout@v4
+
+      - name: cidm-config.js を Secrets から生成
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          CIDM_ADMIN_EMAIL: ${{ secrets.CIDM_ADMIN_EMAIL }}
+        run: |
+          {
+            echo "window.CIDM_SUPABASE_URL = '${SUPABASE_URL}';"
+            echo "window.CIDM_SUPABASE_PUBLISHABLE_KEY = '${SUPABASE_ANON_KEY}';"
+            echo "window.CIDM_SUPABASE_ANON_KEY = window.CIDM_SUPABASE_PUBLISHABLE_KEY;"
+            echo "window.CIDM_ADMIN_AUTH_POLICY = { allowedEmails: ['${CIDM_ADMIN_EMAIL}'], requireAdminFlag: false };"
+          } > cidm-config.js
+
+      - name: Pages を設定
+        uses: actions/configure-pages@v4
+
+      - name: サイトをアーティファクトとしてアップロード
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: GitHub Pages にデプロイ
+        id: deployment
+        uses: actions/deploy-pages@v4
