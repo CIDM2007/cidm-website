@@ -206,11 +206,11 @@ async function sendInviteMail(toEmail: string, contactName: string, inviteUrl: s
   const from = Deno.env.get('RESEND_FROM_EMAIL')
   if (!resendApiKey || !from) throw new Error('Missing email environment variables')
 
-  const subject = '【CIDM】会員ポータル ご利用開始のご案内'
+  const subject = '【CIDM】会員ポータル ログイン情報のご案内'
   const text = [
     contactName ? `${contactName} 様` : 'CIDM 会員担当者様',
     '',
-    'このたびは CIDM 会員ポータルのご登録、誠にありがとうございます。',
+    'このたびは CIDM 会員ポータルへのログイン情報をお送りします。',
     '以下の URL からパスワードを設定のうえ、ポータルへのログインをお願いいたします。',
     '',
     inviteUrl,
@@ -220,7 +220,7 @@ async function sendInviteMail(toEmail: string, contactName: string, inviteUrl: s
     'このメールに心当たりがない場合は、恐れ入りますが破棄してください。',
     '',
     '――――――――――――――――――',
-    'CIDM',
+    '一般社団法人車両情報活用研究所：CIDM',
     `送信先: ${toEmail}`
   ].join('\n')
 
