@@ -806,7 +806,7 @@
             newsList.innerHTML = data.map(item => `
                 <div class="py-6 border-b border-slate-50 last:border-0">
                     <div class="flex items-center mb-2">
-                        <span class="text-sm font-bold text-slate-400 w-32">${item.event_date ? window.cidmAdminUi.sanitizeText(item.event_date.replace(/-/g, '.')) : ''}</span>
+                        <span class="text-sm font-bold text-slate-400 w-32 shrink-0">${item.event_date ? window.cidmAdminUi.sanitizeText(item.event_date.slice(0, 10).replace(/-/g, '.')) : ''}</span>
                         ${item.category ? `<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded mr-4">${window.cidmAdminUi.sanitizeText(item.category)}</span>` : ''}
                         <h3 class="text-slate-800 font-bold">${window.cidmAdminUi.sanitizeText(item.title || '')}</h3>
                     </div>
