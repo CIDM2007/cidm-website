@@ -137,17 +137,11 @@
     }
 
     async function sendInvite(contactId, email) {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        const res = await fetch(`${window.CIDM_SUPABASE_URL}/functions/v1/member-password-reset`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({ action: 'invite', contact_id: contactId })
+        const { data, error } = await supabaseClient.functions.invoke('member-password-reset', {
+            body: { action: 'invite', contact_id: contactId }
         });
-        const json = await res.json();
-        if (!res.ok || !json.ok) throw new Error(json.error || '送信失敗');
+        if (error) throw new Error(error.message || '送信失敗');
+        if (!data?.ok) throw new Error(data?.error || '送信失敗');
         return email;
     }
 
