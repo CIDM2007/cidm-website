@@ -133,7 +133,7 @@
                     <div class="py-8">
                         <div class="flex flex-col md:flex-row md:items-center mb-3 gap-2 md:gap-4">
                             <div class="flex items-center">
-                                <span class="text-sm font-bold text-slate-400 w-28">${item.event_date ? escapeHtml(item.event_date.replace(/-/g, '.')) : ''}</span>
+                                <span class="text-sm font-bold text-slate-400 w-28 shrink-0">${item.event_date ? escapeHtml(item.event_date.slice(0, 10).replace(/-/g, '.')) : ''}</span>
                                 ${item.category ? `<span class="bg-blue-50 text-blue-600 text-[10px] font-bold px-3 py-1 rounded-full mr-4">${escapeHtml(item.category)}</span>` : ''}
                             </div>
                             <h3 class="text-lg text-slate-800 font-bold leading-snug">${escapeHtml(item.title || '')}</h3>
