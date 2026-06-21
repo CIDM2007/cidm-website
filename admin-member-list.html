@@ -121,7 +121,6 @@
     <script src="./admin-ui.js"></script>
     <script>
     const supabaseClient = window.cidmAdminAuth.createSupabaseClient();
-    let allMembers = [];
 
     function escapeHtml(value) {
         return String(value ?? '')
@@ -130,22 +129,6 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
-    }
-
-    function normalizeStatus(value) {
-        const text = String(value ?? '').trim();
-        if (!text) return '承認済';
-        if (text.includes('未審査')) return '未審査';
-        if (text.includes('差戻')) return '差戻し';
-        if (text.includes('却下')) return '却下';
-        if (text.includes('承認')) return '承認済';
-        return text;
-    }
-
-    function normalizeDivision(value) {
-        const text = String(value ?? '').trim();
-        if (text === '関係者') return '関係者';
-        return '会員';
     }
 
     function getStatusMeta(status) {
@@ -223,8 +206,7 @@
         });
 
         tbody.innerHTML = sorted.map(item => {
-            const normalizedStatus = normalizeStatus(item.application_status);
-            const statusMeta = getStatusMeta(normalizedStatus);
+            const statusMeta = getStatusMeta(item.application_status || '承認済');
             const note = item.application_review_note ? `<div class="sub-text">${escapeHtml(item.application_review_note)}</div>` : '';
             return `
             <tr style="cursor:pointer;" data-member-id="${item.id}">
@@ -244,47 +226,20 @@
         }).join('');
     }
 
-    function applyDivisionFilterAndRender() {
-        const includeMember = document.getElementById('division-member')?.checked;
-        const includeRelated = document.getElementById('division-related')?.checked;
-        const pendingOnly = document.getElementById('status-pending-only')?.checked;
-        const filtered = allMembers.filter((item) => {
-            const status = normalizeStatus(item.application_status);
-            const division = normalizeDivision(item.division_flag);
-            const hasDivisionFilter = Boolean(includeMember || includeRelated);
-            const divisionIncluded = division === '会員' ? includeMember : includeRelated;
-
-            if (!pendingOnly) {
-                // 通常表示では未審査を除外する。
-                if (status === '未審査') return false;
-                if (!hasDivisionFilter) return false;
-                return divisionIncluded;
-            }
-
-            // 「未審査のみ」単独チェック時は、区分を問わず未審査を表示する。
-            if (pendingOnly && !hasDivisionFilter) {
-                return status === '未審査';
-            }
-
-            // 区分フィルタがある場合、区分一致データに加えて未審査データを追加表示する。
-            return divisionIncluded || status === '未審査';
-        });
-        renderMembers(filtered);
-    }
-
     async function loadMembers() {
         const tbody = document.getElementById('members-tbody');
         tbody.innerHTML = renderLoadingRows();
-        const [{ data: members, error: memberError }, { data: contacts, error: contactError }] = await Promise.all([
-            supabaseClient
-            .from('member')
-            .select('id, division_flag, member_type, is_officer, company_name, cidm_role, staff_name, staff_mobile, staff_email, biko, application_status, application_review_note, application_submitted_at'),
-            supabaseClient
-            .from('member_contacts')
-            .select('member_id')
-        ]);
+        const includeMember = Boolean(document.getElementById('division-member')?.checked);
+        const includeRelated = Boolean(document.getElementById('division-related')?.checked);
+        const pendingOnly = Boolean(document.getElementById('status-pending-only')?.checked);
 
-        if (memberError || contactError) {
+        const { data: members, error: memberError } = await supabaseClient.rpc('cidm_admin_list_members', {
+            p_include_member: includeMember,
+            p_include_related: includeRelated,
+            p_include_pending_only: pendingOnly
+        });
+
+        if (memberError) {
             tbody.innerHTML = `<tr><td colspan="11" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
             return;
         }
@@ -293,20 +248,7 @@
             return;
         }
 
-        const contactCountByMemberId = new Map();
-        if (Array.isArray(contacts)) {
-            contacts.forEach((row) => {
-                const key = row.member_id;
-                if (!key) return;
-                contactCountByMemberId.set(key, (contactCountByMemberId.get(key) || 0) + 1);
-            });
-        }
-
-        allMembers = members.map((member) => ({
-            ...member,
-            contact_count: contactCountByMemberId.get(member.id) || 0
-        }));
-        applyDivisionFilterAndRender();
+        renderMembers(members);
     }
 
     document.getElementById('members-tbody')?.addEventListener('click', (event) => {
@@ -320,9 +262,9 @@
     document.addEventListener('DOMContentLoaded', async () => {
         const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
         if (!ok) return;
-        document.getElementById('division-member')?.addEventListener('change', applyDivisionFilterAndRender);
-        document.getElementById('division-related')?.addEventListener('change', applyDivisionFilterAndRender);
-        document.getElementById('status-pending-only')?.addEventListener('change', applyDivisionFilterAndRender);
+        document.getElementById('division-member')?.addEventListener('change', loadMembers);
+        document.getElementById('division-related')?.addEventListener('change', loadMembers);
+        document.getElementById('status-pending-only')?.addEventListener('change', loadMembers);
         loadMembers();
     });
     </script>
