@@ -64,7 +64,10 @@
                     <label class="filter-chip"><input type="checkbox" id="status-pending-only"> 未審査のみ</label>
                 </div>
             </div>
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap;">
+            <button id="bulk-invite-btn" class="btn-new" style="background:linear-gradient(135deg,#0891b2,#0ea5e9);"><i class="fa-solid fa-envelope"></i> 全員に招待メール送信</button>
             <a href="admin-member-new.html" class="btn-new"><i class="fa-solid fa-user-plus"></i> 新規追加</a>
+        </div>
         </div>
 
         <div class="table-card">
@@ -82,6 +85,7 @@
                         <th>主担当メール</th>
                         <th>登録人数</th>
                         <th>備考</th>
+                        <th>招待</th>
                         <th id="admin-role-col-header" style="display:none;">管理者</th>
                     </tr>
                 </thead>
@@ -126,10 +130,25 @@
 
     function renderLoadingRows() {
         const cell = window.cidmAdminUi.getSkeletonLine('100%', '0.9rem');
-        const cols = isSuperAdmin ? 12 : 11;
+        const cols = isSuperAdmin ? 13 : 12;
         return Array.from({ length: 6 }).map(() =>
             `<tr>${Array.from({ length: cols }).map(() => `<td>${cell}</td>`).join('')}</tr>`
         ).join('');
+    }
+
+    async function sendInvite(contactId, email) {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        const res = await fetch(`${window.CIDM_SUPABASE_URL}/functions/v1/member-password-reset`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({ action: 'invite', contact_id: contactId })
+        });
+        const json = await res.json();
+        if (!res.ok || !json.ok) throw new Error(json.error || '送信失敗');
+        return email;
     }
 
     function renderMembers(data) {
@@ -177,6 +196,16 @@
             const statusMeta = getStatusMeta(item.application_status || '承認済');
             const note = item.application_review_note ? `<div class="sub-text">${escapeHtml(item.application_review_note)}</div>` : '';
             const isAdmin = item.app_role === 'admin';
+            const inviteCell = `
+                <td style="text-align:center;">
+                    <button
+                        class="btn btn-primary"
+                        style="font-size:0.72rem; padding:0.3rem 0.7rem;"
+                        data-invite-contact="${item.primary_contact_id || ''}"
+                        data-invite-email="${escapeHtml(item.staff_email || '')}"
+                        ${!item.primary_contact_id ? 'disabled title="担当者情報なし"' : ''}
+                    ><i class="fa-solid fa-envelope"></i></button>
+                </td>`;
             const adminCell = isSuperAdmin ? `
                 <td style="text-align:center;">
                     <button
@@ -199,6 +228,7 @@
                 <td><span class="sub-text">${item.staff_email || ''}</span></td>
                 <td><span class="sub-text">${Math.max(1, Number(item.contact_count || 0))}名</span></td>
                 <td><span class="sub-text">${item.biko || ''}</span></td>
+                ${inviteCell}
                 ${adminCell}
             </tr>
         `;
@@ -219,12 +249,12 @@
         });
 
         if (memberError) {
-            const cols = isSuperAdmin ? 12 : 11;
+            const cols = isSuperAdmin ? 13 : 12;
             tbody.innerHTML = `<tr><td colspan="${cols}" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
             return;
         }
         if (!members || members.length === 0) {
-            const cols = isSuperAdmin ? 12 : 11;
+            const cols = isSuperAdmin ? 13 : 12;
             tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
             return;
         }
@@ -233,6 +263,25 @@
     }
 
     document.getElementById('members-tbody')?.addEventListener('click', async (event) => {
+        // 招待メール送信ボタン
+        const inviteBtn = event.target.closest('[data-invite-contact]');
+        if (inviteBtn) {
+            event.stopPropagation();
+            const contactId = inviteBtn.getAttribute('data-invite-contact');
+            const email = inviteBtn.getAttribute('data-invite-email');
+            if (!contactId) return;
+            const confirmed = await window.cidmAdminUi.showConfirm(
+                `${email} に招待メールを送信しますか？`,
+                { confirmText: '送信する' }
+            );
+            if (!confirmed) return;
+            await window.cidmAdminUi.runWithButtonBusy(inviteBtn, async () => {
+                await sendInvite(contactId, email);
+                window.cidmAdminUi.showToast(`招待メールを送信しました: ${email}`, 'success', 3000);
+            }, '送信中...');
+            return;
+        }
+
         // 管理者トグルボタン
         const toggleBtn = event.target.closest('[data-toggle-admin]');
         if (toggleBtn) {
@@ -277,6 +326,35 @@
         if (isSuperAdmin) {
             document.getElementById('admin-role-col-header')?.style.setProperty('display', '');
         }
+
+        // 一斉招待ボタン
+        document.getElementById('bulk-invite-btn')?.addEventListener('click', async () => {
+            const confirmed = await window.cidmAdminUi.showConfirm(
+                '表示中の全会員に招待メールを送信しますか？\n※ すでに登録済みの方にも再送されます。',
+                { confirmText: '一斉送信する' }
+            );
+            if (!confirmed) return;
+            const btn = document.getElementById('bulk-invite-btn');
+            await window.cidmAdminUi.runWithButtonBusy(btn, async () => {
+                const rows = document.querySelectorAll('[data-invite-contact]');
+                let sent = 0, failed = 0;
+                for (const row of rows) {
+                    const contactId = row.getAttribute('data-invite-contact');
+                    const email = row.getAttribute('data-invite-email');
+                    if (!contactId) continue;
+                    try {
+                        await sendInvite(contactId, email);
+                        sent++;
+                    } catch {
+                        failed++;
+                    }
+                }
+                window.cidmAdminUi.showToast(
+                    `招待メール送信完了: ${sent}件成功${failed > 0 ? ` / ${failed}件失敗` : ''}`,
+                    failed > 0 ? 'error' : 'success', 4000
+                );
+            }, '送信中...');
+        });
 
         document.getElementById('division-member')?.addEventListener('change', loadMembers);
         document.getElementById('division-related')?.addEventListener('change', loadMembers);
