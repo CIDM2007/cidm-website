@@ -377,6 +377,16 @@
             }
 
             window.cidmAdminUi.showToast('審査状態を更新しました。', 'success', 1200);
+            if (status === '承認済') {
+                const moveToBilling = await window.cidmAdminUi.showConfirm('承認が完了しました。請求処理画面へ移動しますか？', {
+                    confirmText: '請求処理へ移動',
+                    cancelText: 'この画面に残る'
+                });
+                if (moveToBilling) {
+                    window.location.href = `admin-membership-billing.html?member_id=${encodeURIComponent(id)}&focus=approved`;
+                    return;
+                }
+            }
             loadMember();
         }, '更新中...');
     }

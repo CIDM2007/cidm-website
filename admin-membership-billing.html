@@ -375,6 +375,7 @@
                     <div class="field-row">
                         <label for="billing-group">請求区分</label>
                         <select id="billing-group">
+                            <option value="all">すべて</option>
                             <option value="regular">正会員</option>
                             <option value="associate">準会員</option>
                             <option value="supporter">賛助会員</option>
@@ -509,6 +510,8 @@
         const clearAllBtn = document.getElementById('clear-all-btn');
         const previewBtn = document.getElementById('preview-btn');
         const createBtn = document.getElementById('create-btn');
+        const query = new URLSearchParams(window.location.search);
+        const preselectedMemberId = String(query.get('member_id') || '').trim();
 
         let recipientRows = [];
         let selectedRecipientIds = new Set();
@@ -695,7 +698,20 @@
                 })
                 .sort((a, b) => a.company_name.localeCompare(b.company_name, 'ja'));
 
-            selectedRecipientIds = new Set(recipientRows.filter((item) => item.staff_email).map((item) => item.member_id));
+            if (preselectedMemberId) {
+                const selectedTarget = recipientRows.find((item) => item.member_id === preselectedMemberId && item.staff_email);
+                if (selectedTarget) {
+                    selectedRecipientIds = new Set([selectedTarget.member_id]);
+                    groupSelect.value = 'all';
+                    recipientSearchInput.value = selectedTarget.company_name || '';
+                    statusBox.innerHTML = `承認完了会員を初期選択しました: ${window.cidmAdminUi.sanitizeText(selectedTarget.company_name || selectedTarget.member_id)}`;
+                    window.cidmAdminUi.showToast('承認済み会員を請求対象として初期選択しました。', 'success', 2200);
+                } else {
+                    selectedRecipientIds = new Set(recipientRows.filter((item) => item.staff_email).map((item) => item.member_id));
+                }
+            } else {
+                selectedRecipientIds = new Set(recipientRows.filter((item) => item.staff_email).map((item) => item.member_id));
+            }
             renderRecipientTable();
         }
 
