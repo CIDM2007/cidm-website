@@ -280,6 +280,22 @@
             return data;
         }
 
+        async function fetchMemberLoginContext() {
+            const { data, error } = await memberSupabase.functions.invoke('member-password-reset', {
+                body: { action: 'member_login_context' }
+            });
+
+            if (error) {
+                throw new Error(error.message || '会員情報の取得に失敗しました。');
+            }
+
+            if (!data || data.ok !== true || !data.context) {
+                throw new Error((data && data.error) || '会員情報の取得に失敗しました。');
+            }
+
+            return data.context;
+        }
+
         function getMemberPasswordResetRedirectUrl() {
             return new URL('member-password-reset.html', window.location.href).href;
         }
@@ -708,43 +724,43 @@
             }, LOGIN_HARD_RESET_MS);
 
             try {
-                // 担当者ログイン: cidm_staff_login RPC を使用
-                const { data, error } = await memberSupabase.rpc('cidm_staff_login', {
-                    p_login_id: loginId,
-                    p_password: password
-                });
-
-                if (error || !data || data.length === 0) {
-                    throw new Error('Invalid credentials');
-                }
-
-                const member = {
-                    user: { id: data[0].staff_id, user_metadata: { full_name: data[0].staff_name, company_name: data[0].company_name } },
-                    data: data[0]
-                };
+                const authData = await loginMemberWithSupabaseAuth(loginId, password);
+                const loginContext = await fetchMemberLoginContext();
 
                 if (seq !== memberLoginSeq) return;
 
-                const memberContext = buildMemberContext(member.user, loginId);
-                memberContext.login_type = 'staff';
-                memberContext.member_type = member.data.member_type;
+                const memberContext = buildMemberContext(authData.user, loginId);
+                memberContext.login_type = 'auth';
+                memberContext.member_type = String(loginContext.member_type || '').trim();
+                memberContext.staff_name = String(loginContext.staff_name || memberContext.staff_name || '').trim();
+                memberContext.company_name = String(loginContext.company_name || memberContext.company_name || '').trim();
 
                 isLoggedIn = true;
                 sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
                 sessionStorage.setItem(MEMBER_ID_KEY, memberContext.login_id || loginId);
                 sessionStorage.setItem(MEMBER_NAME_KEY, memberContext.staff_name || '');
                 sessionStorage.setItem(MEMBER_COMPANY_KEY, memberContext.company_name || '');
-                sessionStorage.setItem('MEMBER_LOGIN_TYPE', 'staff');
-                sessionStorage.setItem('MEMBER_TYPE', member.data.member_type || '');
+                sessionStorage.setItem('MEMBER_LOGIN_TYPE', 'auth');
+                sessionStorage.setItem('MEMBER_TYPE', memberContext.member_type || '');
                 window.location.href = 'member.html';
             } catch (error) {
                 if (seq !== memberLoginSeq) return;
+                try {
+                    await memberSupabase.auth.signOut({ scope: 'local' });
+                } catch (_signOutError) {
+                    // Keep original login error for UX clarity.
+                }
+
                 const raw = String(error && error.message ? error.message : 'ログインに失敗しました。');
                 const normalized = raw.toLowerCase();
                 const message = normalized.includes('temporarily locked') || raw.includes('ロック')
                     ? 'ログイン失敗が5回続いたため、1時間ロックされています。時間をおいて再度お試しください。'
                     : normalized.includes('invalid credentials') || normalized.includes('invalid login')
                         ? 'ログイン用メールアドレスまたはパスワードが正しくありません。'
+                        : raw.includes('会員登録情報が見つかりません')
+                            ? '会員登録情報が見つかりません。管理者へお問い合わせください。'
+                            : raw.includes('会員審査が未承認')
+                                ? '会員審査が未承認のためログインできません。'
                         : normalized.includes('timeout') || raw.includes('タイムアウト')
                             ? 'ログイン通信がタイムアウトしました。時間をおいて再度お試しください。'
                             : normalized.includes('failed to fetch')

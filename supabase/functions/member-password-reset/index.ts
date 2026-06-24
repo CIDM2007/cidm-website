@@ -254,6 +254,80 @@ async function canAdminLogin(payload: Record<string, unknown>): Promise<Response
   }
 }
 
+async function findMemberByLoginId(loginId: string): Promise<Record<string, unknown> | null> {
+  const { data: memberRows, error: memberError } = await supabase
+    .from('member')
+    .select('id, app_role, login_id, email, staff_email, member_type, company_name, staff_name, application_status')
+    .limit(2000)
+
+  if (memberError) {
+    console.error('member-password-reset member lookup error:', memberError)
+    throw new Error('member lookup failed')
+  }
+
+  const member = Array.isArray(memberRows)
+    ? memberRows.find((row) => {
+        const login = normalizeEmail((row as Record<string, unknown>)?.login_id)
+        const email = normalizeEmail((row as Record<string, unknown>)?.email)
+        const staffEmail = normalizeEmail((row as Record<string, unknown>)?.staff_email)
+        return loginId === login || loginId === email || loginId === staffEmail
+      })
+    : null
+
+  return (member as Record<string, unknown>) || null
+}
+
+async function memberLoginContext(req: Request): Promise<Response> {
+  const authHeader = (req.headers.get('Authorization') || req.headers.get('authorization') || '').trim()
+  if (!authHeader.startsWith('Bearer ')) {
+    return jsonResponse({ error: 'Unauthorized' }, 401)
+  }
+
+  const ANON_KEY = (Deno.env.get('SUPABASE_ANON_KEY') || '').trim()
+  if (!ANON_KEY) {
+    return jsonResponse({ error: 'Internal server error' }, 500)
+  }
+
+  const userClient = createClient(SUPABASE_URL, ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+    auth: { persistSession: false }
+  })
+
+  const { data: userData, error: userError } = await userClient.auth.getUser()
+  const loginId = normalizeEmail(userData?.user?.email)
+  if (userError || !loginId) {
+    return jsonResponse({ error: 'Unauthorized' }, 401)
+  }
+
+  let member: Record<string, unknown> | null = null
+  try {
+    member = await findMemberByLoginId(loginId)
+  } catch (_e) {
+    return jsonResponse({ error: '会員情報の取得に失敗しました。' }, 500)
+  }
+
+  if (!member) {
+    return jsonResponse({ error: '会員登録情報が見つかりません。' }, 404)
+  }
+
+  const status = String(member.application_status || '承認済').trim() || '承認済'
+  if (status !== '承認済') {
+    return jsonResponse({ error: '会員審査が未承認のためログインできません。' }, 403)
+  }
+
+  return jsonResponse({
+    ok: true,
+    context: {
+      member_id: member.id || null,
+      login_id: loginId,
+      member_type: String(member.member_type || ''),
+      company_name: String(member.company_name || ''),
+      staff_name: String(member.staff_name || ''),
+      app_role: String(member.app_role || 'member')
+    }
+  })
+}
+
 async function requestAdminReset(req: Request, payload: Record<string, unknown>): Promise<Response> {
   const loginId = normalizeEmail(payload.login_id)
   const redirectTo = String(payload.redirect_to || '').trim()
@@ -523,6 +597,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (action === 'admin_can_login') {
       return await canAdminLogin(payload)
+    }
+
+    if (action === 'member_login_context') {
+      return await memberLoginContext(req)
     }
 
     if (action === 'consume') {
