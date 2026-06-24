@@ -825,22 +825,14 @@
                         throw new Error('認証セッションの取得に失敗しました。');
                     }
 
-                    const policyAuthorized = window.cidmAdminAuth.isAdminAuthorized(payload.user, window.CIDM_ADMIN_AUTH_POLICY || {});
-                    const memberRoleAuthorized = await window.cidmAdminAuth.isMemberAdminAccount(email);
-                    if (!policyAuthorized && !memberRoleAuthorized) {
+                    // cidm_is_admin() で管理者権限を確認
+                    const { data: isAdminResult, error: isAdminError } = await supabaseClient.rpc('cidm_is_admin');
+                    if (isAdminError || !isAdminResult) {
+                        await supabaseClient.auth.signOut({ scope: 'local' });
                         throw new Error('管理者権限がありません。');
                     }
 
                     sessionStorage.setItem('admin-session', JSON.stringify(payload));
-
-                    const { error: sessionError } = await supabaseClient.auth.setSession({
-                        access_token: payload.session.access_token,
-                        refresh_token: payload.session.refresh_token
-                    });
-
-                    if (sessionError) {
-                        throw new Error(sessionError.message || 'セッションの復元に失敗しました。');
-                    }
 
                     window.cidmAdminUi.showToast('管理者認証に成功しました。', 'success', 1800);
                     adminLoginForm.reset();

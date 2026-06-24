@@ -281,19 +281,35 @@
         }
 
         async function fetchMemberLoginContext() {
-            const { data, error } = await memberSupabase.functions.invoke('member-password-reset', {
-                body: { action: 'member_login_context' }
-            });
-
-            if (error) {
-                throw new Error(error.message || '会員情報の取得に失敗しました。');
+            // まず担当者（member_contacts）として情報を取得
+            const { data: contactRows, error: contactError } = await memberSupabase.rpc('cidm_get_my_contact_info');
+            if (!contactError && contactRows && contactRows.length > 0) {
+                const info = contactRows[0];
+                return {
+                    member_id: info.member_id,
+                    login_type: 'contact',
+                    member_type: info.member_type || '',
+                    staff_name: info.contact_name || '',
+                    company_name: info.company_name || '',
+                    app_role: info.app_role || 'member'
+                };
             }
 
-            if (!data || data.ok !== true || !data.context) {
-                throw new Error((data && data.error) || '会員情報の取得に失敗しました。');
+            // 次に管理者（member.auth_user_id）として情報を取得
+            const { data: adminRows, error: adminError } = await memberSupabase.rpc('cidm_get_my_admin_info');
+            if (!adminError && adminRows && adminRows.length > 0) {
+                const info = adminRows[0];
+                return {
+                    member_id: info.member_id,
+                    login_type: 'admin',
+                    member_type: '',
+                    staff_name: '',
+                    company_name: info.company_name || '',
+                    app_role: info.app_role || 'admin'
+                };
             }
 
-            return data.context;
+            throw new Error('会員登録情報が見つかりません。管理者へお問い合わせください。');
         }
 
         function getMemberPasswordResetRedirectUrl() {
@@ -731,20 +747,24 @@
 
                 if (seq !== memberLoginSeq) return;
 
-                const memberContext = buildMemberContext(authData.user, loginId);
-                memberContext.login_type = 'auth';
-                memberContext.member_type = String(loginContext.member_type || '').trim();
-                memberContext.staff_name = String(loginContext.staff_name || memberContext.staff_name || '').trim();
-                memberContext.company_name = String(loginContext.company_name || memberContext.company_name || '').trim();
+                const staffName = String(loginContext.staff_name || authData.user?.user_metadata?.full_name || '').trim();
+                const companyName = String(loginContext.company_name || '').trim();
+                const appRole = String(loginContext.app_role || 'member').trim();
 
                 isLoggedIn = true;
                 sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
-                sessionStorage.setItem(MEMBER_ID_KEY, memberContext.login_id || loginId);
-                sessionStorage.setItem(MEMBER_NAME_KEY, memberContext.staff_name || '');
-                sessionStorage.setItem(MEMBER_COMPANY_KEY, memberContext.company_name || '');
-                sessionStorage.setItem('MEMBER_LOGIN_TYPE', 'auth');
-                sessionStorage.setItem('MEMBER_TYPE', memberContext.member_type || '');
-                window.location.href = 'member.html';
+                sessionStorage.setItem(MEMBER_ID_KEY, loginId);
+                sessionStorage.setItem(MEMBER_NAME_KEY, staffName);
+                sessionStorage.setItem(MEMBER_COMPANY_KEY, companyName);
+                sessionStorage.setItem('MEMBER_LOGIN_TYPE', loginContext.login_type || 'contact');
+                sessionStorage.setItem('MEMBER_TYPE', String(loginContext.member_type || '').trim());
+
+                // 管理者は管理者ポータルへ、それ以外は会員ページへ
+                if (appRole === 'admin' || appRole === 'super_admin') {
+                    window.location.href = 'admin-portal.html';
+                } else {
+                    window.location.href = 'member.html';
+                }
             } catch (error) {
                 if (seq !== memberLoginSeq) return;
                 try {

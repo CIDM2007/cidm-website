@@ -438,45 +438,55 @@ async function inviteContact(req: Request, payload: Record<string, unknown>): Pr
     return jsonResponse({ error: 'Unauthorized' }, 401)
   }
 
-  // ユーザーの JWT を使ってクライアントを作成（RLS・admin チェックが機能する）
+  // 管理者権限チェック
   const ANON_KEY = (Deno.env.get('SUPABASE_ANON_KEY') || '').trim()
   const userClient = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false }
   })
+  const { data: isAdminData, error: isAdminError } = await userClient.rpc('cidm_is_admin')
+  if (isAdminError || !isAdminData) {
+    return jsonResponse({ error: 'admin access required' }, 403)
+  }
 
-  const rawToken = createRawToken()
-  const tokenHash = await sha256Hex(rawToken)
+  // 担当者情報を取得
+  const { data: contact, error: contactError } = await supabase
+    .from('member_contacts')
+    .select('id, name, email, auth_user_id')
+    .eq('id', contactId)
+    .single()
 
-  const { data: rows, error: rpcError } = await userClient.rpc(
-    'cidm_admin_create_contact_invite',
-    {
-      p_contact_id: contactId,
-      p_token_hash: tokenHash,
-      p_token_type: 'invite'
-    }
+  if (contactError || !contact) {
+    return jsonResponse({ error: 'contact not found' }, 400)
+  }
+  if (!contact.email) {
+    return jsonResponse({ error: 'contact has no email' }, 400)
+  }
+
+  // Supabase Auth に招待（既存ユーザーの場合は再送）
+  const redirectTo = (Deno.env.get('MEMBER_PASSWORD_RESET_URL_BASE') || '').trim()
+    || `${(req.headers.get('origin') || '').trim()}/member-password-reset.html`
+
+  const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+    contact.email,
+    { redirectTo }
   )
 
-  if (rpcError) {
-    console.error('invite contact rpc error:', rpcError)
-    return jsonResponse({ error: rpcError.message || 'Internal server error' }, 500)
+  if (inviteError) {
+    console.error('invite user error:', inviteError)
+    return jsonResponse({ error: inviteError.message || 'メール送信に失敗しました。' }, 500)
   }
 
-  const row = Array.isArray(rows) ? rows[0] : null
-  if (!row || !row.contact_email) {
-    return jsonResponse({ error: 'contact not found or has no email' }, 400)
+  // auth_user_id を member_contacts に保存
+  const authUserId = inviteData?.user?.id
+  if (authUserId && authUserId !== contact.auth_user_id) {
+    await supabase
+      .from('member_contacts')
+      .update({ auth_user_id: authUserId })
+      .eq('id', contactId)
   }
 
-  const inviteUrl = buildResetUrl(req, rawToken)
-
-  try {
-    await sendInviteMail(row.contact_email, row.contact_name || '', inviteUrl)
-  } catch (mailError) {
-    console.error('invite mail error:', mailError)
-    return jsonResponse({ error: 'メール送信に失敗しました。' }, 500)
-  }
-
-  return jsonResponse({ ok: true, contact_email: row.contact_email })
+  return jsonResponse({ ok: true, contact_email: contact.email })
 }
 
 async function sendInviteMail(toEmail: string, contactName: string, inviteUrl: string): Promise<void> {

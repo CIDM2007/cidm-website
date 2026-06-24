@@ -183,6 +183,17 @@
             try {
                 const { data: { user } } = await memberSupabase.auth.getUser();
                 if (user) {
+                    // cidm_get_my_contact_info で担当者情報を取得
+                    const { data: contactRows } = await memberSupabase.rpc('cidm_get_my_contact_info');
+                    if (contactRows && contactRows.length > 0) {
+                        const info = contactRows[0];
+                        return {
+                            memberId: info.contact_email || user.email || '',
+                            memberName: info.contact_name || '',
+                            memberCompany: info.company_name || ''
+                        };
+                    }
+                    // フォールバック: user_metadata から取得
                     return buildMemberContextFromUser(user);
                 }
             } catch (error) {
