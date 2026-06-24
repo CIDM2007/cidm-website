@@ -40,6 +40,16 @@
         .member-table tbody tr:hover td { background:#f8fbff; }
         .company-name { font-weight:700; color:#1e293b; }
         .sub-text { color:#64748b; font-size:0.8rem; }
+        .admin-check-btn {
+            background:#dc2626 !important;
+            border:1px solid #b91c1c !important;
+            color:#ffffff !important;
+            box-shadow:0 8px 18px rgba(220, 38, 38, 0.24) !important;
+            min-width:2.2rem;
+            justify-content:center;
+        }
+        .admin-check-btn:hover { opacity:0.9; }
+        .admin-check-btn:disabled { opacity:0.82; }
 
     </style>
 </head>
@@ -203,12 +213,12 @@
             const adminCell = `
                 <td style="text-align:center;">
                     <button
-                        class="btn ${isAdmin ? 'btn-danger' : 'btn-primary'}"
+                        class="btn ${isAdmin ? 'admin-check-btn' : 'btn-primary'}"
                         style="font-size:0.72rem; padding:0.3rem 0.7rem;"
                         ${isSuperAdmin ? `data-toggle-admin="${item.id}"` : ''}
                         data-current-role="${item.app_role || 'member'}"
                         ${isSuperAdmin ? '' : 'disabled title="権限変更はスーパー管理者のみ可能です"'}
-                    >${isAdmin ? '管理者 ✓' : '－'}</button>
+                    >${isAdmin ? '✓' : '－'}</button>
                 </td>`;
             return `
             <tr style="cursor:pointer;" data-member-id="${item.id}">
