@@ -209,7 +209,7 @@
                         data-current-role="${item.app_role || 'member'}"
                         ${isSuperAdmin ? '' : 'disabled title="権限変更はスーパー管理者のみ可能です"'}
                     >${isAdmin ? '管理者 ✓' : '－'}</button>
-                </td>` : '';
+                </td>`;
             return `
             <tr style="cursor:pointer;" data-member-id="${item.id}">
                 <td><span class="${statusMeta.className}">${statusMeta.label}</span>${note}</td>
