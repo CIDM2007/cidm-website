@@ -39,6 +39,43 @@
         return true;
     }
 
+    async function isMemberAdminAccount(loginId) {
+        const normalizedLoginId = String(loginId || '').trim().toLowerCase();
+        if (!normalizedLoginId) {
+            return false;
+        }
+
+        const supabaseUrl = String(window.CIDM_SUPABASE_URL || '').trim();
+        const anonKey = String(window.CIDM_SUPABASE_PUBLISHABLE_KEY || window.CIDM_SUPABASE_ANON_KEY || '').trim();
+        if (!supabaseUrl || !anonKey) {
+            return false;
+        }
+
+        try {
+            const response = await fetch(`${supabaseUrl}/functions/v1/member-password-reset`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    apikey: anonKey,
+                    Authorization: `Bearer ${anonKey}`
+                },
+                body: JSON.stringify({
+                    action: 'admin_can_login',
+                    login_id: normalizedLoginId
+                })
+            });
+
+            const json = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                return false;
+            }
+
+            return json && json.ok === true && json.is_admin === true;
+        } catch (_e) {
+            return false;
+        }
+    }
+
     function createSupabaseClient() {
         // Initialize Supabase client from global config
         // Both CIDM_SUPABASE_URL and a public Supabase key must be set in the calling HTML page
@@ -122,7 +159,10 @@
 
             const effectivePolicy = policy && typeof policy === 'object' ? { ...getDefaultPolicy(), ...policy } : getDefaultPolicy();
             if (!isAdminAuthorized(user, effectivePolicy)) {
-                return null;
+                const memberAdmin = await isMemberAdminAccount(user.email || '');
+                if (!memberAdmin) {
+                    return null;
+                }
             }
 
             return user;
@@ -244,6 +284,7 @@
         getAuthenticatedAdminUser,
         ensureAuthenticated,
         signOutAndRedirect,
-        isAdminAuthorized
+        isAdminAuthorized,
+        isMemberAdminAccount
     };
 })();

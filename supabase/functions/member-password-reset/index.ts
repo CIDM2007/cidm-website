@@ -177,14 +177,7 @@ async function sendAdminRecoveryMail(toEmail: string, recoveryUrl: string): Prom
   }
 }
 
-async function requestAdminReset(req: Request, payload: Record<string, unknown>): Promise<Response> {
-  const loginId = normalizeEmail(payload.login_id)
-  const redirectTo = String(payload.redirect_to || '').trim()
-
-  if (!loginId || !isValidEmail(loginId)) {
-    return jsonResponse({ error: 'メールアドレスを入力してください。' }, 400)
-  }
-
+async function findAdminMemberByLoginId(loginId: string): Promise<Record<string, unknown> | null> {
   const { data: memberRows, error: memberError } = await supabase
     .from('member')
     .select('id, app_role, login_id, email, staff_email')
@@ -193,17 +186,50 @@ async function requestAdminReset(req: Request, payload: Record<string, unknown>)
 
   if (memberError) {
     console.error('member-password-reset admin member lookup error:', memberError)
-    return jsonResponse({ error: '管理者確認に失敗しました。時間をおいて再度お試しください。' }, 500)
+    throw new Error('member lookup failed')
   }
 
   const member = Array.isArray(memberRows)
     ? memberRows.find((row) => {
-        const login = normalizeEmail(row?.login_id)
-        const email = normalizeEmail(row?.email)
-        const staffEmail = normalizeEmail(row?.staff_email)
+        const login = normalizeEmail((row as Record<string, unknown>)?.login_id)
+        const email = normalizeEmail((row as Record<string, unknown>)?.email)
+        const staffEmail = normalizeEmail((row as Record<string, unknown>)?.staff_email)
         return loginId === login || loginId === email || loginId === staffEmail
       })
     : null
+
+  return (member as Record<string, unknown>) || null
+}
+
+async function canAdminLogin(payload: Record<string, unknown>): Promise<Response> {
+  const loginId = normalizeEmail(payload.login_id)
+  if (!loginId || !isValidEmail(loginId)) {
+    return jsonResponse({ ok: true, is_admin: false })
+  }
+
+  try {
+    const member = await findAdminMemberByLoginId(loginId)
+    return jsonResponse({ ok: true, is_admin: !!member })
+  } catch (_e) {
+    return jsonResponse({ ok: true, is_admin: false })
+  }
+}
+
+async function requestAdminReset(req: Request, payload: Record<string, unknown>): Promise<Response> {
+  const loginId = normalizeEmail(payload.login_id)
+  const redirectTo = String(payload.redirect_to || '').trim()
+
+  if (!loginId || !isValidEmail(loginId)) {
+    return jsonResponse({ error: 'メールアドレスを入力してください。' }, 400)
+  }
+
+  let member: Record<string, unknown> | null = null
+  try {
+    member = await findAdminMemberByLoginId(loginId)
+  } catch (_e) {
+    return jsonResponse({ error: '管理者確認に失敗しました。時間をおいて再度お試しください。' }, 500)
+  }
+
   if (!member) {
     return jsonResponse({ error: '管理者以外の方のログインは許可されていません。' }, 403)
   }
@@ -452,6 +478,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (action === 'admin_request') {
       return await requestAdminReset(req, payload)
+    }
+
+    if (action === 'admin_can_login') {
+      return await canAdminLogin(payload)
     }
 
     if (action === 'consume') {

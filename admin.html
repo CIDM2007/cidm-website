@@ -738,6 +738,15 @@
                 return 'パスワード回復機能が見つかりません。サーバー反映後に再度お試しください。';
             }
 
+            if (normalized.includes('admin access required') || normalized.includes('管理者権限')) {
+                return '管理者権限がありません。管理者フラグが有効な会員アカウントでログインしてください。';
+            }
+
+            const hasJapanese = /[\u3040-\u30ff\u4e00-\u9faf]/.test(raw);
+            if (hasJapanese) {
+                return raw;
+            }
+
             return fallbackMessage || raw;
         }
 
@@ -814,7 +823,9 @@
                         throw new Error('認証セッションの取得に失敗しました。');
                     }
 
-                    if (!window.cidmAdminAuth.isAdminAuthorized(payload.user, window.CIDM_ADMIN_AUTH_POLICY || {})) {
+                    const policyAuthorized = window.cidmAdminAuth.isAdminAuthorized(payload.user, window.CIDM_ADMIN_AUTH_POLICY || {});
+                    const memberRoleAuthorized = await window.cidmAdminAuth.isMemberAdminAccount(email);
+                    if (!policyAuthorized && !memberRoleAuthorized) {
                         throw new Error('管理者権限がありません。');
                     }
 
