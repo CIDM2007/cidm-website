@@ -226,6 +226,27 @@
             transform: translateY(-1px);
         }
 
+        .helper-actions {
+            margin-top: 0.85rem;
+            text-align: right;
+        }
+
+        .helper-link {
+            border: none;
+            background: transparent;
+            color: #2563eb;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .helper-link:hover {
+            color: #1d4ed8;
+        }
+
         .admin-header {
             display: flex;
             align-items: center;
@@ -441,6 +462,9 @@
                     <button id="admin-login-submit" type="submit" class="primary-button">
                         <i class="fa-solid fa-lock-open"></i> ログインして開始
                     </button>
+                    <div class="helper-actions">
+                        <button id="admin-password-reset-btn" type="button" class="helper-link">パスワードを忘れた方</button>
+                    </div>
                 </form>
             </section>
         </div>
@@ -524,11 +548,16 @@
         const adminLoginIdInput = document.getElementById('admin-login-id');
         const adminLoginPasswordInput = document.getElementById('admin-login-password');
         const adminLoginSubmitBtn = document.getElementById('admin-login-submit');
+        const adminPasswordResetBtn = document.getElementById('admin-password-reset-btn');
         const adminContent = document.getElementById('admin-content');
         const reportForm = document.getElementById('reportForm');
         const reportSubmitBtn = reportForm.querySelector('button[type="submit"]');
         const adminHomeLink = document.getElementById('admin-home-link');
         const adminLogoImg = document.getElementById('admin-logo-img');
+
+        function getAdminPasswordResetRedirectUrl() {
+            return new URL('member-password-reset.html', window.location.href).href;
+        }
 
         function showAdminContent() {
             adminLoginScreen.classList.add('hidden');
@@ -622,6 +651,34 @@
                         ? 'メール確認が未完了です。Authentication > Users で確認してください。'
                         : raw;
                 console.error('Admin login failed:', error);
+                window.cidmAdminUi.showToast(message, 'error', 3800);
+            }
+        });
+
+        adminPasswordResetBtn?.addEventListener('click', async () => {
+            const email = adminLoginIdInput.value.trim();
+            if (!email) {
+                window.cidmAdminUi.showToast('管理者ID（メールアドレス）を入力してください。', 'error', 3200);
+                adminLoginIdInput.focus();
+                return;
+            }
+
+            if (!supabaseClient) {
+                window.cidmAdminUi.showToast('Supabaseクライアントの初期化に失敗しました。', 'error', 3200);
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: getAdminPasswordResetRedirectUrl()
+                });
+                if (error) {
+                    throw new Error(error.message || '再設定メールの送信に失敗しました。');
+                }
+                window.cidmAdminUi.showToast('再設定メールを送信しました。メールをご確認ください。', 'success', 3600);
+            } catch (error) {
+                const message = String(error && error.message ? error.message : '再設定メールの送信に失敗しました。');
+                console.error('Admin password reset request failed:', error);
                 window.cidmAdminUi.showToast(message, 'error', 3800);
             }
         });
