@@ -34,7 +34,7 @@ jobs:
             echo "window.CIDM_SUPABASE_URL = '${SUPABASE_URL}';"
             echo "window.CIDM_SUPABASE_PUBLISHABLE_KEY = '${SUPABASE_ANON_KEY}';"
             echo "window.CIDM_SUPABASE_ANON_KEY = window.CIDM_SUPABASE_PUBLISHABLE_KEY;"
-            echo "window.CIDM_ADMIN_AUTH_POLICY = { allowedEmails: ['${CIDM_ADMIN_EMAIL}'], requireAdminFlag: false };"
+            echo "window.CIDM_ADMIN_AUTH_POLICY = { allowedEmails: [], requireAdminFlag: true };"
           } > cidm-config.js
 
       - name: Pages を設定
