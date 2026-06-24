@@ -86,7 +86,7 @@
                         <th>登録人数</th>
                         <th>備考</th>
                         <th>招待</th>
-                        <th id="admin-role-col-header" style="display:none;">管理者</th>
+                        <th id="admin-role-col-header">管理者</th>
                     </tr>
                 </thead>
                 <tbody id="members-tbody">
@@ -130,7 +130,7 @@
 
     function renderLoadingRows() {
         const cell = window.cidmAdminUi.getSkeletonLine('100%', '0.9rem');
-        const cols = isSuperAdmin ? 13 : 12;
+        const cols = 13;
         return Array.from({ length: 6 }).map(() =>
             `<tr>${Array.from({ length: cols }).map(() => `<td>${cell}</td>`).join('')}</tr>`
         ).join('');
@@ -200,13 +200,14 @@
                         ${!item.primary_contact_id ? 'disabled title="担当者情報なし"' : ''}
                     ><i class="fa-solid fa-envelope"></i></button>
                 </td>`;
-            const adminCell = isSuperAdmin ? `
+            const adminCell = `
                 <td style="text-align:center;">
                     <button
                         class="btn ${isAdmin ? 'btn-danger' : 'btn-primary'}"
                         style="font-size:0.72rem; padding:0.3rem 0.7rem;"
-                        data-toggle-admin="${item.id}"
+                        ${isSuperAdmin ? `data-toggle-admin="${item.id}"` : ''}
                         data-current-role="${item.app_role || 'member'}"
+                        ${isSuperAdmin ? '' : 'disabled title="権限変更はスーパー管理者のみ可能です"'}
                     >${isAdmin ? '管理者 ✓' : '－'}</button>
                 </td>` : '';
             return `
@@ -243,12 +244,12 @@
         });
 
         if (memberError) {
-            const cols = isSuperAdmin ? 13 : 12;
+            const cols = 13;
             tbody.innerHTML = `<tr><td colspan="${cols}" style="color:red; text-align:center;">データ取得エラー</td></tr>`;
             return;
         }
         if (!members || members.length === 0) {
-            const cols = isSuperAdmin ? 13 : 12;
+            const cols = 13;
             tbody.innerHTML = `<tr><td colspan="${cols}" style="text-align:center; color:#888;">会員データはありません</td></tr>`;
             return;
         }
@@ -317,9 +318,6 @@
         const { data: { user } } = await supabaseClient.auth.getUser();
         const email = (user?.email || '').toLowerCase();
         isSuperAdmin = email === 'carinformationdatamanagement@gmail.com';
-        if (isSuperAdmin) {
-            document.getElementById('admin-role-col-header')?.style.setProperty('display', '');
-        }
 
         // 一斉招待ボタン
         document.getElementById('bulk-invite-btn')?.addEventListener('click', async () => {
