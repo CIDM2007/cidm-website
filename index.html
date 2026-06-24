@@ -749,7 +749,14 @@
 
                 const staffName = String(loginContext.staff_name || authData.user?.user_metadata?.full_name || '').trim();
                 const companyName = String(loginContext.company_name || '').trim();
-                const appRole = String(loginContext.app_role || 'member').trim();
+                const memberType = String(loginContext.member_type || '').trim();
+
+                // 会員サイトにアクセスできる会員種別（正会員・準会員・賛助会員のみ）
+                const ALLOWED_MEMBER_TYPES = ['正会員', '準会員', '賛助会員'];
+                if (loginContext.login_type === 'contact' && !ALLOWED_MEMBER_TYPES.includes(memberType)) {
+                    await memberSupabase.auth.signOut({ scope: 'local' });
+                    throw new Error('この会員種別では会員サイトにアクセスできません。管理者へお問い合わせください。');
+                }
 
                 isLoggedIn = true;
                 sessionStorage.setItem(MEMBER_AUTH_KEY, '1');
@@ -757,14 +764,10 @@
                 sessionStorage.setItem(MEMBER_NAME_KEY, staffName);
                 sessionStorage.setItem(MEMBER_COMPANY_KEY, companyName);
                 sessionStorage.setItem('MEMBER_LOGIN_TYPE', loginContext.login_type || 'contact');
-                sessionStorage.setItem('MEMBER_TYPE', String(loginContext.member_type || '').trim());
+                sessionStorage.setItem('MEMBER_TYPE', memberType);
 
-                // 管理者は管理者ポータルへ、それ以外は会員ページへ
-                if (appRole === 'admin' || appRole === 'super_admin') {
-                    window.location.href = 'admin-portal.html';
-                } else {
-                    window.location.href = 'member.html';
-                }
+                // 会員サイトへ遷移（管理者ポータルは admin.html から別途ログイン）
+                window.location.href = 'member.html';
             } catch (error) {
                 if (seq !== memberLoginSeq) return;
                 try {
