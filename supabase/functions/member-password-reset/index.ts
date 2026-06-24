@@ -57,24 +57,17 @@ function buildResetUrl(req: Request, token: string): string {
   return `${base}${separator}token=${encodeURIComponent(token)}`
 }
 
-function buildAdminRecoveryUrl(req: Request, actionLink: string, redirectTo = ''): string {
+function buildAdminRedirectUrl(req: Request, redirectTo = ''): string {
   const configuredBase = String(Deno.env.get('ADMIN_PASSWORD_RESET_URL_BASE') || '').trim()
   const origin = (req.headers.get('origin') || '').trim().replace(/\/$/, '')
   const defaultBase = origin ? `${origin}/member-password-reset.html?from=admin` : ''
   const explicitBase = String(redirectTo || '').trim()
   const base = explicitBase || configuredBase || defaultBase
   if (!base) {
-    return actionLink
+    throw new Error('ADMIN_PASSWORD_RESET_URL_BASE is not configured')
   }
 
-  const hashIndex = actionLink.indexOf('#')
-  if (hashIndex < 0) {
-    return base
-  }
-
-  const hash = actionLink.slice(hashIndex)
-  const cleanBase = base.split('#')[0]
-  return `${cleanBase}${hash}`
+  return base
 }
 
 async function sendResetMail(toEmail: string, resetUrl: string): Promise<void> {
@@ -204,7 +197,10 @@ async function requestAdminReset(req: Request, payload: Record<string, unknown>)
 
   const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
     type: 'recovery',
-    email: loginId
+    email: loginId,
+    options: {
+      redirectTo: buildAdminRedirectUrl(req, redirectTo)
+    }
   })
 
   if (linkError) {
@@ -218,8 +214,7 @@ async function requestAdminReset(req: Request, payload: Record<string, unknown>)
   }
 
   try {
-    const recoveryUrl = buildAdminRecoveryUrl(req, actionLink, redirectTo)
-    await sendAdminRecoveryMail(loginId, recoveryUrl)
+    await sendAdminRecoveryMail(loginId, actionLink)
   } catch (mailError) {
     console.error('member-password-reset admin send mail error:', mailError)
     return jsonResponse({ error: 'メール送信に失敗しました。時間をおいて再度お試しください。' }, 500)
