@@ -725,6 +725,18 @@
             if (normalized.includes('row-level security') || normalized.includes('permission denied') || normalized.includes('not authorized')) {
                 return 'この操作を実行する権限がありません。';
             }
+            if (normalized.includes('invalid action')) {
+                return 'サーバー側のパスワード回復機能が未更新です。運用管理者に連絡してください。';
+            }
+            if (normalized.includes('missing email environment variables')) {
+                return 'サーバーのメール送信設定が不足しています。運用管理者に連絡してください。';
+            }
+            if (normalized.includes('failed to send admin recovery email') || normalized.includes('failed to send reset email')) {
+                return '回復メールの送信に失敗しました。時間をおいて再度お試しください。';
+            }
+            if (normalized.includes('function not found') || normalized.includes('404')) {
+                return 'パスワード回復機能が見つかりません。サーバー反映後に再度お試しください。';
+            }
 
             return fallbackMessage || raw;
         }
@@ -887,6 +899,9 @@
                         window.alert('管理者以外の方のログインは許可されていません。');
                         window.location.href = 'index.html';
                         return;
+                    }
+                    if (response.status === 404) {
+                        throw new Error('Function not found');
                     }
                     throw new Error(msg);
                 }
