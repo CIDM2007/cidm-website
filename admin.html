@@ -274,6 +274,78 @@
             color: #1d4ed8;
         }
 
+        .reset-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.56);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 30;
+        }
+
+        .reset-modal.is-open {
+            display: flex;
+        }
+
+        .reset-modal-card {
+            width: 100%;
+            max-width: 430px;
+            background: #ffffff;
+            border: 1px solid #dbe4ef;
+            border-radius: 1rem;
+            box-shadow: 0 22px 46px rgba(15, 23, 42, 0.26);
+            padding: 1.2rem;
+        }
+
+        .reset-modal-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.35rem;
+        }
+
+        .reset-modal-copy {
+            color: #64748b;
+            font-size: 0.84rem;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        .reset-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.6rem;
+            margin-top: 0.9rem;
+        }
+
+        .ghost-button {
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+            font-size: 0.83rem;
+            font-weight: 700;
+            border-radius: 0.75rem;
+            padding: 0.62rem 0.95rem;
+            cursor: pointer;
+        }
+
+        .ghost-button:hover {
+            background: #f8fafc;
+        }
+
+        .small-primary-button {
+            border: none;
+            background: linear-gradient(135deg, #2563eb, #0ea5e9);
+            color: #fff;
+            font-size: 0.83rem;
+            font-weight: 700;
+            border-radius: 0.75rem;
+            padding: 0.62rem 0.95rem;
+            cursor: pointer;
+        }
+
         .admin-header {
             display: flex;
             align-items: center;
@@ -502,6 +574,23 @@
         </div>
     </div>
 
+    <div id="admin-reset-modal" class="reset-modal" aria-hidden="true">
+        <div class="reset-modal-card" role="dialog" aria-modal="true" aria-labelledby="admin-reset-modal-title">
+            <h3 id="admin-reset-modal-title" class="reset-modal-title">パスワード回復</h3>
+            <p class="reset-modal-copy">管理者メールアドレスを入力してください。管理者の場合のみ、回復用URLをメールで送信します。</p>
+            <form id="admin-reset-form">
+                <div class="field-group" style="margin-bottom: 0;">
+                    <label class="field-label">メールアドレス</label>
+                    <input type="email" id="admin-reset-email" class="field-input" placeholder="メールアドレス" required>
+                </div>
+                <div class="reset-modal-actions">
+                    <button type="button" id="admin-reset-cancel-btn" class="ghost-button">キャンセル</button>
+                    <button type="submit" id="admin-reset-submit-btn" class="small-primary-button">送信する</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- 管理画面コンテンツ（認証完了後に表示） -->
     <div id="admin-content" class="hidden flex-col min-h-screen w-full">
 
@@ -582,6 +671,11 @@
         const adminPasswordToggleBtn = document.getElementById('admin-password-toggle-btn');
         const adminLoginSubmitBtn = document.getElementById('admin-login-submit');
         const adminPasswordResetBtn = document.getElementById('admin-password-reset-btn');
+        const adminResetModal = document.getElementById('admin-reset-modal');
+        const adminResetForm = document.getElementById('admin-reset-form');
+        const adminResetEmailInput = document.getElementById('admin-reset-email');
+        const adminResetSubmitBtn = document.getElementById('admin-reset-submit-btn');
+        const adminResetCancelBtn = document.getElementById('admin-reset-cancel-btn');
         const adminContent = document.getElementById('admin-content');
         const reportForm = document.getElementById('reportForm');
         const reportSubmitBtn = reportForm.querySelector('button[type="submit"]');
@@ -591,7 +685,22 @@
         let adminPasswordResetLastSentAt = 0;
 
         function getAdminPasswordResetRedirectUrl() {
-            return new URL('member-password-reset.html', window.location.href).href;
+            const url = new URL('member-password-reset.html', window.location.href);
+            url.searchParams.set('from', 'admin');
+            return url.href;
+        }
+
+        function openAdminResetModal() {
+            adminResetEmailInput.value = adminLoginIdInput.value.trim();
+            adminResetModal.classList.add('is-open');
+            adminResetModal.setAttribute('aria-hidden', 'false');
+            adminResetEmailInput.focus();
+        }
+
+        function closeAdminResetModal() {
+            adminResetModal.classList.remove('is-open');
+            adminResetModal.setAttribute('aria-hidden', 'true');
+            adminResetForm.reset();
         }
 
         function toJapaneseErrorMessage(error, fallbackMessage) {
@@ -719,7 +828,23 @@
             }
         });
 
-        adminPasswordResetBtn?.addEventListener('click', async () => {
+        adminPasswordResetBtn?.addEventListener('click', () => {
+            openAdminResetModal();
+        });
+
+        adminResetCancelBtn?.addEventListener('click', () => {
+            closeAdminResetModal();
+        });
+
+        adminResetModal?.addEventListener('click', (event) => {
+            if (event.target === adminResetModal) {
+                closeAdminResetModal();
+            }
+        });
+
+        adminResetForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
             const now = Date.now();
             const remainingMs = ADMIN_PASSWORD_RESET_COOLDOWN_MS - (now - adminPasswordResetLastSentAt);
             if (remainingMs > 0) {
@@ -728,10 +853,10 @@
                 return;
             }
 
-            const email = adminLoginIdInput.value.trim();
+            const email = adminResetEmailInput.value.trim();
             if (!email) {
                 window.cidmAdminUi.showToast('管理者ID（メールアドレス）を入力してください。', 'error', 3200);
-                adminLoginIdInput.focus();
+                adminResetEmailInput.focus();
                 return;
             }
 
@@ -741,14 +866,34 @@
             }
 
             try {
-                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: getAdminPasswordResetRedirectUrl()
+                const response = await fetch(`${window.CIDM_SUPABASE_URL}/functions/v1/member-password-reset`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        apikey: window.CIDM_SUPABASE_ANON_KEY,
+                        Authorization: `Bearer ${window.CIDM_SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        action: 'admin_request',
+                        login_id: email,
+                        redirect_to: getAdminPasswordResetRedirectUrl()
+                    })
                 });
-                if (error) {
-                    throw new Error(error.message || '再設定メールの送信に失敗しました。');
+
+                const json = await response.json().catch(() => ({}));
+                if (!response.ok || !json.ok) {
+                    const msg = String(json && json.error ? json.error : '再設定メールの送信に失敗しました。');
+                    if (response.status === 403 || msg.includes('管理者以外の方のログインは許可されていません')) {
+                        window.alert('管理者以外の方のログインは許可されていません。');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                    throw new Error(msg);
                 }
+
                 adminPasswordResetLastSentAt = Date.now();
                 window.cidmAdminUi.showToast('再設定メールを送信しました。メールをご確認ください。', 'success', 3600);
+                closeAdminResetModal();
             } catch (error) {
                 const message = toJapaneseErrorMessage(error, '再設定メールの送信に失敗しました。');
                 console.error('Admin password reset request failed:', error);

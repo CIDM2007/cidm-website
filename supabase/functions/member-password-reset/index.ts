@@ -57,6 +57,26 @@ function buildResetUrl(req: Request, token: string): string {
   return `${base}${separator}token=${encodeURIComponent(token)}`
 }
 
+function buildAdminRecoveryUrl(req: Request, actionLink: string, redirectTo = ''): string {
+  const configuredBase = String(Deno.env.get('ADMIN_PASSWORD_RESET_URL_BASE') || '').trim()
+  const origin = (req.headers.get('origin') || '').trim().replace(/\/$/, '')
+  const defaultBase = origin ? `${origin}/member-password-reset.html?from=admin` : ''
+  const explicitBase = String(redirectTo || '').trim()
+  const base = explicitBase || configuredBase || defaultBase
+  if (!base) {
+    return actionLink
+  }
+
+  const hashIndex = actionLink.indexOf('#')
+  if (hashIndex < 0) {
+    return base
+  }
+
+  const hash = actionLink.slice(hashIndex)
+  const cleanBase = base.split('#')[0]
+  return `${cleanBase}${hash}`
+}
+
 async function sendResetMail(toEmail: string, resetUrl: string): Promise<void> {
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   const from = Deno.env.get('RESEND_FROM_EMAIL')
@@ -102,6 +122,110 @@ async function sendResetMail(toEmail: string, resetUrl: string): Promise<void> {
     const errorText = await response.text()
     throw new Error(errorText || 'Failed to send reset email')
   }
+}
+
+async function sendAdminRecoveryMail(toEmail: string, recoveryUrl: string): Promise<void> {
+  const resendApiKey = Deno.env.get('RESEND_API_KEY')
+  const from = Deno.env.get('RESEND_FROM_EMAIL')
+
+  if (!resendApiKey || !from) {
+    throw new Error('Missing email environment variables')
+  }
+
+  const subject = '【CIDM】管理者パスワード回復のご案内'
+  const text = [
+    'CIDM 管理者各位',
+    '',
+    'パスワードの回復用のURLです。',
+    'こちらのURLを押して、パスワードを回復してください。',
+    '',
+    recoveryUrl,
+    '',
+    'URLの有効期限は1時間です。',
+    '有効期限を過ぎた場合は、再度お手続きをお願いいたします。',
+    '',
+    'このメールに心当たりがない場合は、破棄してください。',
+    '',
+    '――――――――――――――――――',
+    '一般社団法人車両情報活用研究所：CIDM',
+    `送信先: ${toEmail}`
+  ].join('\n')
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from,
+      to: [toEmail],
+      subject,
+      text
+    })
+  })
+
+  if (!response.ok) {
+    const errorText = await response.text()
+    throw new Error(errorText || 'Failed to send admin recovery email')
+  }
+}
+
+async function requestAdminReset(req: Request, payload: Record<string, unknown>): Promise<Response> {
+  const loginId = normalizeEmail(payload.login_id)
+  const redirectTo = String(payload.redirect_to || '').trim()
+
+  if (!loginId || !isValidEmail(loginId)) {
+    return jsonResponse({ error: 'メールアドレスを入力してください。' }, 400)
+  }
+
+  const { data: memberRows, error: memberError } = await supabase
+    .from('member')
+    .select('id, app_role, login_id, email, staff_email')
+    .eq('app_role', 'admin')
+    .limit(500)
+
+  if (memberError) {
+    console.error('member-password-reset admin member lookup error:', memberError)
+    return jsonResponse({ error: '管理者確認に失敗しました。時間をおいて再度お試しください。' }, 500)
+  }
+
+  const member = Array.isArray(memberRows)
+    ? memberRows.find((row) => {
+        const login = normalizeEmail(row?.login_id)
+        const email = normalizeEmail(row?.email)
+        const staffEmail = normalizeEmail(row?.staff_email)
+        return loginId === login || loginId === email || loginId === staffEmail
+      })
+    : null
+  if (!member) {
+    return jsonResponse({ error: '管理者以外の方のログインは許可されていません。' }, 403)
+  }
+
+  const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+    type: 'recovery',
+    email: loginId
+  })
+
+  if (linkError) {
+    console.error('member-password-reset admin generateLink error:', linkError)
+    return jsonResponse({ error: 'パスワード回復URLの生成に失敗しました。' }, 500)
+  }
+
+  const actionLink = String(linkData?.properties?.action_link || '').trim()
+  if (!actionLink) {
+    return jsonResponse({ error: 'パスワード回復URLの生成に失敗しました。' }, 500)
+  }
+
+  try {
+    const recoveryUrl = buildAdminRecoveryUrl(req, actionLink, redirectTo)
+    await sendAdminRecoveryMail(loginId, recoveryUrl)
+  } catch (mailError) {
+    console.error('member-password-reset admin send mail error:', mailError)
+    return jsonResponse({ error: 'メール送信に失敗しました。時間をおいて再度お試しください。' }, 500)
+  }
+
+  return jsonResponse({ ok: true })
 }
 
 // -------------------------------------------------------
@@ -311,6 +435,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (action === 'request') {
       return await requestReset(req, payload)
+    }
+
+    if (action === 'admin_request') {
+      return await requestAdminReset(req, payload)
     }
 
     if (action === 'consume') {
