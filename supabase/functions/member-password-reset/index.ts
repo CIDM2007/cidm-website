@@ -201,6 +201,45 @@ async function findAdminMemberByLoginId(loginId: string): Promise<Record<string,
   return (member as Record<string, unknown>) || null
 }
 
+async function ensureAdminMetadataByEmail(email: string): Promise<void> {
+  const targetEmail = normalizeEmail(email)
+  if (!targetEmail) {
+    return
+  }
+
+  const { data: listData, error: listError } = await supabase.auth.admin.listUsers({
+    page: 1,
+    perPage: 1000
+  })
+
+  if (listError) {
+    console.error('member-password-reset listUsers error:', listError)
+    return
+  }
+
+  const users = Array.isArray(listData?.users) ? listData.users : []
+  const targetUser = users.find((u) => normalizeEmail(u?.email) === targetEmail)
+  if (!targetUser || !targetUser.id) {
+    return
+  }
+
+  const existingMeta = (targetUser.app_metadata || {}) as Record<string, unknown>
+  if (existingMeta.is_admin === true) {
+    return
+  }
+
+  const { error: updateError } = await supabase.auth.admin.updateUserById(targetUser.id, {
+    app_metadata: {
+      ...existingMeta,
+      is_admin: true
+    }
+  })
+
+  if (updateError) {
+    console.error('member-password-reset updateUserById error:', updateError)
+  }
+}
+
 async function canAdminLogin(payload: Record<string, unknown>): Promise<Response> {
   const loginId = normalizeEmail(payload.login_id)
   if (!loginId || !isValidEmail(loginId)) {
@@ -233,6 +272,8 @@ async function requestAdminReset(req: Request, payload: Record<string, unknown>)
   if (!member) {
     return jsonResponse({ error: '管理者以外の方のログインは許可されていません。' }, 403)
   }
+
+  await ensureAdminMetadataByEmail(loginId)
 
   const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
     type: 'recovery',

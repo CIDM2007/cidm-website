@@ -747,7 +747,7 @@
                 return raw;
             }
 
-            return fallbackMessage || raw;
+            return hasJapanese ? raw : `${fallbackMessage || '処理に失敗しました。'} (${raw})`;
         }
 
         function showAdminContent() {
