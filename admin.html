@@ -686,7 +686,7 @@
 
         function getAdminPasswordResetRedirectUrl() {
             const siteBase = String(window.CIDM_PUBLIC_SITE_URL || '').trim();
-            const base = siteBase || window.location.href;
+            const base = siteBase || 'https://cidm.org/';
             const url = new URL('member-password-reset.html', base);
             url.searchParams.set('from', 'admin');
             return url.href;
