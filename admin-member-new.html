@@ -383,9 +383,9 @@
         const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
         if (!ok) return;
 
-        // スーパー管理者のみ管理者区分を操作可能
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        const isSuperAdmin = user?.email === 'carinformationdatamanagement@gmail.com';
+        // スーパー管理者のみ管理者区分を操作可能（DB の app_role = 'super_admin' で判定）
+        const { data: isSuperAdminResult } = await supabaseClient.rpc('cidm_is_super_admin');
+        const isSuperAdmin = !!isSuperAdminResult;
         const isAdminCheckbox = document.getElementById('is_admin');
         if (!isSuperAdmin) {
             isAdminCheckbox.disabled = true;
