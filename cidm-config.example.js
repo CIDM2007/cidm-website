@@ -6,6 +6,7 @@
 window.CIDM_SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
 window.CIDM_SUPABASE_PUBLISHABLE_KEY = 'REPLACE_WITH_YOUR_SB_PUBLISHABLE_KEY';
 window.CIDM_SUPABASE_ANON_KEY = window.CIDM_SUPABASE_PUBLISHABLE_KEY;
+window.CIDM_PUBLIC_SITE_URL = 'https://YOUR_PUBLIC_SITE_URL/';
 
 // Optional admin auth policy for additional admin whitelist checks.
 // window.CIDM_ADMIN_AUTH_POLICY = {

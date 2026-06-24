@@ -297,7 +297,9 @@
         }
 
         function getMemberPasswordResetRedirectUrl() {
-            return new URL('member-password-reset.html', window.location.href).href;
+            const siteBase = String(window.CIDM_PUBLIC_SITE_URL || '').trim();
+            const base = siteBase || window.location.href;
+            return new URL('member-password-reset.html', base).href;
         }
 
         function setMemberLoginButtonBusy(button, busy) {
