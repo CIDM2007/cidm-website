@@ -382,6 +382,17 @@
         setPageMode();
         const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
         if (!ok) return;
+
+        // スーパー管理者のみ管理者区分を操作可能
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        const isSuperAdmin = user?.email === 'carinformationdatamanagement@gmail.com';
+        const isAdminCheckbox = document.getElementById('is_admin');
+        if (!isSuperAdmin) {
+            isAdminCheckbox.disabled = true;
+            isAdminCheckbox.parentElement.querySelector('.officer-check-help').textContent =
+                '管理者区分の変更はスーパー管理者のみ可能です。';
+        }
+
         if (isEditMode) {
             await loadEditData();
         } else {
