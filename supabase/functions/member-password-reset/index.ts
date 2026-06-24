@@ -70,6 +70,19 @@ function buildAdminRedirectUrl(req: Request, redirectTo = ''): string {
   return base
 }
 
+function appendQueryParam(url: string, key: string, value: string): string {
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+}
+
+function buildAdminRecoveryEntryUrl(req: Request, redirectTo: string, tokenHash: string, email: string): string {
+  let url = buildAdminRedirectUrl(req, redirectTo)
+  url = appendQueryParam(url, 'from', 'admin')
+  url = appendQueryParam(url, 'recovery_token_hash', tokenHash)
+  url = appendQueryParam(url, 'recovery_email', email)
+  return url
+}
+
 async function sendResetMail(toEmail: string, resetUrl: string): Promise<void> {
   const resendApiKey = Deno.env.get('RESEND_API_KEY')
   const from = Deno.env.get('RESEND_FROM_EMAIL')
@@ -209,12 +222,17 @@ async function requestAdminReset(req: Request, payload: Record<string, unknown>)
   }
 
   const actionLink = String(linkData?.properties?.action_link || '').trim()
+  const hashedToken = String(linkData?.properties?.hashed_token || '').trim()
   if (!actionLink) {
+    return jsonResponse({ error: 'パスワード回復URLの生成に失敗しました。' }, 500)
+  }
+  if (!hashedToken) {
     return jsonResponse({ error: 'パスワード回復URLの生成に失敗しました。' }, 500)
   }
 
   try {
-    await sendAdminRecoveryMail(loginId, actionLink)
+    const recoveryEntryUrl = buildAdminRecoveryEntryUrl(req, redirectTo, hashedToken, loginId)
+    await sendAdminRecoveryMail(loginId, recoveryEntryUrl)
   } catch (mailError) {
     console.error('member-password-reset admin send mail error:', mailError)
     return jsonResponse({ error: 'メール送信に失敗しました。時間をおいて再度お試しください。' }, 500)
