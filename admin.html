@@ -207,6 +207,33 @@
             resize: vertical;
         }
 
+        .password-field-wrap {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #64748b;
+            width: 34px;
+            height: 34px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .password-toggle-btn:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
         .primary-button {
             width: 100%;
             border: none;
@@ -457,7 +484,12 @@
                     </div>
                     <div class="field-group">
                         <label class="field-label">パスワード</label>
-                        <input type="password" id="admin-login-password" placeholder="パスワード" required class="field-input">
+                        <div class="password-field-wrap">
+                            <input type="password" id="admin-login-password" placeholder="パスワード" required class="field-input" style="padding-right: 2.9rem;">
+                            <button id="admin-password-toggle-btn" type="button" class="password-toggle-btn" aria-label="パスワードを表示">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
                     <button id="admin-login-submit" type="submit" class="primary-button">
                         <i class="fa-solid fa-lock-open"></i> ログインして開始
@@ -547,6 +579,7 @@
         const adminLoginForm = document.getElementById('admin-login-form');
         const adminLoginIdInput = document.getElementById('admin-login-id');
         const adminLoginPasswordInput = document.getElementById('admin-login-password');
+        const adminPasswordToggleBtn = document.getElementById('admin-password-toggle-btn');
         const adminLoginSubmitBtn = document.getElementById('admin-login-submit');
         const adminPasswordResetBtn = document.getElementById('admin-password-reset-btn');
         const adminContent = document.getElementById('admin-content');
@@ -604,6 +637,15 @@
             const fallbackSrc = adminLogoImg.getAttribute('data-fallback-src');
             if (!fallbackSrc || adminLogoImg.src.includes(fallbackSrc)) return;
             adminLogoImg.src = fallbackSrc;
+        });
+
+        adminPasswordToggleBtn?.addEventListener('click', () => {
+            const isHidden = adminLoginPasswordInput.type === 'password';
+            adminLoginPasswordInput.type = isHidden ? 'text' : 'password';
+            adminPasswordToggleBtn.setAttribute('aria-label', isHidden ? 'パスワードを隠す' : 'パスワードを表示');
+            adminPasswordToggleBtn.innerHTML = isHidden
+                ? '<i class="fa-regular fa-eye-slash"></i>'
+                : '<i class="fa-regular fa-eye"></i>';
         });
 
         document.addEventListener('DOMContentLoaded', async () => {
