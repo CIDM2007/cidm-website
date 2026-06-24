@@ -554,9 +554,37 @@
         const reportSubmitBtn = reportForm.querySelector('button[type="submit"]');
         const adminHomeLink = document.getElementById('admin-home-link');
         const adminLogoImg = document.getElementById('admin-logo-img');
+        const ADMIN_PASSWORD_RESET_COOLDOWN_MS = 60 * 1000;
+        let adminPasswordResetLastSentAt = 0;
 
         function getAdminPasswordResetRedirectUrl() {
             return new URL('member-password-reset.html', window.location.href).href;
+        }
+
+        function toJapaneseErrorMessage(error, fallbackMessage) {
+            const raw = String(error && error.message ? error.message : (fallbackMessage || '処理に失敗しました。'));
+            const normalized = raw.toLowerCase();
+
+            if (normalized.includes('invalid login credentials')) {
+                return 'メールアドレスまたはパスワードが正しくありません。';
+            }
+            if (normalized.includes('email not confirmed')) {
+                return 'メール確認が未完了です。Authentication > Users で確認してください。';
+            }
+            if (normalized.includes('email rate limit exceeded') || normalized.includes('over_email_send_rate_limit')) {
+                return 'メール送信回数の上限に達しました。しばらく待ってから再度お試しください。';
+            }
+            if (normalized.includes('failed to fetch') || normalized.includes('networkerror')) {
+                return 'ネットワーク接続に失敗しました。通信環境を確認して再度お試しください。';
+            }
+            if (normalized.includes('jwt expired') || normalized.includes('token has expired') || normalized.includes('refresh token')) {
+                return 'セッションの有効期限が切れました。もう一度ログインしてください。';
+            }
+            if (normalized.includes('row-level security') || normalized.includes('permission denied') || normalized.includes('not authorized')) {
+                return 'この操作を実行する権限がありません。';
+            }
+
+            return fallbackMessage || raw;
         }
 
         function showAdminContent() {
@@ -643,19 +671,21 @@
                     window.location.href = 'admin-portal.html';
                 }, '認証中...');
             } catch (error) {
-                const raw = String(error && error.message ? error.message : 'ログインに失敗しました。');
-                const normalized = raw.toLowerCase();
-                const message = normalized.includes('invalid login credentials')
-                    ? 'メールアドレスまたはパスワードが正しくありません。'
-                    : normalized.includes('email not confirmed')
-                        ? 'メール確認が未完了です。Authentication > Users で確認してください。'
-                        : raw;
+                const message = toJapaneseErrorMessage(error, 'ログインに失敗しました。');
                 console.error('Admin login failed:', error);
                 window.cidmAdminUi.showToast(message, 'error', 3800);
             }
         });
 
         adminPasswordResetBtn?.addEventListener('click', async () => {
+            const now = Date.now();
+            const remainingMs = ADMIN_PASSWORD_RESET_COOLDOWN_MS - (now - adminPasswordResetLastSentAt);
+            if (remainingMs > 0) {
+                const remainingSec = Math.ceil(remainingMs / 1000);
+                window.cidmAdminUi.showToast(`再送信まで ${remainingSec} 秒お待ちください。`, 'error', 3000);
+                return;
+            }
+
             const email = adminLoginIdInput.value.trim();
             if (!email) {
                 window.cidmAdminUi.showToast('管理者ID（メールアドレス）を入力してください。', 'error', 3200);
@@ -675,9 +705,10 @@
                 if (error) {
                     throw new Error(error.message || '再設定メールの送信に失敗しました。');
                 }
+                adminPasswordResetLastSentAt = Date.now();
                 window.cidmAdminUi.showToast('再設定メールを送信しました。メールをご確認ください。', 'success', 3600);
             } catch (error) {
-                const message = String(error && error.message ? error.message : '再設定メールの送信に失敗しました。');
+                const message = toJapaneseErrorMessage(error, '再設定メールの送信に失敗しました。');
                 console.error('Admin password reset request failed:', error);
                 window.cidmAdminUi.showToast(message, 'error', 3800);
             }
@@ -715,7 +746,8 @@
 
                 if (error) {
                     console.error('エラー:', error);
-                    window.cidmAdminUi.showToast('保存に失敗しました: ' + error.message, 'error', 3000);
+                    const message = toJapaneseErrorMessage(error, '保存に失敗しました。時間をおいて再度お試しください。');
+                    window.cidmAdminUi.showToast(message, 'error', 3000);
                 } else {
                     window.cidmAdminUi.showToast('報告を保存しました！', 'success');
                     reportForm.reset(); // 入力欄を空にする
