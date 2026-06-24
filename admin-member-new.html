@@ -80,21 +80,22 @@
             <form id="member-form" autocomplete="off">
                 <div class="form-section">
                     <p class="section-label"><i class="fa-solid fa-building"></i> 会社情報</p>
+                    <!-- 区分・会員種別・役員区分・管理者区分 -->
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 1rem;">
                         <div class="form-group">
-                            <label for="division_flag">区分</label>
+                            <label for="division_flag">１．区分</label>
                             <select id="division_flag" name="division_flag">
                                 <option value="会員">会員</option>
                                 <option value="関係者">関係者</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="member_type">会員種別</label>
+                            <label for="member_type">２．会員種別</label>
                             <select id="member_type" name="member_type">
                                 <option value="">-- 未設定 --</option>
                                 <option value="正会員">正会員</option>
                                 <option value="準会員">準会員</option>
-                                <option value="賛助">賛助会員</option>
+                                <option value="賛助会員">賛助会員</option>
                             </select>
                         </div>
                     </div>
@@ -102,10 +103,24 @@
                         <label for="is_officer" class="officer-check-label">
                             <input type="checkbox" id="is_officer" name="is_officer">
                             <span>
-                                <span class="officer-check-title">この会員を役員として扱う</span>
+                                <span class="officer-check-title">３．役員区分：この会員を役員として扱う</span>
                                 <span class="officer-check-help">理事長・副理事長・理事・監事などの役員に該当する場合にチェックしてください。</span>
                             </span>
                         </label>
+                    </div>
+                    <div class="officer-check-wrap" style="margin-top:0.5rem;">
+                        <label for="is_admin" class="officer-check-label">
+                            <input type="checkbox" id="is_admin" name="is_admin">
+                            <span>
+                                <span class="officer-check-title">４．管理者区分：この会員を管理者として扱う</span>
+                                <span class="officer-check-help">管理者ポータルへのアクセス権を付与します。管理業務を担当する方のみチェックしてください。</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div style="background:#f0f7ff; border:1px solid #bfdbfe; border-radius:0.6rem; padding:0.85rem 1rem; margin-top:0.75rem; font-size:0.83rem; color:#1e40af; line-height:1.7;">
+                        <strong>ログイン権限について</strong><br>
+                        ・<strong>会員サイト</strong>にログインできるのは、区分が「会員」の担当者です。会員種別は問いません。<br>
+                        ・<strong>管理者ポータル</strong>にログインできるのは、区分が「会員」かつ「管理者区分」にチェックが入っている方です。
                     </div>
                     <div class="form-group"><label for="cidm_role">CIDM役職</label><input type="text" id="cidm_role" name="cidm_role" placeholder="副理事長, 理事, 監事 等"></div>
                     <div class="form-group"><label for="company_name">会社名 <span style="color:#f87171">*</span></label><input type="text" id="company_name" name="company_name" required></div>
@@ -323,6 +338,7 @@
         form.division_flag.value = data.division_flag || '会員';
         form.member_type.value = data.member_type || '';
         form.is_officer.checked = Boolean(data.is_officer);
+        form.is_admin.checked = (data.app_role === 'admin');
         form.cidm_role.value = data.cidm_role || '';
         form.company_name.value = data.company_name || '';
         form.representative_name.value = data.representative_name || '';
@@ -389,6 +405,7 @@
             if (!contacts.some((contact) => contact.is_cidm_contact)) contacts[0].is_cidm_contact = true;
 
             const primaryContact = contacts.find((contact) => contact.is_primary) || contacts[0];
+            const newAppRole = form.is_admin.checked ? 'admin' : 'member';
             const memberData = {
                 division_flag: form.division_flag.value || '会員',
                 member_type: form.member_type.value || null,
@@ -429,6 +446,7 @@
                     window.cidmAdminUi.showToast('担当者情報の登録に失敗しました: ' + contactError.message, 'error', 3600);
                     return;
                 }
+                await supabaseClient.rpc('cidm_set_member_app_role', { p_member_id: inserted.id, p_role: newAppRole });
                 window.cidmAdminUi.showToast('登録が完了しました。招待メールを送信してください。', 'success', 2200);
                 setTimeout(() => { window.location.href = `admin-member-new.html?id=${inserted.id}`; }, 500);
                 return;
@@ -450,6 +468,7 @@
                 window.cidmAdminUi.showToast('担当者情報の更新に失敗しました: ' + insertContactError.message, 'error', 3600);
                 return;
             }
+            await supabaseClient.rpc('cidm_set_member_app_role', { p_member_id: memberId, p_role: newAppRole });
             window.cidmAdminUi.showToast('更新が完了しました。', 'success', 1200);
             setTimeout(() => { window.location.href = `admin-members.html?id=${memberId}`; }, 500);
         }, isEditMode ? '更新中...' : '登録中...');

@@ -751,11 +751,11 @@
                 const companyName = String(loginContext.company_name || '').trim();
                 const memberType = String(loginContext.member_type || '').trim();
 
-                // 会員サイトにアクセスできる会員種別（正会員・準会員・賛助会員のみ）
-                const ALLOWED_MEMBER_TYPES = ['正会員', '準会員', '賛助会員'];
-                if (loginContext.login_type === 'contact' && !ALLOWED_MEMBER_TYPES.includes(memberType)) {
+                // 会員サイトにアクセスできるのは区分「会員」のみ
+                const divisionFlag = String(loginContext.division_flag || '').trim();
+                if (loginContext.login_type === 'contact' && divisionFlag !== '会員') {
                     await memberSupabase.auth.signOut({ scope: 'local' });
-                    throw new Error('この会員種別では会員サイトにアクセスできません。管理者へお問い合わせください。');
+                    throw new Error('この区分では会員サイトにアクセスできません。管理者へお問い合わせください。');
                 }
 
                 isLoggedIn = true;
