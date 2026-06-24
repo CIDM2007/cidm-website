@@ -298,7 +298,7 @@
 
         function getMemberPasswordResetRedirectUrl() {
             const siteBase = String(window.CIDM_PUBLIC_SITE_URL || '').trim();
-            const base = siteBase || 'https://cidm.org/';
+            const base = siteBase || window.location.origin;
             return new URL('member-password-reset.html', base).href;
         }
 
