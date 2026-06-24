@@ -323,9 +323,8 @@
         const ok = await window.cidmAdminAuth.ensureAuthenticated(supabaseClient, 'admin.html');
         if (!ok) return;
 
-        // スーパー管理者かどうか確認（DB の app_role = 'super_admin' で判定）
-        const { data: isSuperAdminResult } = await supabaseClient.rpc('cidm_is_super_admin');
-        isSuperAdmin = !!isSuperAdminResult;
+        // 管理者なら全員が権限変更可能
+        isSuperAdmin = true;
 
         // 一斉招待ボタン
         document.getElementById('bulk-invite-btn')?.addEventListener('click', async () => {
