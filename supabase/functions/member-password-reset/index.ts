@@ -463,22 +463,52 @@ async function inviteContact(req: Request, payload: Record<string, unknown>): Pr
     return jsonResponse({ error: 'contact has no email' }, 400)
   }
 
-  // Supabase Auth に招待（既存ユーザーの場合は再送）
   const redirectTo = (Deno.env.get('MEMBER_PASSWORD_RESET_URL_BASE') || '').trim()
     || `${(req.headers.get('origin') || '').trim()}/member-password-reset.html`
 
+  let authUserId: string | undefined = contact.auth_user_id
+
+  // まず invite を試みる（新規ユーザー）
   const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
     contact.email,
     { redirectTo }
   )
 
   if (inviteError) {
-    console.error('invite user error:', inviteError)
-    return jsonResponse({ error: inviteError.message || 'メール送信に失敗しました。' }, 500)
+    // 既存ユーザーの場合はパスワードリセットリンクを生成して送信
+    const isAlreadyRegistered = inviteError.message?.includes('already been registered')
+      || inviteError.message?.includes('already registered')
+    if (!isAlreadyRegistered) {
+      console.error('invite user error:', inviteError)
+      return jsonResponse({ error: inviteError.message || 'メール送信に失敗しました。' }, 500)
+    }
+
+    // generateLink でリセットリンクを生成
+    const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+      type: 'recovery',
+      email: contact.email,
+      options: { redirectTo }
+    })
+
+    if (linkError || !linkData) {
+      console.error('generateLink error:', linkError)
+      return jsonResponse({ error: 'メール送信に失敗しました。' }, 500)
+    }
+
+    // リセットリンクを Resend で送信
+    try {
+      await sendInviteMail(contact.email, contact.name || '', linkData.properties?.action_link || '')
+    } catch (mailError) {
+      console.error('invite mail error:', mailError)
+      return jsonResponse({ error: 'メール送信に失敗しました。' }, 500)
+    }
+
+    authUserId = linkData.user?.id || authUserId
+  } else {
+    authUserId = inviteData?.user?.id || authUserId
   }
 
   // auth_user_id を member_contacts に保存
-  const authUserId = inviteData?.user?.id
   if (authUserId && authUserId !== contact.auth_user_id) {
     await supabase
       .from('member_contacts')
