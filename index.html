@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://images.unsplash.com https://placehold.jp https://uhhhifbotqidqeceqyis.supabase.co; connect-src 'self' https://uhhhifbotqidqeceqyis.supabase.co https://uhhhifbotqidqeceqyis.functions.supabase.co https://zipcloud.ibsnet.co.jp; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>一般社団法人 車両情報活用研究所 | CIDM Official</title>
-    <link rel="icon" type="image/png" href="./CIDMchara.png">
+    <link rel="icon" type="image/png" href="assets/images/CIDMchara.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Noto+Sans+JP:wght@300;400;500;700&display=block" rel="stylesheet">
-    <link href="./output.css" rel="stylesheet">
+    <link href="css/output.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="./cidm-config.js"></script>
+    <script src="js/cidm-config.js"></script>
     <style>
         
         :root {
@@ -132,8 +132,8 @@
             <header class="relative h-[80vh] flex items-center overflow-hidden bg-white">
                 <div class="absolute inset-0 z-0">
                     <picture>
-                        <source srcset="heroimg.webp" type="image/webp">
-                        <img id="hero-image" src="heroimg.png" data-fallback-src="https://images.unsplash.com/photo-1558444458-5f75bc9b6a58?auto=format&fit=crop&q=80&w=2000" alt="ヒーロー画像" class="w-full h-full object-cover opacity-90">
+                        <source srcset="assets/images/heroimg.webp" type="image/webp">
+                        <img id="hero-image" src="assets/images/heroimg.png" data-fallback-src="https://images.unsplash.com/photo-1558444458-5f75bc9b6a58?auto=format&fit=crop&q=80&w=2000" alt="ヒーロー画像" class="w-full h-full object-cover opacity-90">
                     </picture>
                     <div class="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent"></div>
                 </div>
@@ -159,8 +159,8 @@
                     </p>
                     <div class="mt-12 text-center">
                         <picture>
-                            <source srcset="CIDM_top_CIDMimage.webp" type="image/webp">
-                            <img src="CIDM_top_CIDMimage.png" alt="車両情報活用研究所のコンセプト" class="w-full mx-auto rounded-2xl shadow-xl border border-slate-200">
+                            <source srcset="assets/images/CIDM_top_CIDMimage.webp" type="image/webp">
+                            <img src="assets/images/CIDM_top_CIDMimage.png" alt="車両情報活用研究所のコンセプト" class="w-full mx-auto rounded-2xl shadow-xl border border-slate-200">
                         </picture>
                     </div>
                 </div>
@@ -217,8 +217,8 @@
         </div>
     </div>
 
-    <script src="./nav.js" defer></script>
-        <script src="./admin-ui.js"></script>
+    <script src="js/nav.js" defer></script>
+        <script src="js/admin-ui.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         let isLoggedIn = false;

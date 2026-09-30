@@ -24,7 +24,7 @@
 
 ### 1. 認証の完全なバイパス（AUTH_BYPASS）
 
-**ファイル:** [admin-auth.js](admin-auth.js#L46-L50)
+**ファイル:** [admin-auth.js](../js/admin-auth.js#L46-L50)
 
 **現在の実装:**
 ```javascript

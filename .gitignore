@@ -3,7 +3,7 @@ node_modules/
 .DS_Store
 
 # Local config with real Supabase keys — do not commit
-cidm-config.js
+js/cidm-config.js
 
 # Supabase CLI temporary files
 supabase/.temp/

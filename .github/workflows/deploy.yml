@@ -24,7 +24,7 @@ jobs:
       - name: リポジトリをチェックアウト
         uses: actions/checkout@v4
 
-      - name: cidm-config.js を Secrets から生成
+      - name: js/cidm-config.js を Secrets から生成
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -35,7 +35,7 @@ jobs:
             echo "window.CIDM_SUPABASE_PUBLISHABLE_KEY = '${SUPABASE_ANON_KEY}';"
             echo "window.CIDM_SUPABASE_ANON_KEY = window.CIDM_SUPABASE_PUBLISHABLE_KEY;"
             echo "window.CIDM_ADMIN_AUTH_POLICY = { allowedEmails: [], requireAdminFlag: true };"
-          } > cidm-config.js
+          } > js/cidm-config.js
 
       - name: Pages を設定
         uses: actions/configure-pages@v4
