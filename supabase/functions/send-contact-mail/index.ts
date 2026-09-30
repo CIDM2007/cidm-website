@@ -16,6 +16,37 @@ function getCorsHeaders(origin: string): Record<string, string> {
   };
 }
 
+function getClientIp(req: Request): string {
+  const forwardedFor = req.headers.get("x-forwarded-for") || "";
+  const first = forwardedFor.split(",")[0]?.trim();
+  return first || req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") || "unknown";
+}
+
+async function checkRateLimit(
+  supabaseUrl: string,
+  apiKey: string,
+  key: string,
+  limit: number,
+  windowSeconds: number,
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/rpc/cidm_check_rate_limit`, {
+      method: "POST",
+      headers: {
+        apikey: apiKey,
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ p_key: key, p_limit: limit, p_window_seconds: windowSeconds }),
+    });
+    if (!res.ok) return true;
+    const withinLimit = await res.json();
+    return withinLimit !== false;
+  } catch (_error) {
+    return true;
+  }
+}
+
 serve(async (req) => {
   const origin = req.headers.get("origin") || "";
   const corsHeaders = getCorsHeaders(origin);
@@ -48,7 +79,17 @@ serve(async (req) => {
       email,
       category,
       message,
+      hp_field,
     } = payload;
+
+    // Honeypot: a hidden field real users never fill in. Pretend success
+    // so bots don't adapt, but never store or forward the submission.
+    if (String(hp_field || "").trim()) {
+      return new Response(
+        JSON.stringify({ ok: true, inquiry_id: null, sent_to: null, mode: "stored_only" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     if (!name || !postal || !pref || !address || !phone || !email || !message) {
       return new Response("Missing required fields", {
@@ -64,6 +105,23 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
       "",
     ).trim();
+
+    if (supabaseUrl && supabaseServiceRoleKey) {
+      const clientIp = getClientIp(req);
+      const withinLimit = await checkRateLimit(
+        supabaseUrl,
+        supabaseServiceRoleKey,
+        `send_contact_mail:${clientIp}`,
+        5,
+        3600,
+      );
+      if (!withinLimit) {
+        return new Response(
+          JSON.stringify({ error: "リクエストが多すぎます。しばらく時間をおいて再度お試しください。" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
 
     let to = "carinformationdatamanagement@gmail.com";
     let inquiryId: string | null = null;

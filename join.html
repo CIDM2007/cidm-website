@@ -36,6 +36,10 @@
                     <p class="mt-6 text-slate-500 text-sm">Web上で入会手続きを完結できます。印鑑は不要です。</p>
                 </div>
                 <form id="application-form" class="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-blue-50 space-y-10">
+                    <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+                        <label for="hp_field">このフィールドは入力しないでください</label>
+                        <input type="text" id="hp_field" name="hp_field" tabindex="-1" autocomplete="off">
+                    </div>
                     <!-- 会社組織情報 -->
                     <div class="space-y-6 pt-6 border-t border-slate-100">
                         <h3 class="font-bold text-blue-600 flex items-center italic">
@@ -227,7 +231,8 @@
             is_cidm_contact: rawData.is_cidm_contact === 'on',
             receive_invite_mail: rawData.receive_invite_mail === 'on',
             receive_invoice_mail: rawData.receive_invoice_mail === 'on',
-            contact_biko: rawData.contact_biko || null
+            contact_biko: rawData.contact_biko || null,
+            hp_field: rawData.hp_field || ''
         };
 
         submitButton.disabled = true;

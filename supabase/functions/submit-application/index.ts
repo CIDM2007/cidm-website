@@ -25,6 +25,12 @@ function jsonResponse(body: unknown, status = 200, corsHeaders: Record<string, s
   })
 }
 
+function getClientIp(request: Request): string {
+  const forwardedFor = request.headers.get("x-forwarded-for") || ""
+  const first = forwardedFor.split(",")[0]?.trim()
+  return first || request.headers.get("cf-connecting-ip") || request.headers.get("x-real-ip") || "unknown"
+}
+
 function firstFilled(source: Record<string, unknown>, keys: string[]) {
   for (const key of keys) {
     const value = source[key]
@@ -139,7 +145,32 @@ Deno.serve(async (request) => {
       throw new Error("Supabase credentials are not configured")
     }
 
+    const supabase = createClient(supabaseUrl, rpcKey, {
+      auth: { persistSession: false },
+    })
+
     const payload = await request.json()
+
+    // Honeypot: a hidden field real users never fill in. Bots that
+    // blindly fill every input trip it; pretend success so they don't
+    // adapt, but never actually create an application.
+    const honeypot = firstFilled(payload, ["hp_field"])
+    if (honeypot) {
+      return jsonResponse({ ok: true, member_id: null, application_status: "未審査", mode: "created", mail_warning: null }, 200, corsHeaders)
+    }
+
+    const clientIp = getClientIp(request)
+    const { data: withinLimit, error: rateLimitError } = await supabase.rpc("cidm_check_rate_limit", {
+      p_key: `submit_application:${clientIp}`,
+      p_limit: 3,
+      p_window_seconds: 3600,
+    })
+    if (rateLimitError) {
+      console.error("rate limit check failed:", rateLimitError)
+    } else if (withinLimit === false) {
+      return jsonResponse({ error: "リクエストが多すぎます。しばらく時間をおいて再度お試しください。" }, 429, corsHeaders)
+    }
+
     const companyName = firstFilled(payload, ["company_name", "company", "companyName", "name"])
     const contactName = firstFilled(payload, ["contact_name", "staff_name", "applicant_name"])
     const contactEmail = firstFilled(payload, ["contact_email", "email", "staff_email", "applicant_email"])
@@ -155,10 +186,6 @@ Deno.serve(async (request) => {
     if (!contactEmail) {
       return jsonResponse({ error: "contact_email is required" }, 400, corsHeaders)
     }
-
-    const supabase = createClient(supabaseUrl, rpcKey, {
-      auth: { persistSession: false },
-    })
 
     const { data, error } = await supabase.rpc("cidm_submit_application", {
       p_payload: payload,

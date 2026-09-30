@@ -45,6 +45,30 @@ function isStrongPassword(value: string): boolean {
   return value.length >= 12 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value)
 }
 
+function getClientIp(req: Request): string {
+  const forwardedFor = req.headers.get('x-forwarded-for') || ''
+  const first = forwardedFor.split(',')[0]?.trim()
+  return first || req.headers.get('cf-connecting-ip') || req.headers.get('x-real-ip') || 'unknown'
+}
+
+async function checkRateLimit(key: string, limit: number, windowSeconds: number): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('cidm_check_rate_limit', {
+      p_key: key,
+      p_limit: limit,
+      p_window_seconds: windowSeconds
+    })
+    if (error) {
+      console.error('rate limit check failed:', error)
+      return true
+    }
+    return data !== false
+  } catch (e) {
+    console.error('rate limit check threw:', e)
+    return true
+  }
+}
+
 function createRawToken(): string {
   const bytes = new Uint8Array(32)
   crypto.getRandomValues(bytes)
@@ -349,6 +373,15 @@ async function requestAdminReset(req: Request, payload: Record<string, unknown>,
     return jsonResponse({ error: 'メールアドレスを入力してください。' }, 400, corsHeaders)
   }
 
+  const clientIp = getClientIp(req)
+  const [ipOk, targetOk] = await Promise.all([
+    checkRateLimit(`pw_reset_admin_ip:${clientIp}`, 10, 3600),
+    checkRateLimit(`pw_reset_admin_target:${loginId}`, 3, 3600)
+  ])
+  if (!ipOk || !targetOk) {
+    return jsonResponse({ error: 'リクエストが多すぎます。しばらく時間をおいて再度お試しください。' }, 429, corsHeaders)
+  }
+
   let member: Record<string, unknown> | null = null
   try {
     member = await findAdminMemberByLoginId(loginId)
@@ -403,6 +436,15 @@ async function requestReset(req: Request, payload: Record<string, unknown>, cors
 
   if (!loginId || !isValidEmail(loginId)) {
     return jsonResponse({ ok: true }, 200, corsHeaders)
+  }
+
+  const clientIp = getClientIp(req)
+  const [ipOk, targetOk] = await Promise.all([
+    checkRateLimit(`pw_reset_request_ip:${clientIp}`, 10, 3600),
+    checkRateLimit(`pw_reset_request_target:${loginId}`, 3, 3600)
+  ])
+  if (!ipOk || !targetOk) {
+    return jsonResponse({ error: 'リクエストが多すぎます。しばらく時間をおいて再度お試しください。' }, 429, corsHeaders)
   }
 
   const rawToken = createRawToken()

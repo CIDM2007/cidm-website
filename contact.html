@@ -57,6 +57,11 @@
                         ※は必須項目です。
                     </div>
 
+                    <div style="position:absolute;left:-9999px;top:-9999px;" aria-hidden="true">
+                        <label for="hp_field">このフィールドは入力しないでください</label>
+                        <input type="text" id="hp_field" name="hp_field" tabindex="-1" autocomplete="off">
+                    </div>
+
                     <div class="grid md:grid-cols-4 gap-4 items-center">
                         <label class="md:col-span-1 text-sm font-bold text-slate-700">会社名</label>
                         <input type="text" name="company" class="md:col-span-3 w-full border border-slate-200 px-5 py-3 rounded-xl bg-slate-50/50 transition" placeholder="例：株式会社〇〇">
@@ -258,7 +263,8 @@
                 fax: normalizePhone(formData, 'fax'),
                 email,
                 category: String(formData.get('category') || '').trim(),
-                message: String(formData.get('message') || '').trim()
+                message: String(formData.get('message') || '').trim(),
+                hp_field: String(formData.get('hp_field') || '').trim()
             };
 
             if (!payload.name || !payload.postal || !payload.pref || !payload.address || !payload.phone || !payload.email || !payload.message) {
