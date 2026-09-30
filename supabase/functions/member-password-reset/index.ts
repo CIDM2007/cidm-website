@@ -10,14 +10,23 @@ const SUPABASE_SERVICE_ROLE_KEY = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || 
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-const corsHeaders = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info, x-supabase-api-version'
+// Add any additional trusted origins (e.g. a local dev server) here.
+const ALLOWED_ORIGINS = new Set([
+  'https://www.cidm.or.jp',
+  'https://cidm.or.jp',
+])
+
+function getCorsHeaders(origin: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.cidm.or.jp',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info, x-supabase-api-version',
+    'Vary': 'Origin'
+  }
 }
 
-function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+function jsonResponse(body: Record<string, unknown>, status = 200, corsHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: corsHeaders
@@ -30,6 +39,10 @@ function normalizeEmail(value: unknown): string {
 
 function isValidEmail(value: string): boolean {
   return /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(value)
+}
+
+function isStrongPassword(value: string): boolean {
+  return value.length >= 12 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value)
 }
 
 function createRawToken(): string {
@@ -240,17 +253,17 @@ async function ensureAdminMetadataByEmail(email: string): Promise<void> {
   }
 }
 
-async function canAdminLogin(payload: Record<string, unknown>): Promise<Response> {
+async function canAdminLogin(payload: Record<string, unknown>, corsHeaders: Record<string, string>): Promise<Response> {
   const loginId = normalizeEmail(payload.login_id)
   if (!loginId || !isValidEmail(loginId)) {
-    return jsonResponse({ ok: true, is_admin: false })
+    return jsonResponse({ ok: true, is_admin: false }, 200, corsHeaders)
   }
 
   try {
     const member = await findAdminMemberByLoginId(loginId)
-    return jsonResponse({ ok: true, is_admin: !!member })
+    return jsonResponse({ ok: true, is_admin: !!member }, 200, corsHeaders)
   } catch (_e) {
-    return jsonResponse({ ok: true, is_admin: false })
+    return jsonResponse({ ok: true, is_admin: false }, 200, corsHeaders)
   }
 }
 
@@ -277,15 +290,15 @@ async function findMemberByLoginId(loginId: string): Promise<Record<string, unkn
   return (member as Record<string, unknown>) || null
 }
 
-async function memberLoginContext(req: Request): Promise<Response> {
+async function memberLoginContext(req: Request, corsHeaders: Record<string, string>): Promise<Response> {
   const authHeader = (req.headers.get('Authorization') || req.headers.get('authorization') || '').trim()
   if (!authHeader.startsWith('Bearer ')) {
-    return jsonResponse({ error: 'Unauthorized' }, 401)
+    return jsonResponse({ error: 'Unauthorized' }, 401, corsHeaders)
   }
 
   const ANON_KEY = (Deno.env.get('SUPABASE_ANON_KEY') || '').trim()
   if (!ANON_KEY) {
-    return jsonResponse({ error: 'Internal server error' }, 500)
+    return jsonResponse({ error: 'Internal server error' }, 500, corsHeaders)
   }
 
   const userClient = createClient(SUPABASE_URL, ANON_KEY, {
@@ -296,23 +309,23 @@ async function memberLoginContext(req: Request): Promise<Response> {
   const { data: userData, error: userError } = await userClient.auth.getUser()
   const loginId = normalizeEmail(userData?.user?.email)
   if (userError || !loginId) {
-    return jsonResponse({ error: 'Unauthorized' }, 401)
+    return jsonResponse({ error: 'Unauthorized' }, 401, corsHeaders)
   }
 
   let member: Record<string, unknown> | null = null
   try {
     member = await findMemberByLoginId(loginId)
   } catch (_e) {
-    return jsonResponse({ error: '会員情報の取得に失敗しました。' }, 500)
+    return jsonResponse({ error: '会員情報の取得に失敗しました。' }, 500, corsHeaders)
   }
 
   if (!member) {
-    return jsonResponse({ error: '会員登録情報が見つかりません。' }, 404)
+    return jsonResponse({ error: '会員登録情報が見つかりません。' }, 404, corsHeaders)
   }
 
   const status = String(member.application_status || '承認済').trim() || '承認済'
   if (status !== '承認済') {
-    return jsonResponse({ error: '会員審査が未承認のためログインできません。' }, 403)
+    return jsonResponse({ error: '会員審査が未承認のためログインできません。' }, 403, corsHeaders)
   }
 
   return jsonResponse({
@@ -325,26 +338,26 @@ async function memberLoginContext(req: Request): Promise<Response> {
       staff_name: String(member.staff_name || ''),
       app_role: String(member.app_role || 'member')
     }
-  })
+  }, 200, corsHeaders)
 }
 
-async function requestAdminReset(req: Request, payload: Record<string, unknown>): Promise<Response> {
+async function requestAdminReset(req: Request, payload: Record<string, unknown>, corsHeaders: Record<string, string>): Promise<Response> {
   const loginId = normalizeEmail(payload.login_id)
   const redirectTo = String(payload.redirect_to || '').trim()
 
   if (!loginId || !isValidEmail(loginId)) {
-    return jsonResponse({ error: 'メールアドレスを入力してください。' }, 400)
+    return jsonResponse({ error: 'メールアドレスを入力してください。' }, 400, corsHeaders)
   }
 
   let member: Record<string, unknown> | null = null
   try {
     member = await findAdminMemberByLoginId(loginId)
   } catch (_e) {
-    return jsonResponse({ error: '管理者確認に失敗しました。時間をおいて再度お試しください。' }, 500)
+    return jsonResponse({ error: '管理者確認に失敗しました。時間をおいて再度お試しください。' }, 500, corsHeaders)
   }
 
   if (!member) {
-    return jsonResponse({ error: '管理者以外の方のログインは許可されていません。' }, 403)
+    return jsonResponse({ error: '管理者以外の方のログインは許可されていません。' }, 403, corsHeaders)
   }
 
   await ensureAdminMetadataByEmail(loginId)
@@ -359,16 +372,16 @@ async function requestAdminReset(req: Request, payload: Record<string, unknown>)
 
   if (linkError) {
     console.error('member-password-reset admin generateLink error:', linkError)
-    return jsonResponse({ error: 'パスワード回復URLの生成に失敗しました。' }, 500)
+    return jsonResponse({ error: 'パスワード回復URLの生成に失敗しました。' }, 500, corsHeaders)
   }
 
   const actionLink = String(linkData?.properties?.action_link || '').trim()
   const hashedToken = String(linkData?.properties?.hashed_token || '').trim()
   if (!actionLink) {
-    return jsonResponse({ error: 'パスワード回復URLの生成に失敗しました。' }, 500)
+    return jsonResponse({ error: 'パスワード回復URLの生成に失敗しました。' }, 500, corsHeaders)
   }
   if (!hashedToken) {
-    return jsonResponse({ error: 'パスワード回復URLの生成に失敗しました。' }, 500)
+    return jsonResponse({ error: 'パスワード回復URLの生成に失敗しました。' }, 500, corsHeaders)
   }
 
   try {
@@ -376,20 +389,20 @@ async function requestAdminReset(req: Request, payload: Record<string, unknown>)
     await sendAdminRecoveryMail(loginId, recoveryEntryUrl)
   } catch (mailError) {
     console.error('member-password-reset admin send mail error:', mailError)
-    return jsonResponse({ error: 'メール送信に失敗しました。時間をおいて再度お試しください。' }, 500)
+    return jsonResponse({ error: 'メール送信に失敗しました。時間をおいて再度お試しください。' }, 500, corsHeaders)
   }
 
-  return jsonResponse({ ok: true })
+  return jsonResponse({ ok: true }, 200, corsHeaders)
 }
 
 // -------------------------------------------------------
 // action=request: 担当者セルフサービス パスワードリセット要求
 // -------------------------------------------------------
-async function requestReset(req: Request, payload: Record<string, unknown>): Promise<Response> {
+async function requestReset(req: Request, payload: Record<string, unknown>, corsHeaders: Record<string, string>): Promise<Response> {
   const loginId = normalizeEmail(payload.login_id)
 
   if (!loginId || !isValidEmail(loginId)) {
-    return jsonResponse({ ok: true })
+    return jsonResponse({ ok: true }, 200, corsHeaders)
   }
 
   const rawToken = createRawToken()
@@ -403,14 +416,14 @@ async function requestReset(req: Request, payload: Record<string, unknown>): Pro
 
   if (rpcError) {
     console.error('member-password-reset contact request error:', rpcError)
-    return jsonResponse({ error: 'Internal server error' }, 500)
+    return jsonResponse({ error: 'Internal server error' }, 500, corsHeaders)
   }
 
   const contact = Array.isArray(rows) ? rows[0] : null
 
   // 見つからない場合は成功扱い（列挙攻撃防止）
   if (!contact || !contact.contact_email) {
-    return jsonResponse({ ok: true })
+    return jsonResponse({ ok: true }, 200, corsHeaders)
   }
 
   try {
@@ -418,24 +431,24 @@ async function requestReset(req: Request, payload: Record<string, unknown>): Pro
     await sendResetMail(contact.contact_email, resetUrl)
   } catch (mailError) {
     console.error('member-password-reset send mail error:', mailError)
-    return jsonResponse({ error: 'メール送信に失敗しました。時間をおいて再度お試しください。' }, 500)
+    return jsonResponse({ error: 'メール送信に失敗しました。時間をおいて再度お試しください。' }, 500, corsHeaders)
   }
 
-  return jsonResponse({ ok: true })
+  return jsonResponse({ ok: true }, 200, corsHeaders)
 }
 
 // -------------------------------------------------------
 // action=invite: 管理者が担当者に招待メールを送信
 // -------------------------------------------------------
-async function inviteContact(req: Request, payload: Record<string, unknown>): Promise<Response> {
+async function inviteContact(req: Request, payload: Record<string, unknown>, corsHeaders: Record<string, string>): Promise<Response> {
   const contactId = String(payload.contact_id || '').trim()
   if (!contactId) {
-    return jsonResponse({ error: 'contact_id is required' }, 400)
+    return jsonResponse({ error: 'contact_id is required' }, 400, corsHeaders)
   }
 
   const authHeader = (req.headers.get('Authorization') || req.headers.get('authorization') || '').trim()
   if (!authHeader.startsWith('Bearer ')) {
-    return jsonResponse({ error: 'Unauthorized' }, 401)
+    return jsonResponse({ error: 'Unauthorized' }, 401, corsHeaders)
   }
 
   // 管理者権限チェック
@@ -446,7 +459,7 @@ async function inviteContact(req: Request, payload: Record<string, unknown>): Pr
   })
   const { data: isAdminData, error: isAdminError } = await userClient.rpc('cidm_is_admin')
   if (isAdminError || !isAdminData) {
-    return jsonResponse({ error: 'admin access required' }, 403)
+    return jsonResponse({ error: 'admin access required' }, 403, corsHeaders)
   }
 
   // 担当者情報を取得
@@ -457,10 +470,10 @@ async function inviteContact(req: Request, payload: Record<string, unknown>): Pr
     .single()
 
   if (contactError || !contact) {
-    return jsonResponse({ error: 'contact not found' }, 400)
+    return jsonResponse({ error: 'contact not found' }, 400, corsHeaders)
   }
   if (!contact.email) {
-    return jsonResponse({ error: 'contact has no email' }, 400)
+    return jsonResponse({ error: 'contact has no email' }, 400, corsHeaders)
   }
 
   const redirectTo = (Deno.env.get('MEMBER_PASSWORD_RESET_URL_BASE') || '').trim()
@@ -480,7 +493,7 @@ async function inviteContact(req: Request, payload: Record<string, unknown>): Pr
       || inviteError.message?.includes('already registered')
     if (!isAlreadyRegistered) {
       console.error('invite user error:', inviteError)
-      return jsonResponse({ error: inviteError.message || 'メール送信に失敗しました。' }, 500)
+      return jsonResponse({ error: inviteError.message || 'メール送信に失敗しました。' }, 500, corsHeaders)
     }
 
     // generateLink でリセットリンクを生成
@@ -492,7 +505,7 @@ async function inviteContact(req: Request, payload: Record<string, unknown>): Pr
 
     if (linkError || !linkData) {
       console.error('generateLink error:', linkError)
-      return jsonResponse({ error: 'メール送信に失敗しました。' }, 500)
+      return jsonResponse({ error: 'メール送信に失敗しました。' }, 500, corsHeaders)
     }
 
     // リセットリンクを Resend で送信
@@ -500,7 +513,7 @@ async function inviteContact(req: Request, payload: Record<string, unknown>): Pr
       await sendInviteMail(contact.email, contact.name || '', linkData.properties?.action_link || '')
     } catch (mailError) {
       console.error('invite mail error:', mailError)
-      return jsonResponse({ error: 'メール送信に失敗しました。' }, 500)
+      return jsonResponse({ error: 'メール送信に失敗しました。' }, 500, corsHeaders)
     }
 
     authUserId = linkData.user?.id || authUserId
@@ -516,7 +529,7 @@ async function inviteContact(req: Request, payload: Record<string, unknown>): Pr
       .eq('id', contactId)
   }
 
-  return jsonResponse({ ok: true, contact_email: contact.email })
+  return jsonResponse({ ok: true, contact_email: contact.email }, 200, corsHeaders)
 }
 
 async function sendInviteMail(toEmail: string, contactName: string, inviteUrl: string): Promise<void> {
@@ -557,21 +570,21 @@ async function sendInviteMail(toEmail: string, contactName: string, inviteUrl: s
 // action=consume: トークンを消費してパスワードを設定
 //   担当者トークン（contact_password_reset_tokens）を優先して試みる
 // -------------------------------------------------------
-async function consumeReset(payload: Record<string, unknown>): Promise<Response> {
+async function consumeReset(payload: Record<string, unknown>, corsHeaders: Record<string, string>): Promise<Response> {
   const token = String(payload.token || '').trim()
   const newPassword = String(payload.new_password || '')
   const confirmPassword = String(payload.confirm_password || '')
 
   if (!token) {
-    return jsonResponse({ error: 'token is required' }, 400)
+    return jsonResponse({ error: 'token is required' }, 400, corsHeaders)
   }
 
-  if (!newPassword || newPassword.length < 8) {
-    return jsonResponse({ error: 'password must be at least 8 characters' }, 400)
+  if (!isStrongPassword(newPassword)) {
+    return jsonResponse({ error: 'password must be at least 12 characters and include uppercase, lowercase and a number' }, 400, corsHeaders)
   }
 
   if (newPassword !== confirmPassword) {
-    return jsonResponse({ error: 'password confirmation does not match' }, 400)
+    return jsonResponse({ error: 'password confirmation does not match' }, 400, corsHeaders)
   }
 
   const tokenHash = await sha256Hex(token)
@@ -583,13 +596,13 @@ async function consumeReset(payload: Record<string, unknown>): Promise<Response>
   )
 
   if (!contactError && contactResult?.ok === true) {
-    return jsonResponse({ ok: true })
+    return jsonResponse({ ok: true }, 200, corsHeaders)
   }
 
   // 担当者トークンで "invalid or expired token" 以外のエラーは内部エラー
   if (contactError) {
     console.error('member-password-reset consume contact rpc error:', contactError)
-    return jsonResponse({ error: 'パスワード更新に失敗しました。' }, 400)
+    return jsonResponse({ error: 'パスワード更新に失敗しました。' }, 400, corsHeaders)
   }
 
   // contactResult.ok === false の場合: トークンが見つからなかった
@@ -601,17 +614,19 @@ async function consumeReset(payload: Record<string, unknown>): Promise<Response>
 
   if (memberError) {
     console.error('member-password-reset consume member rpc error:', memberError)
-    return jsonResponse({ error: 'パスワード更新に失敗しました。' }, 400)
+    return jsonResponse({ error: 'パスワード更新に失敗しました。' }, 400, corsHeaders)
   }
 
   if (!memberResult) {
-    return jsonResponse({ error: 'URLが無効か有効期限切れです。' }, 400)
+    return jsonResponse({ error: 'URLが無効か有効期限切れです。' }, 400, corsHeaders)
   }
 
-  return jsonResponse({ ok: true })
+  return jsonResponse({ ok: true }, 200, corsHeaders)
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin') || '')
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       status: 200,
@@ -620,7 +635,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405)
+    return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders)
   }
 
   try {
@@ -628,32 +643,32 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const action = String(payload?.action || '').trim().toLowerCase()
 
     if (action === 'request') {
-      return await requestReset(req, payload)
+      return await requestReset(req, payload, corsHeaders)
     }
 
     if (action === 'admin_request') {
-      return await requestAdminReset(req, payload)
+      return await requestAdminReset(req, payload, corsHeaders)
     }
 
     if (action === 'admin_can_login') {
-      return await canAdminLogin(payload)
+      return await canAdminLogin(payload, corsHeaders)
     }
 
     if (action === 'member_login_context') {
-      return await memberLoginContext(req)
+      return await memberLoginContext(req, corsHeaders)
     }
 
     if (action === 'consume') {
-      return await consumeReset(payload)
+      return await consumeReset(payload, corsHeaders)
     }
 
     if (action === 'invite') {
-      return await inviteContact(req, payload)
+      return await inviteContact(req, payload, corsHeaders)
     }
 
-    return jsonResponse({ error: 'Invalid action' }, 400)
+    return jsonResponse({ error: 'Invalid action' }, 400, corsHeaders)
   } catch (error) {
     console.error('member-password-reset error:', error)
-    return jsonResponse({ error: 'Internal server error' }, 500)
+    return jsonResponse({ error: 'Internal server error' }, 500, corsHeaders)
   }
 })

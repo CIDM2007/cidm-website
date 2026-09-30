@@ -5,11 +5,20 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('CIDM_SUPABASE_SECRET_KEY') || De
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-const corsHeaders = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey'
+// Add any additional trusted origins (e.g. a local dev server) here.
+const ALLOWED_ORIGINS = new Set([
+  'https://www.cidm.or.jp',
+  'https://cidm.or.jp',
+])
+
+function getCorsHeaders(origin: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.cidm.or.jp',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
+    'Vary': 'Origin'
+  }
 }
 
 interface NewsItem {
@@ -22,6 +31,8 @@ interface NewsItem {
 }
 
 export default async function handler(req: Request): Promise<Response> {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin') || '')
+
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,

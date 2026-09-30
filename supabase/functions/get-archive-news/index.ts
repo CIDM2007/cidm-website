@@ -5,11 +5,30 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('CIDM_SUPABASE_SECRET_KEY') || De
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+// Add any additional trusted origins (e.g. a local dev server) here.
+const ALLOWED_ORIGINS = new Set([
+  'https://www.cidm.or.jp',
+  'https://cidm.or.jp',
+])
+
 export default async function handler(req: Request): Promise<Response> {
+  const origin = req.headers.get('origin') || ''
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.cidm.or.jp',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin'
+  }
+
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers })
+  }
+
   if (req.method !== 'GET') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: { 'Content-Type': 'application/json' }
+      headers
     })
   }
 
@@ -30,18 +49,13 @@ export default async function handler(req: Request): Promise<Response> {
 
     return new Response(JSON.stringify(data || []), {
       status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      }
+      headers
     })
   } catch (error) {
     console.error('Error fetching archive news:', error)
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers
     })
   }
 }

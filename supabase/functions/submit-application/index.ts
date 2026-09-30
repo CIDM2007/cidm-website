@@ -1,12 +1,21 @@
 import { createClient } from "jsr:@supabase/supabase-js@2"
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+// Add any additional trusted origins (e.g. a local dev server) here.
+const ALLOWED_ORIGINS = new Set([
+  "https://www.cidm.or.jp",
+  "https://cidm.or.jp",
+])
+
+function getCorsHeaders(origin: string): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://www.cidm.or.jp",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  }
 }
 
-function jsonResponse(body: unknown, status = 200) {
+function jsonResponse(body: unknown, status = 200, corsHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -99,6 +108,8 @@ async function notifyApplicationMail(
 }
 
 Deno.serve(async (request) => {
+  const corsHeaders = getCorsHeaders(request.headers.get("origin") || "")
+
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -107,7 +118,7 @@ Deno.serve(async (request) => {
   }
 
   if (request.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed" }, 405)
+    return jsonResponse({ error: "Method not allowed" }, 405, corsHeaders)
   }
 
   try {
@@ -134,15 +145,15 @@ Deno.serve(async (request) => {
     const contactEmail = firstFilled(payload, ["contact_email", "email", "staff_email", "applicant_email"])
 
     if (!companyName) {
-      return jsonResponse({ error: "company_name is required" }, 400)
+      return jsonResponse({ error: "company_name is required" }, 400, corsHeaders)
     }
 
     if (!contactName) {
-      return jsonResponse({ error: "contact_name is required" }, 400)
+      return jsonResponse({ error: "contact_name is required" }, 400, corsHeaders)
     }
 
     if (!contactEmail) {
-      return jsonResponse({ error: "contact_email is required" }, 400)
+      return jsonResponse({ error: "contact_email is required" }, 400, corsHeaders)
     }
 
     const supabase = createClient(supabaseUrl, rpcKey, {
@@ -176,10 +187,10 @@ Deno.serve(async (request) => {
       application_status: registrationResult.application_status ?? "未審査",
       mode: registrationResult.mode ?? "created",
       mail_warning: mailWarning,
-    })
+    }, 200, corsHeaders)
   } catch (error) {
     const serialized = serializeError(error)
     console.error(serialized)
-    return jsonResponse({ error: serialized }, 500)
+    return jsonResponse({ error: serialized }, 500, corsHeaders)
   }
 })

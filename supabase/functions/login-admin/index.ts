@@ -5,13 +5,22 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('CIDM_SUPABASE_SECRET_KEY') || De
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+// Add any additional trusted origins (e.g. a local dev server) here.
+const ALLOWED_ORIGINS = new Set([
+  'https://www.cidm.or.jp',
+  'https://cidm.or.jp',
+])
+
+function getCorsHeaders(origin: string): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.has(origin) ? origin : 'https://www.cidm.or.jp',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin'
+  }
 }
 
-function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+function jsonResponse(body: Record<string, unknown>, status = 200, corsHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -22,19 +31,21 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
 }
 
 export default async function handler(req: Request): Promise<Response> {
+  const corsHeaders = getCorsHeaders(req.headers.get('origin') || '')
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   if (req.method !== 'POST') {
-    return jsonResponse({ error: 'Method not allowed' }, 405)
+    return jsonResponse({ error: 'Method not allowed' }, 405, corsHeaders)
   }
 
   try {
     const { email, password } = await req.json()
 
     if (!email || !password) {
-      return jsonResponse({ error: 'Missing email or password' }, 400)
+      return jsonResponse({ error: 'Missing email or password' }, 400, corsHeaders)
     }
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -43,15 +54,15 @@ export default async function handler(req: Request): Promise<Response> {
     })
 
     if (error) {
-      return jsonResponse({ error: error.message }, 401)
+      return jsonResponse({ error: error.message }, 401, corsHeaders)
     }
 
     return jsonResponse({
       user: data.user,
       session: data.session
-    }, 200)
+    }, 200, corsHeaders)
   } catch (error) {
     console.error('Error logging in admin:', error)
-    return jsonResponse({ error: 'Internal server error' }, 500)
+    return jsonResponse({ error: 'Internal server error' }, 500, corsHeaders)
   }
 }

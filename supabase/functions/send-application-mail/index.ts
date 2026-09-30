@@ -1,9 +1,16 @@
-function getCorsHeaders(_origin: string): Record<string, string> {
+// Add any additional trusted origins (e.g. a local dev server) here.
+const ALLOWED_ORIGINS = new Set([
+  "https://www.cidm.or.jp",
+  "https://cidm.or.jp",
+]);
+
+function getCorsHeaders(origin: string): Record<string, string> {
   return {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://www.cidm.or.jp",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey, x-client-info",
     "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
   };
 }
 
