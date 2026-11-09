@@ -98,6 +98,7 @@ async function notifyApplicationMail(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${serviceRoleKey}`,
     },
     body: JSON.stringify({
       ...payload,

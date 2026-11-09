@@ -699,11 +699,14 @@
 
             await ensureInvoiceFunctionReachable();
 
+            const { data: sessionData } = await supabaseClient.auth.getSession();
+            const accessToken = sessionData?.session?.access_token || '';
             const response = await fetch(`${window.CIDM_SUPABASE_URL}/functions/v1/send-membership-invoice-mail`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    apikey: window.CIDM_SUPABASE_ANON_KEY
+                    apikey: window.CIDM_SUPABASE_ANON_KEY,
+                    Authorization: `Bearer ${accessToken}`
                 },
                 body: JSON.stringify({
                     billing_year: Number(yearInput.value),

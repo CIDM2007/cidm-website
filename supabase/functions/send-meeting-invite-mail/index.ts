@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Add any additional trusted origins (e.g. a local dev server) here.
 const ALLOWED_ORIGINS = new Set([
@@ -29,6 +30,20 @@ const DEFAULT_INVITE_MAIL_BODY = [
   "大変お忙しい中かとは存じますが、何卒ご出席を賜りますよう、宜しくお願い致します。",
 ].join("\n");
 
+// 管理者としてログイン中の利用者からの呼び出しだけを許可する
+async function isAdminRequest(req: Request): Promise<boolean> {
+  const authHeader = (req.headers.get("Authorization") || "").trim();
+  if (!authHeader.startsWith("Bearer ")) {
+    return false;
+  }
+  const userClient = createClient(Deno.env.get("SUPABASE_URL") || "", Deno.env.get("SUPABASE_ANON_KEY") || "", {
+    global: { headers: { Authorization: authHeader } },
+    auth: { persistSession: false },
+  });
+  const { data, error } = await userClient.rpc("cidm_is_admin");
+  return !error && data === true;
+}
+
 serve(async (req) => {
   const origin = req.headers.get("origin") || "";
   const corsHeaders = getCorsHeaders(origin);
@@ -43,6 +58,13 @@ serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", {
       status: 405,
+      headers: corsHeaders,
+    });
+  }
+
+  if (!(await isAdminRequest(req))) {
+    return new Response("Forbidden", {
+      status: 403,
       headers: corsHeaders,
     });
   }

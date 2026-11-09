@@ -48,6 +48,20 @@ function buildInvoiceNo(year: number, month: number, seq: number): string {
   return `CIDM-${yy}${mm}-${n}`;
 }
 
+// 管理者としてログイン中の利用者からの呼び出しだけを許可する
+async function isAdminRequest(req: Request): Promise<boolean> {
+  const authHeader = (req.headers.get("Authorization") || "").trim();
+  if (!authHeader.startsWith("Bearer ")) {
+    return false;
+  }
+  const userClient = createClient(Deno.env.get("SUPABASE_URL") || "", Deno.env.get("SUPABASE_ANON_KEY") || "", {
+    global: { headers: { Authorization: authHeader } },
+    auth: { persistSession: false },
+  });
+  const { data, error } = await userClient.rpc("cidm_is_admin");
+  return !error && data === true;
+}
+
 serve(async (req) => {
   const origin = req.headers.get("origin") || "";
   const corsHeaders = getCorsHeaders(origin);
@@ -59,6 +73,13 @@ serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", {
       status: 405,
+      headers: corsHeaders,
+    });
+  }
+
+  if (!(await isAdminRequest(req))) {
+    return new Response("Forbidden", {
+      status: 403,
       headers: corsHeaders,
     });
   }

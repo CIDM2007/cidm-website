@@ -14,6 +14,17 @@ function getCorsHeaders(origin: string): Record<string, string> {
   };
 }
 
+// submit-application からのサーバー内部呼び出しだけを許可する
+function isInternalRequest(req: Request): boolean {
+  const authHeader = (req.headers.get("Authorization") || "").trim();
+  const keys = [
+    Deno.env.get("CIDM_SUPABASE_SECRET_KEY"),
+    Deno.env.get("SUPABASE_SECRET_KEY"),
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+  ].map((k) => (k || "").trim()).filter((k) => k.length > 0);
+  return keys.some((k) => authHeader === `Bearer ${k}`);
+}
+
 function normalizeEmail(value: unknown): string {
   return String(value ?? "").trim().toLowerCase();
 }
@@ -63,6 +74,13 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", {
       status: 405,
+      headers: corsHeaders,
+    });
+  }
+
+  if (!isInternalRequest(req)) {
+    return new Response("Forbidden", {
+      status: 403,
       headers: corsHeaders,
     });
   }
